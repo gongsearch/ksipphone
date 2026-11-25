@@ -1,0 +1,109 @@
+name: macOS
+
+on:
+  push:
+    branches: [main, 'windows-*']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  KF_VERSION: v6.32.0
+
+jobs:
+  macos:
+    name: macOS (Apple Silicon, .dmg, unsigned)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Error reporting helper
+        run: |
+          sudo mkdir -p /usr/local/bin
+          sudo tee /usr/local/bin/logrun >/dev/null <<'SH'
+          #!/bin/bash
+          # logrun <name> <command...>: run, keep a log; on failure publish the log tail as annotation
+          name="$1"; shift
+          log="/tmp/$name.log"
+          "$@" > "$log" 2>&1
+          rc=$?
+          if [ $rc -eq 0 ]; then tail -3 "$log"; exit 0; fi
+          tail -80 "$log"
+          msg=$(tail -60 "$log" | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+          echo "::error title=$name failed::$msg"
+          exit $rc
+          SH
+          sudo chmod +x /usr/local/bin/logrun
+
+      - name: Dependencies (Homebrew)
+        run: |
+          brew update >/dev/null
+          brew install --quiet qt qtkeychain openldap opus spandsp openssl@3 gettext ninja
+
+      - name: ECM and KI18n from source
+        run: |
+          set -e
+          P="$PWD/deps"
+          export CMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix gettext);$P"
+          for fw in extra-cmake-modules ki18n; do
+            git clone -q --depth 1 -b "$KF_VERSION" "https://invent.kde.org/frameworks/$fw.git"
+            logrun "$fw-configure" cmake -S "$fw" -B "$fw/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX="$P" -DBUILD_TESTING=OFF -DBUILD_WITH_QML=OFF -DBUILD_QCH=OFF
+            logrun "$fw-build" cmake --build "$fw/build"
+            logrun "$fw-install" cmake --install "$fw/build"
+          done
+
+      - name: Build KSipPhone (with bundled static baresip)
+        run: |
+          set -e
+          P="$PWD/deps"
+          export CMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix qtkeychain);$(brew --prefix gettext);$(brew --prefix openssl@3);$(brew --prefix opus);$(brew --prefix spandsp);$P"
+          export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix opus)/lib/pkgconfig:$(brew --prefix spandsp)/lib/pkgconfig"
+          OL="$(brew --prefix openldap)"
+          logrun ksipphone-configure cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DKSIPPHONE_WITH_KDE=OFF -DKSIPPHONE_BUNDLE_BARESIP=ON \
+            "-DKSIPPHONE_BARESIP_MODULES=g711;g722;opus;audiounit;auconv;auresamp;srtp;menu;mwi;ctrl_tcp" \
+            -DLDAP_INCLUDE_DIR="$OL/include" -DLDAP_LIBRARY="$OL/lib/libldap.dylib" -DLBER_LIBRARY="$OL/lib/liblber.dylib" \
+            -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+          logrun ksipphone-build cmake --build build
+
+      - name: App bundle and .dmg
+        run: |
+          set -e
+          APP=build/bin/KSipPhone.app
+          [ -d "$APP" ] || APP=$(find build -name KSipPhone.app -maxdepth 3 | head -1)
+          echo "app: $APP"
+          # bundled baresip next to the executable, its sounds in Resources
+          cp build/bundled-baresip/bin/baresip "$APP/Contents/MacOS/"
+          mkdir -p "$APP/Contents/Resources/baresip" "$APP/Contents/Resources/locale"
+          cp build/bundled-baresip/share/baresip/*.wav "$APP/Contents/Resources/baresip/"
+          for po in po/*/ksipphone.po; do
+            l=$(basename "$(dirname "$po")"); mkdir -p "$APP/Contents/Resources/locale/$l/LC_MESSAGES"
+            "$(brew --prefix gettext)/bin/msgfmt" -o "$APP/Contents/Resources/locale/$l/LC_MESSAGES/ksipphone.mo" "$po"
+          done
+          cp -R deps/lib/libKF6I18n*.dylib "$APP/Contents/Frameworks/" 2>/dev/null || true
+          logrun macdeployqt "$(brew --prefix qt)/bin/macdeployqt" "$APP" -executable="$APP/Contents/MacOS/baresip" \
+            -libpath="$PWD/deps/lib"
+          # Apple Silicon refuses unsigned code: ad-hoc signature (not notarized)
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --verbose "$APP"
+          VER=$(sed -n 's/^project(ksipphone VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          hdiutil create -volname KSipPhone -srcfolder "$APP" -ov -format UDZO "KSipPhone-$VER-macos-arm64.dmg"
+          ls -la KSipPhone-*.dmg
+          otool -L "$APP/Contents/MacOS/KSipPhone" | grep -v "@\|/System/\|/usr/lib/" || true
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: KSipPhone-macos
+          path: KSipPhone-*.dmg
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
+          gh release upload "$GITHUB_REF_NAME" KSipPhone-*.dmg --clobber

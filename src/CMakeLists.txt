@@ -11,8 +11,8 @@ add_executable(ksipphone
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})
-target_compile_definitions(ksipphone PRIVATE LDAP_DEPRECATED=0 KSIPPHONE_VERSION="${PROJECT_VERSION}"
-    KSIPPHONE_BARESIP_MODULE_PATH="${BARESIP_MODULE_PATH}" KSIPPHONE_BARESIP_SHARE_PATH="${BARESIP_SHARE_PATH}")
+target_compile_definitions(ksipphone PRIVATE LDAP_DEPRECATED=0 KSIPPHONE_VERSION="${PROJECT_VERSION}")
+# baresip paths are added in the top-level CMakeLists (after an optional bundled baresip set them)
 
 target_link_libraries(ksipphone PRIVATE
     Qt6::Widgets Qt6::Concurrent Qt6::Network Qt6::Multimedia Qt6Keychain::Qt6Keychain
@@ -26,6 +26,21 @@ if (KSIPPHONE_WITH_KDE)
 else()
     target_sources(ksipphone PRIVATE icons.qrc)
     target_link_libraries(ksipphone PRIVATE Qt6::Svg)
+endif()
+if (APPLE)
+    set_target_properties(ksipphone PROPERTIES
+        MACOSX_BUNDLE ON
+        OUTPUT_NAME KSipPhone
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/packaging/macos/Info.plist.in
+        MACOSX_BUNDLE_GUI_IDENTIFIER io.github.gongsearch.KSipPhone
+        MACOSX_BUNDLE_BUNDLE_NAME KSipPhone
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+        MACOSX_BUNDLE_ICON_FILE ksipphone.icns)
+    if (EXISTS ${CMAKE_SOURCE_DIR}/packaging/macos/ksipphone.icns)
+        target_sources(ksipphone PRIVATE ${CMAKE_SOURCE_DIR}/packaging/macos/ksipphone.icns)
+        set_source_files_properties(${CMAKE_SOURCE_DIR}/packaging/macos/ksipphone.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    endif()
 endif()
 if (WIN32)
     target_sources(ksipphone PRIVATE ${CMAKE_SOURCE_DIR}/packaging/windows/ksipphone.rc)

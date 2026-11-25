@@ -5,7 +5,7 @@ set(QT_MIN_VERSION "6.6.0")
 set(KF_MIN_VERSION "6.0.0")
 
 find_package(ECM ${KF_MIN_VERSION} REQUIRED NO_MODULE)
-set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 # ON: Plasma integration (KStatusNotifierItem, KNotifications with buttons). OFF: plain Qt tray and
 # messages (Windows, macOS). KI18n is used in both cases.
@@ -38,12 +38,21 @@ set_package_properties(KF6Wallet PROPERTIES TYPE OPTIONAL PURPOSE "migrate passw
 
 set(BARESIP_MODULE_PATH "/usr/lib/baresip/modules" CACHE PATH "Where baresip's modules are installed")
 set(BARESIP_SHARE_PATH "/usr/share/baresip" CACHE PATH "Where baresip's sound files are installed")
+set(BARESIP_EXECUTABLE "baresip" CACHE STRING "baresip executable (name in PATH or absolute path)")
+option(KSIPPHONE_BUNDLE_BARESIP "Build a private static baresip and install it with KSipPhone" OFF)
 
 find_library(LDAP_LIBRARY NAMES ldap REQUIRED)
 find_library(LBER_LIBRARY NAMES lber REQUIRED)
 find_path(LDAP_INCLUDE_DIR ldap.h REQUIRED)
 
 add_subdirectory(src)
+if (KSIPPHONE_BUNDLE_BARESIP)
+    include(BundledBaresip)
+endif()
+target_compile_definitions(ksipphone PRIVATE
+    KSIPPHONE_BARESIP_MODULE_PATH="${BARESIP_MODULE_PATH}" KSIPPHONE_BARESIP_SHARE_PATH="${BARESIP_SHARE_PATH}"
+    KSIPPHONE_BARESIP_EXECUTABLE="${BARESIP_EXECUTABLE}")
+include(Packaging)
 ki18n_install(po)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)

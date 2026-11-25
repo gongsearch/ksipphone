@@ -1,0 +1,35 @@
+# CPack: .deb and .rpm   (cpack -G DEB / cpack -G RPM in the build directory)
+set(CPACK_PACKAGE_NAME "ksipphone")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VENDOR "gongsearch")
+set(CPACK_PACKAGE_CONTACT "gongsearch <66825717+gongsearch@users.noreply.github.com>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A small SIP phone for KDE Plasma")
+set(CPACK_PACKAGE_DESCRIPTION "KSipPhone is an audio-only SIP softphone living in the system tray. It uses baresip as SIP and media engine and integrates it into KDE Plasma: notifications with accept/decline, voicemail indicator, LDAP phonebook with caller photos, keychain password storage and tel:/sip: links.")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/gongsearch/ksipphone")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_STRIP_FILES ON)
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "/usr")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+
+# Debian / Ubuntu: library dependencies from dpkg-shlibdeps; baresip is bundled there (distro has 1.1)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+set(CPACK_DEBIAN_PACKAGE_SECTION "comm")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+if (NOT KSIPPHONE_BUNDLE_BARESIP)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "baresip-core (>= 4)")
+endif()
+
+# Fedora / openSUSE: automatic library requirements; baresip 4.x from the distribution
+set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Communications")
+set(CPACK_RPM_PACKAGE_URL "${CPACK_PACKAGE_HOMEPAGE_URL}")
+set(CPACK_RPM_PACKAGE_AUTOREQ ON)
+if (NOT KSIPPHONE_BUNDLE_BARESIP)
+    set(CPACK_RPM_PACKAGE_REQUIRES "baresip >= 4, baresip-pipewire, baresip-g722, baresip-opus")
+endif()
+set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/share/applications /usr/share/metainfo /usr/share/icons
+    /usr/share/icons/hicolor /usr/share/icons/hicolor/scalable /usr/share/icons/hicolor/scalable/apps
+    /usr/share/knotifications6 /usr/share/locale /usr/share/locale/de /usr/share/locale/de/LC_MESSAGES)
+
+include(CPack)

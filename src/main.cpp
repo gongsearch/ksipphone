@@ -8,6 +8,8 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QFileOpenEvent>
+#include <QUrl>
 #include <QIcon>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -97,6 +99,24 @@ int main(int argc, char **argv)
             });
         }
     });
+    // macOS hands URL scheme activations (tel:, sip:, callto:) to the app as FileOpen events
+    struct UrlOpenFilter : QObject {
+        PhoneApp *phone;
+        explicit UrlOpenFilter(PhoneApp *p) : phone(p) {}
+        bool eventFilter(QObject *o, QEvent *e) override
+        {
+            if (e->type() == QEvent::FileOpen) {
+                const QUrl url = static_cast<QFileOpenEvent *>(e)->url();
+                if (!url.isEmpty() && !url.isLocalFile()) {
+                    phone->handleArguments({QString(), url.toString()}, true);
+                    return true;
+                }
+            }
+            return QObject::eventFilter(o, e);
+        }
+    } urlFilter(&phone);
+    app.installEventFilter(&urlFilter);
+
     phone.start(parser.isSet(QStringLiteral("minimized")));
     phone.handleArguments(QCoreApplication::arguments(), false);
     return app.exec();

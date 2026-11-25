@@ -1,0 +1,11 @@
+#!/bin/sh
+# KSipPhone AppImage entry point: point KSipPhone at the bundled baresip and its sound files.
+HERE="$(dirname "$(readlink -f "$0")")"
+for d in "$HERE"/usr/lib/*/ksipphone "$HERE"/usr/lib/ksipphone "$HERE"/usr/lib64/ksipphone; do
+  [ -x "$d/baresip" ] && { PRIV="$d"; break; }
+done
+export KSIPPHONE_BARESIP="$PRIV/baresip"
+export KSIPPHONE_BARESIP_MODULES="$PRIV/modules"   # static build: modules are inside baresip
+export KSIPPHONE_BARESIP_SHARE="$HERE/usr/share/ksipphone/baresip"
+export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH:-}"
+exec "$HERE/usr/bin/ksipphone" "$@"
