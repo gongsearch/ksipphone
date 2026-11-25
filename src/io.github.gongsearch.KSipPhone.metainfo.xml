@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: MIT -->
+<component type="desktop-application">
+  <id>io.github.gongsearch.KSipPhone</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>KSipPhone</name>
+  <summary>A small SIP phone for KDE Plasma</summary>
+  <description>
+    <p>KSipPhone is an audio-only SIP softphone that lives in the Plasma system tray. It uses baresip as SIP and media engine and integrates it into the desktop.</p>
+    <ul>
+      <li>Incoming calls as KDE notifications with accept and decline</li>
+      <li>Missed calls with call back from the notification history</li>
+      <li>Voicemail indicator and one-click mailbox call</li>
+      <li>LDAP phonebook search with caller name and photo</li>
+      <li>HD codec indicator, call timer, DTMF keypad, mute and hold</li>
+      <li>Selectable microphone, speaker and ring device, custom ring tone</li>
+      <li>Password stored in KWallet, handler for tel: and sip: links</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.gongsearch.KSipPhone.desktop</launchable>
+  <url type="homepage">https://github.com/gongsearch/ksipphone</url>
+  <url type="bugtracker">https://github.com/gongsearch/ksipphone/issues</url>
+  <developer id="io.github.gongsearch">
+    <name>gongsearch</name>
+  </developer>
+  <categories>
+    <category>Network</category>
+    <category>Telephony</category>
+  </categories>
+  <keywords>
+    <keyword>SIP</keyword>
+    <keyword>VoIP</keyword>
+    <keyword>phone</keyword>
+    <keyword>softphone</keyword>
+  </keywords>
+  <provides>
+    <binary>ksipphone</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-11-25"/>
+  </releases>
+</component>

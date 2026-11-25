@@ -64,7 +64,7 @@ configuration. After a user-local install run `kbuildsycoca6` once so Plasma fin
 To make KSipPhone the handler for phone links:
 
 ```sh
-for s in tel sip sips callto; do xdg-mime default org.ksipphone.KSipPhone.desktop x-scheme-handler/$s; done
+for s in tel sip sips callto; do xdg-mime default io.github.gongsearch.KSipPhone.desktop x-scheme-handler/$s; done
 ```
 
 Autostart (hidden in the tray): add `ksipphone --minimized` in *System Settings → Autostart*.

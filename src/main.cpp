@@ -17,8 +17,10 @@ int main(int argc, char **argv)
 
     KAboutData about(QStringLiteral("ksipphone"), i18n("KSipPhone"), QStringLiteral(KSIPPHONE_VERSION),
                      i18n("A small SIP phone for KDE Plasma"), KAboutLicense::MIT);
-    about.setOrganizationDomain("ksipphone.org");
-    about.setDesktopFileName(QStringLiteral("org.ksipphone.KSipPhone"));
+    about.setOrganizationDomain("gongsearch.github.io");
+    about.setHomepage(QStringLiteral("https://github.com/gongsearch/ksipphone"));
+    about.setBugAddress("https://github.com/gongsearch/ksipphone/issues");
+    about.setDesktopFileName(QStringLiteral("io.github.gongsearch.KSipPhone"));
     KAboutData::setApplicationData(about);
     QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("call-start")));
 

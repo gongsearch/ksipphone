@@ -20,5 +20,6 @@ target_link_libraries(ksipphone PRIVATE
 
 install(TARGETS ksipphone ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES ksipphone.notifyrc DESTINATION ${KDE_INSTALL_KNOTIFYRCDIR})
-configure_file(org.ksipphone.KSipPhone.desktop.in ${CMAKE_CURRENT_BINARY_DIR}/org.ksipphone.KSipPhone.desktop @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/org.ksipphone.KSipPhone.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+configure_file(io.github.gongsearch.KSipPhone.desktop.in ${CMAKE_CURRENT_BINARY_DIR}/io.github.gongsearch.KSipPhone.desktop @ONLY)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/io.github.gongsearch.KSipPhone.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES io.github.gongsearch.KSipPhone.metainfo.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
