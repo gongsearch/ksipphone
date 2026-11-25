@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 // Read-only LDAP phonebook (inetOrgPerson: cn, telephoneNumber, mobile, homePhone).
 #pragma once
 

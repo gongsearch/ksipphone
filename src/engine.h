@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 // Baresip engine: runs baresip as a child process and talks to it via its ctrl_dbus module.
 #pragma once
 

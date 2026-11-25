@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 // Ties engine, phonebook, dialer window, tray icon and notifications together.
 #pragma once
 

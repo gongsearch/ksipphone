@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 // Ring tone playback on a selectable PipeWire output, once or looped.
 #pragma once
 

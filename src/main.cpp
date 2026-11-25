@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: MIT
 #include "phoneapp.h"
 
 #include <KAboutData>
@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     KLocalizedString::setApplicationDomain("ksipphone");
 
     KAboutData about(QStringLiteral("ksipphone"), i18n("KSipPhone"), QStringLiteral(KSIPPHONE_VERSION),
-                     i18n("A small SIP phone for KDE Plasma"), KAboutLicense::GPL_V3);
+                     i18n("A small SIP phone for KDE Plasma"), KAboutLicense::MIT);
     about.setOrganizationDomain("ksipphone.org");
     about.setDesktopFileName(QStringLiteral("org.ksipphone.KSipPhone"));
     KAboutData::setApplicationData(about);
