@@ -32,7 +32,7 @@ if [ ! -d "$W/qt/$QT_VERSION" ]; then
 fi
 QTDIR=$( (ls -d "$W/qt/$QT_VERSION"/gcc_64 "$W/qt/$QT_VERSION"/linux_gcc_64 2>/dev/null || true) | head -1)
 echo "Qt: $QTDIR"
-export CMAKE_PREFIX_PATH="$QTDIR;$PREFIX"
+export CMAKE_PREFIX_PATH="$QTDIR:$PREFIX"   # environment variable: ":" separated
 export PATH="$QTDIR/bin:$QTDIR/libexec:$PATH"   # ECM looks for qtpaths in PATH
 export LD_LIBRARY_PATH="$QTDIR/lib:$PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
