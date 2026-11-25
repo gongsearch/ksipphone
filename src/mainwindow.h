@@ -25,6 +25,7 @@ public:
     void setCall(Engine::CallState state, const QString &peerText);
     void setNumber(const QString &number);
     void setSearchResults(int requestId, const QList<PhonebookEntry> &entries);
+    void setPhonebookError(const QString &message);
 
 Q_SIGNALS:
     void dialRequested(const QString &target);
@@ -44,7 +45,7 @@ private:
     void keypad(const QString &digit);
     void callClicked();
 
-    QLabel *m_reg, *m_status;
+    QLabel *m_reg, *m_status, *m_pbError;
     QLineEdit *m_number;
     QPushButton *m_call, *m_hangup;
     QToolButton *m_mute, *m_hold;

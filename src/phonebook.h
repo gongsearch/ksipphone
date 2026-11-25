@@ -7,10 +7,18 @@
 #include <QObject>
 #include <QString>
 
+struct PhonebookEntry;
+struct PhonebookResult;
+
 struct PhonebookEntry {
     QString name;
     QString number;
     QString kind; // "telephoneNumber", "mobile", "homePhone"
+};
+
+struct PhonebookResult {
+    QList<PhonebookEntry> entries;
+    QString error; // empty on success
 };
 
 class Phonebook : public QObject
@@ -31,8 +39,9 @@ public:
 Q_SIGNALS:
     void searchFinished(int requestId, const QList<PhonebookEntry> &entries);
     void lookupFinished(int requestId, const QString &name);
+    void errorOccurred(const QString &message); // empty message = OK again
 
 private:
-    static QList<PhonebookEntry> query(const QString &uri, const QString &base, const QString &filter, int limit);
+    static PhonebookResult query(const QString &uri, const QString &base, const QString &filter, int limit);
     QString m_uri, m_base;
 };

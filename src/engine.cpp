@@ -198,8 +198,24 @@ void Engine::setAccount(const Account &account)
         }
     }
     line += QStringLiteral(";regint=300;answermode=manual");
-    if (!account.codecs.isEmpty())
-        line += QStringLiteral(";audio_codecs=%1").arg(account.codecs.join(QLatin1Char(',')));
+    if (!account.codecs.isEmpty()) {
+        // baresip matches a bare codec name against 8 kHz; wideband codecs need their rate.
+        QStringList list;
+        for (const QString &c : account.codecs) {
+            const QString u = c.trimmed().toUpper();
+            if (c.contains(QLatin1Char('/')))
+                list << c.trimmed();
+            else if (u == QLatin1String("G722"))
+                list << QStringLiteral("G722/16000/1");
+            else if (u == QLatin1String("OPUS"))
+                list << QStringLiteral("opus/48000/2");
+            else if (u == QLatin1String("L16"))
+                list << QStringLiteral("L16/16000/1");
+            else
+                list << c.trimmed();
+        }
+        line += QStringLiteral(";audio_codecs=%1").arg(list.join(QLatin1Char(',')));
+    }
     invoke(QStringLiteral("uanew ") + line);
     m_uaCreated = true;
     setRegState(RegState::Registering);

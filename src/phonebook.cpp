@@ -53,12 +53,13 @@ QString Phonebook::normalize(const QString &number)
     return n;
 }
 
-QList<PhonebookEntry> Phonebook::query(const QString &uri, const QString &base, const QString &filter, int limit)
+PhonebookResult Phonebook::query(const QString &uri, const QString &base, const QString &filter, int limit)
 {
-    QList<PhonebookEntry> result;
+    PhonebookResult result;
     LDAP *ld = nullptr;
     if (ldap_initialize(&ld, uri.toUtf8().constData()) != LDAP_SUCCESS || !ld) {
         qCWarning(PHONEBOOK) << "ldap_initialize failed" << uri;
+        result.error = QStringLiteral("invalid LDAP URI %1").arg(uri);
         return result;
     }
     int version = LDAP_VERSION3;
@@ -70,6 +71,7 @@ QList<PhonebookEntry> Phonebook::query(const QString &uri, const QString &base, 
     int rc = ldap_sasl_bind_s(ld, nullptr, LDAP_SASL_SIMPLE, &cred, nullptr, nullptr, nullptr); // anonymous
     if (rc != LDAP_SUCCESS) {
         qCWarning(PHONEBOOK) << "bind failed" << ldap_err2string(rc);
+        result.error = QString::fromUtf8(ldap_err2string(rc));
         ldap_unbind_ext_s(ld, nullptr, nullptr);
         return result;
     }
@@ -78,6 +80,7 @@ QList<PhonebookEntry> Phonebook::query(const QString &uri, const QString &base, 
                            const_cast<char **>(kAttrs), 0, nullptr, nullptr, &tv, limit, &res);
     if (rc != LDAP_SUCCESS && rc != LDAP_SIZELIMIT_EXCEEDED) {
         qCWarning(PHONEBOOK) << "search failed" << ldap_err2string(rc);
+        result.error = QString::fromUtf8(ldap_err2string(rc));
     }
     for (LDAPMessage *e = res ? ldap_first_entry(ld, res) : nullptr; e; e = ldap_next_entry(ld, e)) {
         QString name;
@@ -91,7 +94,7 @@ QList<PhonebookEntry> Phonebook::query(const QString &uri, const QString &base, 
             if (!v)
                 continue;
             for (int i = 0; v[i]; ++i)
-                result.append({name, QString::fromUtf8(v[i]->bv_val, int(v[i]->bv_len)), QString::fromLatin1(attr)});
+                result.entries.append({name, QString::fromUtf8(v[i]->bv_val, int(v[i]->bv_len)), QString::fromLatin1(attr)});
             ldap_value_free_len(v);
         }
     }
@@ -122,10 +125,13 @@ void Phonebook::search(const QString &text, int requestId)
     filter += QStringLiteral("))");
 
     QPointer<Phonebook> self(this);
-    auto *w = new QFutureWatcher<QList<PhonebookEntry>>(this);
-    connect(w, &QFutureWatcher<QList<PhonebookEntry>>::finished, this, [self, w, requestId] {
-        if (self)
-            Q_EMIT self->searchFinished(requestId, w->result());
+    auto *w = new QFutureWatcher<PhonebookResult>(this);
+    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, requestId] {
+        if (self) {
+            const PhonebookResult r = w->result();
+            Q_EMIT self->errorOccurred(r.error);
+            Q_EMIT self->searchFinished(requestId, r.entries);
+        }
         w->deleteLater();
     });
     w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 25));
@@ -141,11 +147,13 @@ void Phonebook::lookupNumber(const QString &number, int requestId)
     const QString e = escapeFilter(n);
     const QString filter = QStringLiteral("(&(objectClass=inetOrgPerson)(|(telephoneNumber=%1)(mobile=%1)(homePhone=%1)))").arg(e);
     QPointer<Phonebook> self(this);
-    auto *w = new QFutureWatcher<QList<PhonebookEntry>>(this);
-    connect(w, &QFutureWatcher<QList<PhonebookEntry>>::finished, this, [self, w, requestId] {
-        const auto r = w->result();
-        if (self)
-            Q_EMIT self->lookupFinished(requestId, r.isEmpty() ? QString() : r.first().name);
+    auto *w = new QFutureWatcher<PhonebookResult>(this);
+    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, requestId] {
+        const PhonebookResult r = w->result();
+        if (self) {
+            Q_EMIT self->errorOccurred(r.error);
+            Q_EMIT self->lookupFinished(requestId, r.entries.isEmpty() ? QString() : r.entries.first().name);
+        }
         w->deleteLater();
     });
     w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 1));

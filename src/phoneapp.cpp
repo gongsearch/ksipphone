@@ -74,6 +74,7 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_window, &MainWindow::settingsRequested, this, &PhoneApp::openSettings);
     connect(m_window, &MainWindow::searchRequested, m_phonebook, &Phonebook::search);
     connect(m_phonebook, &Phonebook::searchFinished, m_window, &MainWindow::setSearchResults);
+    connect(m_phonebook, &Phonebook::errorOccurred, m_window, &MainWindow::setPhonebookError);
 
     // engine -> ui
     connect(m_engine, &Engine::regStateChanged, this, [this](Engine::RegState s, const QString &info) {

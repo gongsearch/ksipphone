@@ -66,6 +66,12 @@ MainWindow::MainWindow(QWidget *parent)
     });
     connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
 
+    m_pbError = new QLabel(this);
+    m_pbError->setWordWrap(true);
+    m_pbError->setStyleSheet(QStringLiteral("color:#c0392b"));
+    m_pbError->hide();
+    lay->addWidget(m_pbError);
+
     m_status = new QLabel(this);
     m_status->setAlignment(Qt::AlignCenter);
     m_status->setWordWrap(true);
@@ -162,6 +168,12 @@ void MainWindow::setSearchResults(int requestId, const QList<PhonebookEntry> &en
     }
     if (!entries.isEmpty() && m_number->hasFocus())
         m_completer->complete();
+}
+
+void MainWindow::setPhonebookError(const QString &message)
+{
+    m_pbError->setText(message.isEmpty() ? QString() : i18n("Phonebook: %1", message));
+    m_pbError->setVisible(!message.isEmpty());
 }
 
 void MainWindow::keypad(const QString &digit)
