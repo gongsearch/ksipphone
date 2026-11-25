@@ -1,0 +1,95 @@
+# Flatpak manifest for KSipPhone (KDE runtime; baresip and the libraries the runtime lacks are built here).
+# Local build:  flatpak-builder --user --install --force-clean build-dir packaging/flatpak/io.github.gongsearch.KSipPhone.yml
+id: io.github.gongsearch.KSipPhone
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+command: ksipphone
+finish-args:
+  - --share=ipc
+  - --share=network                       # SIP, RTP, LDAP
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio                   # ring tone (Qt Multimedia)
+  - --filesystem=xdg-run/pipewire-0       # baresip's PipeWire audio driver
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.secrets   # password via QtKeychain / Secret Service (KWallet)
+  - --talk-name=org.kde.kwalletd6
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /lib/cmake
+  - /share/man
+  - '*.la'
+  - '*.a'
+modules:
+  - name: qtkeychain
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_WITH_QT6=ON
+      - -DBUILD_TRANSLATIONS=OFF
+      - -DBUILD_TEST_APPLICATION=OFF
+    sources:
+      - type: archive
+        url: https://github.com/frankosterfeld/qtkeychain/archive/refs/tags/0.18.0.tar.gz
+        sha256: 837af59f2b950760a73eff81ccae817f7d3051183b447438dc610bb984a41691
+
+  - name: openldap
+    config-opts:
+      - --disable-slapd
+      - --without-cyrus-sasl
+      - --with-tls=openssl
+      - --disable-static
+    cleanup:
+      - /bin
+      - /etc
+    sources:
+      - type: archive
+        url: https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.16.tgz
+        sha256: 8d8452bc3f56aa7a392c62dd377733f83d1314eed6c52fe44028439a3bb4df18
+
+  - name: spandsp                         # G.722 for baresip
+    config-opts:
+      - --disable-static
+    cleanup:
+      - /bin
+    sources:
+      - type: git
+        url: https://github.com/freeswitch/spandsp.git
+        commit: 8f1e1646bdec99eac5fd2cd92c35563f736b9b89
+      - type: script
+        dest-filename: autogen.sh
+        commands:
+          - autoreconf -fi
+
+  - name: re
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    sources:
+      - type: archive
+        url: https://github.com/baresip/re/archive/refs/tags/v4.6.0.tar.gz
+        sha256: 811f19ed3df60f75070c07fc0eb5f767574e5b6dc2f12a679df04df381a43d88
+
+  - name: baresip
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DMODULES=g711;g722;opus;pipewire;auconv;auresamp;srtp;menu;mwi;ctrl_tcp;webrtc_aec
+    sources:
+      - type: archive
+        url: https://github.com/baresip/baresip/archive/refs/tags/v4.6.0.tar.gz
+        sha256: af190d326891c6c51f45af130bca00a4826c7de9f9cbec3c3f4ff90d7393739c
+
+  - name: ksipphone
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBARESIP_MODULE_PATH=/app/lib/baresip/modules
+      - -DBARESIP_SHARE_PATH=/app/share/baresip
+      - -DCMAKE_DISABLE_FIND_PACKAGE_KF6Wallet=ON
+    sources:
+      - type: dir
+        path: ../..

@@ -29,29 +29,46 @@ jobs:
             qtkeychain:p ki18n:p extra-cmake-modules:p gettext-tools:p
             openldap:p opus:p spandsp:p openssl:p zlib:p nsis:p
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      - name: Error reporting helper
+        run: |
+          cat > /usr/local/bin/logrun <<'SH'
+          #!/bin/bash
+          # logrun <name> <command...>: run, keep a log; on failure publish the log tail as annotation
+          name="$1"; shift
+          log="/tmp/$name.log"
+          if "$@" > "$log" 2>&1; then tail -3 "$log"; exit 0; fi
+          rc=$?
+          tail -80 "$log"
+          msg=$(tail -60 "$log" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::error title=$name failed::$msg"
+          exit $rc
+          SH
+          chmod +x /usr/local/bin/logrun
+
 
       - name: Build re and baresip (static, only the modules KSipPhone uses)
         run: |
           set -e
           D="$PWD/deps"
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/re.git
-          cmake -S re -B re/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$D"
-          cmake --build re/build
-          cmake --install re/build
+          logrun re-configure cmake -S re -B re/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$D"
+          logrun re-build cmake --build re/build
+          logrun re-install cmake --install re/build
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/baresip.git
-          cmake -S baresip -B baresip/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          logrun baresip-configure cmake -S baresip -B baresip/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH="$D" -DCMAKE_INSTALL_PREFIX="$D" -DSTATIC=ON \
-            -DMODULES="g711;g722;opus;winwave;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
-          cmake --build baresip/build
-          cmake --install baresip/build
+            "-DMODULES=g711;g722;opus;winwave;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
+          logrun baresip-build cmake --build baresip/build
+          logrun baresip-install cmake --install baresip/build
           ls -la "$D/bin"
 
       - name: Build KSipPhone
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DKSIPPHONE_WITH_KDE=OFF \
+          logrun ksipphone-configure cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DKSIPPHONE_WITH_KDE=OFF \
             -DBARESIP_MODULE_PATH=modules -DBARESIP_SHARE_PATH=share/baresip
-          cmake --build build
+          logrun ksipphone-build cmake --build build
 
       - name: Bundle
         run: |
@@ -98,7 +115,7 @@ jobs:
           (cd bundle && zip -qr "../KSipPhone-$VER-windows-portable.zip" .)
           ls -la KSipPhone-*
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: KSipPhone-windows
           path: |

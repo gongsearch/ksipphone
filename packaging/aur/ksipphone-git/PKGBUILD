@@ -1,0 +1,34 @@
+# Maintainer: gongsearch <66825717+gongsearch@users.noreply.github.com>
+pkgname=ksipphone-git
+_pkgname=ksipphone
+pkgver=0.1.0.r0.g0000000
+pkgrel=1
+pkgdesc="A small SIP phone for KDE Plasma (baresip front end)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/gongsearch/ksipphone"
+license=('MIT')
+depends=('baresip' 'qt6-base' 'qt6-multimedia' 'qtkeychain-qt6' 'ki18n' 'kcoreaddons'
+         'knotifications' 'kstatusnotifieritem' 'libldap')
+makedepends=('git' 'cmake' 'ninja' 'extra-cmake-modules')
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+source=("git+https://github.com/gongsearch/ksipphone.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$_pkgname"
+  git describe --long --tags --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cmake -S "$_pkgname" -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=None \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_DISABLE_FIND_PACKAGE_KF6Wallet=ON
+  cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+  install -Dm644 "$_pkgname/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
