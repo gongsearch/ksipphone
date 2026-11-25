@@ -107,6 +107,10 @@ After changing user-visible strings run `scripts/update-translations.sh` to upda
 `po/ksipphone.pot` and merge it into all languages. A new language is a copy of the
 template as `po/<lang>/ksipphone.po`; pull requests are welcome.
 
+## Screenshots
+
+![Dialer](screenshots/dialer.png) ![Settings](screenshots/settings.png)
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

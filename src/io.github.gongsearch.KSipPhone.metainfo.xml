@@ -21,6 +21,8 @@
   <launchable type="desktop-id">io.github.gongsearch.KSipPhone.desktop</launchable>
   <url type="homepage">https://github.com/gongsearch/ksipphone</url>
   <url type="bugtracker">https://github.com/gongsearch/ksipphone/issues</url>
+  <url type="vcs-browser">https://github.com/gongsearch/ksipphone</url>
+  <url type="translate">https://github.com/gongsearch/ksipphone/tree/main/po</url>
   <developer id="io.github.gongsearch">
     <name>gongsearch</name>
   </developer>
@@ -37,8 +39,43 @@
   <provides>
     <binary>ksipphone</binary>
   </provides>
-  <content_rating type="oars-1.1"/>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-audio">intense</content_attribute>
+  </content_rating>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Dialer with phonebook search, keypad and voicemail button</caption>
+      <image>https://raw.githubusercontent.com/gongsearch/ksipphone/v0.2.0/screenshots/dialer.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Settings: SIP account, audio devices, ring tone and LDAP phonebook</caption>
+      <image>https://raw.githubusercontent.com/gongsearch/ksipphone/v0.2.0/screenshots/settings.png</image>
+    </screenshot>
+  </screenshots>
+  <branding>
+    <color type="primary" scheme_preference="light">#a8e2a4</color>
+    <color type="primary" scheme_preference="dark">#1e5a2a</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
   <releases>
+    <release version="0.2.0" date="2026-11-26">
+      <description>
+        <p>Packages for all platforms and a more portable engine:</p>
+        <ul>
+          <li>Installers for Windows and macOS, packages for Debian/Ubuntu, Fedora, Arch (AUR), Flatpak and AppImage</li>
+          <li>baresip is controlled via ctrl_tcp instead of D-Bus</li>
+          <li>Passwords in the system keychain (QtKeychain)</li>
+          <li>Single instance via a local socket, new --settings option</li>
+          <li>Application icon</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-11-25"/>
   </releases>
 </component>
