@@ -6,6 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   arch:
     name: Arch Linux (Qt 6 / KF 6)
