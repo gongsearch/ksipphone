@@ -6,6 +6,12 @@ Comment=SIP phone
 [Event/incomingCall]
 Name=Incoming call
 Comment=Someone is calling
+Action=Popup|Sound
+Sound=phone-incoming-call
+
+[Event/incomingCallSilent]
+Name=Incoming call (continuous ring tone)
+Comment=Someone is calling; the phone rings until answered
 Action=Popup
 
 [Event/missedCall]

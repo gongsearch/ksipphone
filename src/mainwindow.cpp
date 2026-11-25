@@ -72,10 +72,17 @@ MainWindow::MainWindow(QWidget *parent)
     m_pbError->hide();
     lay->addWidget(m_pbError);
 
+    auto *statusRow = new QHBoxLayout;
     m_status = new QLabel(this);
     m_status->setAlignment(Qt::AlignCenter);
     m_status->setWordWrap(true);
-    lay->addWidget(m_status);
+    m_codec = new QLabel(this);
+    m_codec->hide();
+    statusRow->addStretch();
+    statusRow->addWidget(m_status);
+    statusRow->addWidget(m_codec);
+    statusRow->addStretch();
+    lay->addLayout(statusRow);
 
     auto *grid = new QGridLayout;
     const QStringList keys = {QStringLiteral("1"), QStringLiteral("2"), QStringLiteral("3"), QStringLiteral("4"),
@@ -174,6 +181,29 @@ void MainWindow::setPhonebookError(const QString &message)
 {
     m_pbError->setText(message.isEmpty() ? QString() : i18n("Phonebook: %1", message));
     m_pbError->setVisible(!message.isEmpty());
+}
+
+void MainWindow::setCodec(const QString &codec)
+{
+    const QString u = codec.toUpper();
+    if (u.isEmpty()) {
+        m_codec->hide();
+        return;
+    }
+    const bool hd = u == QLatin1String("G722") || u == QLatin1String("OPUS") || u == QLatin1String("AMR-WB") || u == QLatin1String("L16");
+    const QString name = u == QLatin1String("PCMA") || u == QLatin1String("PCMU") ? QStringLiteral("G.711")
+        : u == QLatin1String("G722")                                                ? QStringLiteral("G.722")
+        : u == QLatin1String("OPUS")                                                ? QStringLiteral("Opus")
+                                                                                    : codec;
+    if (hd) {
+        m_codec->setText(QStringLiteral("HD"));
+        m_codec->setStyleSheet(QStringLiteral("QLabel{background:#2e9d4c;color:white;border-radius:4px;padding:1px 5px;font-weight:bold}"));
+    } else {
+        m_codec->setText(name);
+        m_codec->setStyleSheet(QStringLiteral("QLabel{border:1px solid palette(mid);border-radius:4px;padding:1px 5px}"));
+    }
+    m_codec->setToolTip(i18n("Codec: %1", name));
+    m_codec->show();
 }
 
 void MainWindow::keypad(const QString &digit)

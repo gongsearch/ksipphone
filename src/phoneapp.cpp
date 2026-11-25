@@ -75,6 +75,7 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_window, &MainWindow::searchRequested, m_phonebook, &Phonebook::search);
     connect(m_phonebook, &Phonebook::searchFinished, m_window, &MainWindow::setSearchResults);
     connect(m_phonebook, &Phonebook::errorOccurred, m_window, &MainWindow::setPhonebookError);
+    connect(m_engine, &Engine::codecChanged, m_window, &MainWindow::setCodec);
 
     // engine -> ui
     connect(m_engine, &Engine::regStateChanged, this, [this](Engine::RegState s, const QString &info) {
@@ -104,10 +105,8 @@ PhoneApp::PhoneApp(QObject *parent)
             return;
         m_peerName = name;
         m_window->setCall(m_engine->callState(), peerText());
-        if (m_ring) {
-            m_ring->setText(peerText());
-            m_ring->sendEvent(); // updates the visible notification
-        }
+        if (m_ring)
+            m_ring->setText(peerText()); // updates the visible notification (no second sound)
     });
     connect(m_engine, &Engine::callStateChanged, this, [this](Engine::CallState s) {
         if (s == Engine::CallState::Outgoing) {
@@ -182,6 +181,7 @@ void PhoneApp::applySettings()
 {
     const Settings s = Settings::load();
     m_phonebook->configure(s.ldapUri, s.ldapBase);
+    m_engine->setRingLoop(s.ringLoop);
     Account a;
     a.user = s.user;
     a.server = s.server;
@@ -213,7 +213,9 @@ void PhoneApp::openSettings()
 void PhoneApp::notifyIncoming()
 {
     closeRingNotification();
-    m_ring = new KNotification(QStringLiteral("incomingCall"), KNotification::Persistent);
+    // "incomingCall" plays the KDE ring sound once; with a continuous baresip ring tone use the silent event.
+    m_ring = new KNotification(m_engine->ringLoop() ? QStringLiteral("incomingCallSilent") : QStringLiteral("incomingCall"),
+                               KNotification::Persistent);
     m_ring->setTitle(i18n("Incoming call"));
     m_ring->setText(peerText());
     m_ring->setIconName(QStringLiteral("call-start"));

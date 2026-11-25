@@ -65,7 +65,7 @@ bool Engine::writeConfig(QString *dir)
         "audio_player\t\tpipewire,default\n"
         "audio_source\t\tpipewire,default\n"
         "audio_alert\t\tpipewire,default\n"
-        "audio_path\t\t/usr/share/baresip\n"
+        "audio_path\t\t" + base.toUtf8() + "\n"
         "ausrc_srate\t\t48000\n"
         "auplay_srate\t\t48000\n"
         "module_path\t\t/usr/lib/baresip/modules\n"
@@ -82,6 +82,29 @@ bool Engine::writeConfig(QString *dir)
         "ringback_disabled\tno\n";
     cfg.write(conf);
     cfg.close();
+    // Sounds: baresip's own tones, except the endlessly looping ring tone, which is replaced by
+    // silence - the KDE notification plays the ring sound once instead (configurable in Plasma).
+    for (const auto &f : {QStringLiteral("ringback.wav"), QStringLiteral("busy.wav"), QStringLiteral("error.wav"),
+                          QStringLiteral("notfound.wav"), QStringLiteral("callwaiting.wav")}) {
+        QFile::remove(base + QLatin1Char('/') + f);
+        QFile::copy(QStringLiteral("/usr/share/baresip/") + f, base + QLatin1Char('/') + f);
+    }
+    QFile::remove(base + QStringLiteral("/ring.wav"));
+    if (m_ringLoop) {
+        QFile::copy(QStringLiteral("/usr/share/baresip/ring.wav"), base + QStringLiteral("/ring.wav"));
+    } else {
+        QFile ring(base + QStringLiteral("/ring.wav"));
+        if (ring.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            const quint32 rate = 8000, samples = 800; // 0.1 s, 16 bit mono silence
+            QByteArray wav;
+            auto u32 = [&wav](quint32 v) { for (int i = 0; i < 4; ++i) wav.append(char((v >> (8 * i)) & 0xff)); };
+            auto u16 = [&wav](quint16 v) { wav.append(char(v & 0xff)); wav.append(char(v >> 8)); };
+            wav.append("RIFF"); u32(36 + samples * 2); wav.append("WAVEfmt "); u32(16); u16(1); u16(1);
+            u32(rate); u32(rate * 2); u16(2); u16(16); wav.append("data"); u32(samples * 2);
+            wav.append(QByteArray(int(samples * 2), '\0'));
+            ring.write(wav);
+        }
+    }
     for (const auto &f : {QStringLiteral("/accounts"), QStringLiteral("/contacts")}) {
         QFile e(base + f);
         if (e.open(QIODevice::WriteOnly | QIODevice::Truncate))
@@ -129,6 +152,17 @@ void Engine::connectBus()
     Q_EMIT ready();
     if (m_account.isValid())
         setAccount(m_account);
+}
+
+void Engine::setRingLoop(bool loop)
+{
+    if (loop == m_ringLoop)
+        return;
+    m_ringLoop = loop;
+    if (m_proc.state() != QProcess::NotRunning && m_callState == CallState::Idle) {
+        stop();
+        QTimer::singleShot(500, this, &Engine::start);
+    }
 }
 
 void Engine::stop()
@@ -274,6 +308,33 @@ void Engine::sendDtmf(const QString &digit)
     invoke(QStringLiteral("sndcode ") + digit);
 }
 
+void Engine::queryCodec(int attempt)
+{
+    if (m_callState != CallState::Established)
+        return;
+    // "callstat" prints the audio stream incl. the codec; pick the first known codec name.
+    static const QStringList known = {QStringLiteral("G722"), QStringLiteral("opus"), QStringLiteral("PCMA"),
+                                      QStringLiteral("PCMU"), QStringLiteral("L16"), QStringLiteral("G726"),
+                                      QStringLiteral("GSM"), QStringLiteral("G729"), QStringLiteral("AMR-WB"),
+                                      QStringLiteral("AMR")};
+    const QString out = invoke(QStringLiteral("callstat"));
+    int best = -1;
+    QString codec;
+    for (const QString &k : known) {
+        const int i = out.indexOf(k, 0, Qt::CaseInsensitive);
+        if (i >= 0 && (best < 0 || i < best)) {
+            best = i;
+            codec = k;
+        }
+    }
+    if (codec.isEmpty() && attempt < 5) {
+        QTimer::singleShot(1000, this, [this, attempt] { queryCodec(attempt + 1); });
+        return;
+    }
+    qCDebug(ENGINE) << "codec" << codec;
+    Q_EMIT codecChanged(codec);
+}
+
 void Engine::setRegState(RegState s, const QString &info)
 {
     if (s == m_regState && info.isEmpty())
@@ -318,8 +379,10 @@ void Engine::onEvent(const QString &cls, const QString &type, const QString &par
             setCallState(CallState::Ringing);
     } else if (t == QLatin1String("CALL_ESTABLISHED")) {
         setCallState(CallState::Established);
+        QTimer::singleShot(300, this, [this] { queryCodec(); });
     } else if (t == QLatin1String("CALL_CLOSED")) {
         setCallState(CallState::Idle);
+        Q_EMIT codecChanged(QString());
         Q_EMIT callEnded(text);
     }
 }

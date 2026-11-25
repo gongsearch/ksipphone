@@ -35,6 +35,8 @@ public:
     void start();
     void stop();
     void setAccount(const Account &account); // (re)creates the user agent
+    void setRingLoop(bool loop);             // restarts the engine if it changes while running
+    bool ringLoop() const { return m_ringLoop; }
 
     void dial(const QString &target);
     void accept();
@@ -54,6 +56,7 @@ Q_SIGNALS:
     void callStateChanged(Engine::CallState state);
     void incomingCall(const QString &peerUri, const QString &peerName);
     void callEnded(const QString &reason);
+    void codecChanged(const QString &codec); // e.g. "G722", "PCMA"; empty when idle
     void engineError(const QString &message);
     void ready();
 
@@ -66,6 +69,7 @@ private:
     void connectBus();
     void setRegState(RegState s, const QString &info = {});
     void setCallState(CallState s);
+    void queryCodec(int attempt = 0);
     QString targetUri(const QString &target) const;
 
     QProcess m_proc;
@@ -77,4 +81,5 @@ private:
     CallState m_callState = CallState::Idle;
     QString m_peer, m_peerName, m_lastError;
     int m_retries = 0;
+    bool m_ringLoop = false;
 };

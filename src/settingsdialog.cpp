@@ -25,6 +25,7 @@ Settings Settings::load()
     s.displayName = a.readEntry("DisplayName", QString());
     s.codecs = a.readEntry("Codecs", QStringLiteral("G722,PCMA,PCMU"));
     s.preferIpv6 = a.readEntry("PreferIPv6", false);
+    s.ringLoop = KConfigGroup(cfg, QStringLiteral("General")).readEntry("RingContinuously", false);
     s.ldapUri = p.readEntry("Uri", QString());
     s.ldapBase = p.readEntry("BaseDn", QString());
     return s;
@@ -40,6 +41,7 @@ void Settings::save() const
     a.writeEntry("DisplayName", displayName);
     a.writeEntry("Codecs", codecs);
     a.writeEntry("PreferIPv6", preferIpv6);
+    KConfigGroup(cfg, QStringLiteral("General")).writeEntry("RingContinuously", ringLoop);
     KConfigGroup p(cfg, QStringLiteral("Phonebook"));
     p.writeEntry("Uri", ldapUri);
     p.writeEntry("BaseDn", ldapBase);
@@ -78,6 +80,15 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     f->addRow(i18n("Codecs:"), m_codecs);
     lay->addWidget(acc);
 
+    auto *gen = new QGroupBox(i18n("Incoming calls"), this);
+    auto *gf = new QFormLayout(gen);
+    m_ring = new QComboBox(gen);
+    m_ring->addItem(i18n("Once (notification sound, set in System Settings → Notifications)"));
+    m_ring->addItem(i18n("Continuously until answered"));
+    m_ring->setCurrentIndex(s.ringLoop ? 1 : 0);
+    gf->addRow(i18n("Ring:"), m_ring);
+    lay->addWidget(gen);
+
     auto *pb = new QGroupBox(i18n("LDAP phonebook (optional, anonymous read)"), this);
     auto *g = new QFormLayout(pb);
     m_ldapUri = new QLineEdit(s.ldapUri, pb);
@@ -102,6 +113,7 @@ Settings SettingsDialog::settings() const
     s.server = m_server->text().trimmed();
     s.transport = m_transport->currentText();
     s.preferIpv6 = m_ipv6->isChecked();
+    s.ringLoop = m_ring->currentIndex() == 1;
     s.displayName = m_display->text().trimmed();
     s.codecs = m_codecs->text().remove(QLatin1Char(' '));
     s.ldapUri = m_ldapUri->text().trimmed();
