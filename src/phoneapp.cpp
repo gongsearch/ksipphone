@@ -341,39 +341,24 @@ void PhoneApp::closeRingNotification()
 
 void PhoneApp::updateTray()
 {
+    // Icon: always the normal phone icon, only a waiting voice message changes it.
+    // Missed calls are left to Plasma's notification history; state details go to the tooltip.
     const auto cs = m_engine->callState();
     const auto rs = m_engine->regState();
-    QString icon = QStringLiteral("call-start");
-    QString tip;
-    // Active (not Passive): Plasma moves passive items into the hidden part of the tray.
-    KStatusNotifierItem::ItemStatus status = KStatusNotifierItem::Active;
-    if (cs == Engine::CallState::Incoming) {
-        status = KStatusNotifierItem::NeedsAttention;
-        tip = i18n("Incoming call from %1", peerText());
-    } else if (cs != Engine::CallState::Idle) {
-        status = KStatusNotifierItem::Active;
-        icon = QStringLiteral("call-start");
-        tip = i18n("In call with %1", peerText());
-    } else if (m_missed > 0) {
-        status = KStatusNotifierItem::NeedsAttention;
-        icon = QStringLiteral("call-missed");
-        tip = i18np("1 missed call", "%1 missed calls", m_missed);
-    } else if (rs == Engine::RegState::Registered) {
-        tip = i18n("Registered");
-        if (m_voicemails > 0) {
-            status = KStatusNotifierItem::NeedsAttention;
-            icon = QStringLiteral("mail-unread-new");
-            tip = i18np("1 new voice message", "%1 new voice messages", m_voicemails);
-        }
-    } else {
-        status = KStatusNotifierItem::Active;
-        icon = QStringLiteral("call-stop");
-        tip = i18n("Not registered");
-    }
+    const bool vm = m_voicemails > 0;
+    const QString icon = vm ? QStringLiteral("mail-unread-new") : QStringLiteral("call-start");
+    QStringList tip;
+    if (cs == Engine::CallState::Incoming)
+        tip << i18n("Incoming call from %1", peerText());
+    else if (cs != Engine::CallState::Idle)
+        tip << i18n("In call with %1", peerText());
+    tip << (rs == Engine::RegState::Registered ? i18n("Registered") : i18n("Not registered"));
+    if (vm)
+        tip << i18np("1 new voice message", "%1 new voice messages", m_voicemails);
     m_tray->setIconByName(icon);
     m_tray->setAttentionIconByName(icon);
-    m_tray->setStatus(status);
-    m_tray->setToolTip(icon, i18n("KSipPhone"), tip);
+    m_tray->setStatus(vm ? KStatusNotifierItem::NeedsAttention : KStatusNotifierItem::Active);
+    m_tray->setToolTip(icon, i18n("KSipPhone"), tip.join(QStringLiteral("<br>")));
 }
 
 void PhoneApp::handleArguments(const QStringList &args, bool fromRemote)
