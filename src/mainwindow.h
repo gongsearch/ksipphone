@@ -28,6 +28,7 @@ public:
     void setPhonebookError(const QString &message);
     void setCodec(const QString &codec);
     void setPeerPhoto(const QPixmap &photo); // null pixmap hides it
+    void setVoicemail(int newMessages, bool configured);
 
 Q_SIGNALS:
     void dialRequested(const QString &target);
@@ -38,6 +39,7 @@ Q_SIGNALS:
     void dtmf(const QString &digit);
     void searchRequested(const QString &text, int requestId);
     void settingsRequested();
+    void voicemailRequested();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -53,7 +55,7 @@ private:
     qint64 m_callStartMs = 0;
     QLineEdit *m_number;
     QPushButton *m_call, *m_hangup;
-    QToolButton *m_mute, *m_hold;
+    QToolButton *m_mute, *m_hold, *m_vm;
     QCompleter *m_completer;
     QStandardItemModel *m_model;
     QTimer *m_searchTimer;

@@ -16,6 +16,7 @@ struct Account {
     QString displayName;
     QString password;
     bool preferIpv6 = false;
+    QString dtmfMode = QStringLiteral("rtpevent"); // rtpevent (RFC 4733) | info (SIP INFO) | auto
     QStringList codecs = {QStringLiteral("G722"), QStringLiteral("PCMA"), QStringLiteral("PCMU")};
     bool isValid() const { return !user.isEmpty() && !server.isEmpty(); }
 };
@@ -58,6 +59,7 @@ Q_SIGNALS:
     void incomingCall(const QString &peerUri, const QString &peerName);
     void callEnded(const QString &reason);
     void codecChanged(const QString &codec); // e.g. "G722", "PCMA"; empty when idle
+    void voicemailChanged(int newMessages, int oldMessages, bool waiting);
     void engineError(const QString &message);
     void ready();
 

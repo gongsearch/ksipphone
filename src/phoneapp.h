@@ -35,6 +35,7 @@ private:
     void closeRingNotification();
     void notifyMissed();
     void callBack(const QString &number);
+    void callVoicemail();
     void quit();
 
     Engine *m_engine;
@@ -49,4 +50,6 @@ private:
     bool m_wasEstablished = false;
     int m_lookupId = 0;
     int m_missed = 0;
+    int m_voicemails = 0;
+    QPointer<KNotification> m_vmNotification;
 };

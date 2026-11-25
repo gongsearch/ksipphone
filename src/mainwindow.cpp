@@ -38,7 +38,14 @@ MainWindow::MainWindow(QWidget *parent)
     settings->setToolTip(i18n("Settings"));
     settings->setAutoRaise(true);
     connect(settings, &QToolButton::clicked, this, &MainWindow::settingsRequested);
+    m_vm = new QToolButton(this);
+    m_vm->setIcon(QIcon::fromTheme(QStringLiteral("mail-message")));
+    m_vm->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_vm->setAutoRaise(true);
+    m_vm->setToolTip(i18n("Call voicemail"));
+    connect(m_vm, &QToolButton::clicked, this, &MainWindow::voicemailRequested);
     top->addWidget(m_reg, 1);
+    top->addWidget(m_vm);
     top->addWidget(settings);
     lay->addLayout(top);
 
@@ -254,6 +261,18 @@ void MainWindow::setPeerPhoto(const QPixmap &photo)
     }
     m_photo->setPixmap(photo.scaled(96 * devicePixelRatioF(), 96 * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     m_photo->show();
+}
+
+void MainWindow::setVoicemail(int newMessages, bool configured)
+{
+    m_vm->setVisible(configured || newMessages > 0);
+    m_vm->setIcon(QIcon::fromTheme(newMessages > 0 ? QStringLiteral("mail-unread-new") : QStringLiteral("mail-message")));
+    m_vm->setText(newMessages > 0 ? QString::number(newMessages) : QString());
+    m_vm->setToolTip(newMessages > 0 ? i18np("1 new voice message - click to listen", "%1 new voice messages - click to listen", newMessages)
+                                     : i18n("Call voicemail"));
+    QFont f = m_vm->font();
+    f.setBold(newMessages > 0);
+    m_vm->setFont(f);
 }
 
 void MainWindow::setCodec(const QString &codec)

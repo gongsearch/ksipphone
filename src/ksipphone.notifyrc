@@ -14,3 +14,9 @@ Comment=A call was not answered
 Action=Popup
 Urgency=Normal
 ShowInHistory=true
+
+[Event/newVoicemail]
+Name=New voice message
+Comment=A caller left a voice message
+Action=Popup
+ShowInHistory=true

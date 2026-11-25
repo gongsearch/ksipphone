@@ -55,6 +55,7 @@ PhoneApp::PhoneApp(QObject *parent)
         m_window->raise();
         m_window->activateWindow();
     });
+    menu->addAction(QIcon::fromTheme(QStringLiteral("mail-message")), i18n("Call voicemail"), this, &PhoneApp::callVoicemail);
     menu->addAction(QIcon::fromTheme(QStringLiteral("call-stop")), i18n("Hang up"), m_engine, &Engine::hangup);
     menu->addSeparator();
     menu->addAction(QIcon::fromTheme(QStringLiteral("configure")), i18n("Settings…"), this, &PhoneApp::openSettings);
@@ -76,10 +77,32 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_window, &MainWindow::holdToggled, m_engine, &Engine::setHold);
     connect(m_window, &MainWindow::dtmf, m_engine, &Engine::sendDtmf);
     connect(m_window, &MainWindow::settingsRequested, this, &PhoneApp::openSettings);
+    connect(m_window, &MainWindow::voicemailRequested, this, &PhoneApp::callVoicemail);
     connect(m_window, &MainWindow::searchRequested, m_phonebook, &Phonebook::search);
     connect(m_phonebook, &Phonebook::searchFinished, m_window, &MainWindow::setSearchResults);
     connect(m_phonebook, &Phonebook::errorOccurred, m_window, &MainWindow::setPhonebookError);
     connect(m_engine, &Engine::codecChanged, m_window, &MainWindow::setCodec);
+    connect(m_engine, &Engine::voicemailChanged, this, [this](int nNew, int, bool) {
+        const int before = m_voicemails;
+        m_voicemails = nNew;
+        m_window->setVoicemail(nNew, !Settings::load().voicemail.isEmpty());
+        updateTray();
+        if (nNew > before) {
+            if (m_vmNotification)
+                m_vmNotification->close();
+            m_vmNotification = new KNotification(QStringLiteral("newVoicemail"), KNotification::CloseOnTimeout);
+            m_vmNotification->setTitle(i18n("New voice message"));
+            m_vmNotification->setText(i18np("You have 1 new voice message.", "You have %1 new voice messages.", nNew));
+            m_vmNotification->setIconName(QStringLiteral("mail-unread-new"));
+            if (!Settings::load().voicemail.isEmpty()) {
+                auto *listen = m_vmNotification->addAction(i18n("Listen"));
+                connect(listen, &KNotificationAction::activated, this, &PhoneApp::callVoicemail);
+            }
+            m_vmNotification->sendEvent();
+        } else if (nNew == 0 && m_vmNotification) {
+            m_vmNotification->close();
+        }
+    });
 
     // engine -> ui
     connect(m_engine, &Engine::regStateChanged, this, [this](Engine::RegState s, const QString &info) {
@@ -206,11 +229,13 @@ void PhoneApp::applySettings()
     a.server = s.server;
     a.transport = s.transport;
     a.preferIpv6 = s.preferIpv6;
+    a.dtmfMode = s.dtmfMode;
     a.displayName = s.displayName;
     a.codecs = s.codecs.split(QLatin1Char(','), Qt::SkipEmptyParts);
     if (a.isValid())
         a.password = readPassword(QStringLiteral("sip:%1@%2").arg(s.user, s.server));
     m_engine->setAccount(a);
+    m_window->setVoicemail(m_voicemails, !s.voicemail.isEmpty());
     if (!a.isValid())
         m_window->setRegistration(i18n("No SIP account configured"), false);
 }
@@ -290,6 +315,21 @@ void PhoneApp::callBack(const QString &number)
         m_engine->dial(number);
 }
 
+void PhoneApp::callVoicemail()
+{
+    const QString vm = Settings::load().voicemail;
+    if (vm.isEmpty()) {
+        openSettings();
+        return;
+    }
+    m_window->setNumber(vm);
+    m_window->show();
+    m_window->raise();
+    m_window->activateWindow();
+    if (m_engine->callState() == Engine::CallState::Idle)
+        m_engine->dial(vm);
+}
+
 void PhoneApp::closeRingNotification()
 {
     m_ringer->stop();
@@ -320,6 +360,11 @@ void PhoneApp::updateTray()
         tip = i18np("1 missed call", "%1 missed calls", m_missed);
     } else if (rs == Engine::RegState::Registered) {
         tip = i18n("Registered");
+        if (m_voicemails > 0) {
+            status = KStatusNotifierItem::NeedsAttention;
+            icon = QStringLiteral("mail-unread-new");
+            tip = i18np("1 new voice message", "%1 new voice messages", m_voicemails);
+        }
     } else {
         status = KStatusNotifierItem::Active;
         icon = QStringLiteral("call-stop");

@@ -28,6 +28,8 @@ Settings Settings::load()
     s.transport = a.readEntry("Transport", QStringLiteral("udp"));
     s.displayName = a.readEntry("DisplayName", QString());
     s.codecs = a.readEntry("Codecs", QStringLiteral("G722,PCMA,PCMU"));
+    s.voicemail = a.readEntry("Voicemail", QString());
+    s.dtmfMode = a.readEntry("DtmfMode", QStringLiteral("rtpevent"));
     s.preferIpv6 = a.readEntry("PreferIPv6", false);
     const KConfigGroup au(cfg, QStringLiteral("Audio"));
     s.ringLoop = au.readEntry("RingContinuously", false);
@@ -49,6 +51,8 @@ void Settings::save() const
     a.writeEntry("Transport", transport);
     a.writeEntry("DisplayName", displayName);
     a.writeEntry("Codecs", codecs);
+    a.writeEntry("Voicemail", voicemail);
+    a.writeEntry("DtmfMode", dtmfMode);
     a.writeEntry("PreferIPv6", preferIpv6);
     KConfigGroup au(cfg, QStringLiteral("Audio"));
     au.writeEntry("RingContinuously", ringLoop);
@@ -92,6 +96,16 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     f->addRow(i18n("Display name:"), m_display);
     f->addRow(i18n("Password:"), m_password);
     f->addRow(i18n("Codecs:"), m_codecs);
+    m_voicemail = new QLineEdit(s.voicemail, acc);
+    m_voicemail->setPlaceholderText(i18n("number of the mailbox, e.g. 9000"));
+    f->addRow(i18n("Voicemail:"), m_voicemail);
+    m_dtmf = new QComboBox(acc);
+    m_dtmf->addItem(i18n("RFC 4733 / RTP events (recommended)"), QStringLiteral("rtpevent"));
+    m_dtmf->addItem(i18n("SIP INFO"), QStringLiteral("info"));
+    m_dtmf->addItem(i18n("Automatic"), QStringLiteral("auto"));
+    m_dtmf->setCurrentIndex(qMax(0, m_dtmf->findData(s.dtmfMode)));
+    m_dtmf->setToolTip(i18n("Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, dtmf_mode=info needs SIP INFO."));
+    f->addRow(i18n("DTMF:"), m_dtmf);
     lay->addWidget(acc);
 
     auto *gen = new QGroupBox(i18n("Audio"), this);
@@ -175,6 +189,8 @@ Settings SettingsDialog::settings() const
     s.ringFile = m_ringFile->text().trimmed();
     s.displayName = m_display->text().trimmed();
     s.codecs = m_codecs->text().remove(QLatin1Char(' '));
+    s.voicemail = m_voicemail->text().trimmed();
+    s.dtmfMode = m_dtmf->currentData().toString();
     s.ldapUri = m_ldapUri->text().trimmed();
     s.ldapBase = m_ldapBase->text().trimmed();
     return s;

@@ -13,6 +13,7 @@
 #include <QJsonDocument>
 #include <QLoggingCategory>
 #include <QStandardPaths>
+#include <QRegularExpression>
 #include <QTimer>
 
 Q_LOGGING_CATEGORY(ENGINE, "ksipphone.engine")
@@ -79,6 +80,7 @@ bool Engine::writeConfig(QString *dir)
         "module\t\t\tauresamp.so\n"
         "module\t\t\tsrtp.so\n"
         "module_app\t\tmenu.so\n"
+        "module_app\t\tmwi.so\n"
         "module_app\t\tctrl_dbus.so\n"
         "ctrl_dbus_use\t\tsession\n"
         "ringback_disabled\tno\n";
@@ -233,6 +235,8 @@ void Engine::setAccount(const Account &account)
         }
     }
     line += QStringLiteral(";regint=300;answermode=manual");
+    if (!account.dtmfMode.isEmpty())
+        line += QStringLiteral(";dtmfmode=%1").arg(account.dtmfMode);
     if (!account.codecs.isEmpty()) {
         // baresip matches a bare codec name against 8 kHz; wideband codecs need their rate.
         QStringList list;
@@ -359,6 +363,28 @@ void Engine::onEvent(const QString &cls, const QString &type, const QString &par
     const QString text = ev.value(QStringLiteral("param")).toString(ev.isEmpty() ? param : QString());
     qCDebug(ENGINE) << "event" << cls << t << text;
 
+    if (t == QLatin1String("MWI_NOTIFY")) {
+        // body like "Messages-Waiting: yes\r\nVoice-Message: 2/5 (0/0)"
+        const QString body = text.isEmpty() ? param : text;
+        bool waiting = false;
+        int nNew = 0, nOld = 0;
+        for (const QString &raw : body.split(QRegularExpression(QStringLiteral("[\r\n]+")), Qt::SkipEmptyParts)) {
+            const QString l = raw.trimmed();
+            if (l.startsWith(QLatin1String("Messages-Waiting"), Qt::CaseInsensitive))
+                waiting = l.section(QLatin1Char(':'), 1).trimmed().startsWith(QLatin1String("yes"), Qt::CaseInsensitive);
+            else if (l.startsWith(QLatin1String("Voice-Message"), Qt::CaseInsensitive)) {
+                const auto m = QRegularExpression(QStringLiteral("(\\d+)\\s*/\\s*(\\d+)")).match(l);
+                if (m.hasMatch()) {
+                    nNew = m.captured(1).toInt();
+                    nOld = m.captured(2).toInt();
+                }
+            }
+        }
+        if (waiting && nNew == 0)
+            nNew = 1; // "yes" without counts
+        Q_EMIT voicemailChanged(nNew, nOld, waiting);
+        return;
+    }
     if (t == QLatin1String("REGISTERING")) {
         if (m_regState != RegState::Registered)
             setRegState(RegState::Registering);
