@@ -45,7 +45,7 @@ Not (yet) supported: video, chat/presence, call transfer, multiple accounts, con
 - [QtKeychain](https://github.com/frankosterfeld/qtkeychain) for Qt 6
 - OpenLDAP client library (`libldap`)
 - **baresip ≥ 4** with the modules `ctrl_tcp`, `menu`, `g711`, `g722`, `opus`, `auconv`,
-  `auresamp`, `srtp`, `mwi` and the platform's audio driver (`pipewire` on Linux; `winwave` /
+  `auresamp`, `srtp`, `mwi` and the platform's audio driver (`pipewire` on Linux; `wasapi` /
   `audiounit` on Windows / macOS), optional `webrtc_aec`
 
 On Arch Linux:

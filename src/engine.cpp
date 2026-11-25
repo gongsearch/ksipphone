@@ -32,7 +32,7 @@ namespace
 {
 // baresip's audio driver per platform
 #if defined(Q_OS_WIN)
-const char *const kAudioModule = "winwave";
+const char *const kAudioModule = "wasapi";
 #elif defined(Q_OS_MACOS)
 const char *const kAudioModule = "audiounit";
 #else

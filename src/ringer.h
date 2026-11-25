@@ -16,7 +16,7 @@ struct AudioNode {
 
 class QAudioDevice;
 // Key that identifies a device for baresip: the PipeWire/PulseAudio node name on Linux,
-// the device name on Windows (winwave) and macOS (audiounit).
+// the device name on Windows (wasapi) and macOS (audiounit).
 QString audioDeviceKey(const QAudioDevice &device);
 // Audio inputs or outputs as reported by Qt Multimedia.
 QList<AudioNode> audioDevices(bool inputs);

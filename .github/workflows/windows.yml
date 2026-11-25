@@ -63,7 +63,7 @@ jobs:
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/baresip.git
           logrun baresip-configure cmake -S baresip -B baresip/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH="$D" -DCMAKE_INSTALL_PREFIX="$D" -DSTATIC=ON \
-            "-DMODULES=g711;g722;opus;winwave;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
+            "-DMODULES=g711;g722;opus;wasapi;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
           logrun baresip-build cmake --build baresip/build
           logrun baresip-install cmake --install baresip/build
           ls -la "$D/bin"
