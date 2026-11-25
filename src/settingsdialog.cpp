@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "settingsdialog.h"
+#include "ringer.h"
 
 #include <KConfigGroup>
 #include <KLocalizedString>
@@ -8,6 +9,9 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QFileDialog>
+#include <QHBoxLayout>
+#include <QPushButton>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLineEdit>
@@ -25,7 +29,12 @@ Settings Settings::load()
     s.displayName = a.readEntry("DisplayName", QString());
     s.codecs = a.readEntry("Codecs", QStringLiteral("G722,PCMA,PCMU"));
     s.preferIpv6 = a.readEntry("PreferIPv6", false);
-    s.ringLoop = KConfigGroup(cfg, QStringLiteral("General")).readEntry("RingContinuously", false);
+    const KConfigGroup au(cfg, QStringLiteral("Audio"));
+    s.ringLoop = au.readEntry("RingContinuously", false);
+    s.micDevice = au.readEntry("Microphone", QString());
+    s.speakerDevice = au.readEntry("Speaker", QString());
+    s.ringDevice = au.readEntry("RingDevice", QString());
+    s.ringFile = au.readEntry("RingTone", QString());
     s.ldapUri = p.readEntry("Uri", QString());
     s.ldapBase = p.readEntry("BaseDn", QString());
     return s;
@@ -41,7 +50,12 @@ void Settings::save() const
     a.writeEntry("DisplayName", displayName);
     a.writeEntry("Codecs", codecs);
     a.writeEntry("PreferIPv6", preferIpv6);
-    KConfigGroup(cfg, QStringLiteral("General")).writeEntry("RingContinuously", ringLoop);
+    KConfigGroup au(cfg, QStringLiteral("Audio"));
+    au.writeEntry("RingContinuously", ringLoop);
+    au.writeEntry("Microphone", micDevice);
+    au.writeEntry("Speaker", speakerDevice);
+    au.writeEntry("RingDevice", ringDevice);
+    au.writeEntry("RingTone", ringFile);
     KConfigGroup p(cfg, QStringLiteral("Phonebook"));
     p.writeEntry("Uri", ldapUri);
     p.writeEntry("BaseDn", ldapBase);
@@ -80,12 +94,53 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     f->addRow(i18n("Codecs:"), m_codecs);
     lay->addWidget(acc);
 
-    auto *gen = new QGroupBox(i18n("Incoming calls"), this);
+    auto *gen = new QGroupBox(i18n("Audio"), this);
     auto *gf = new QFormLayout(gen);
+    auto fill = [](QComboBox *c, const QList<AudioNode> &nodes, const QString &cur) {
+        c->addItem(i18n("System default"), QString());
+        for (const AudioNode &n : nodes)
+            c->addItem(n.description, n.name);
+        int i = c->findData(cur);
+        if (i < 0 && !cur.isEmpty()) { // configured device currently not present
+            c->addItem(i18n("%1 (not connected)", cur), cur);
+            i = c->count() - 1;
+        }
+        c->setCurrentIndex(qMax(0, i));
+    };
+    const auto sinks = pipewireNodes(false);
+    m_mic = new QComboBox(gen);
+    fill(m_mic, pipewireNodes(true), s.micDevice);
+    m_speaker = new QComboBox(gen);
+    fill(m_speaker, sinks, s.speakerDevice);
+    m_ringDev = new QComboBox(gen);
+    fill(m_ringDev, sinks, s.ringDevice);
+    m_ringFile = new QLineEdit(s.ringFile, gen);
+    m_ringFile->setPlaceholderText(Ringer::defaultFile());
+    auto *browse = new QPushButton(QIcon::fromTheme(QStringLiteral("document-open")), QString(), gen);
+    browse->setToolTip(i18n("Choose ring tone"));
+    connect(browse, &QPushButton::clicked, this, [this] {
+        const QString start = m_ringFile->text().isEmpty() ? QStringLiteral("/usr/share/sounds") : m_ringFile->text();
+        const QString f = QFileDialog::getOpenFileName(this, i18n("Ring tone"), start, i18n("Sounds (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"));
+        if (!f.isEmpty())
+            m_ringFile->setText(f);
+    });
+    m_preview = new Ringer(this);
+    auto *test = new QPushButton(QIcon::fromTheme(QStringLiteral("media-playback-start")), i18n("Test"), gen);
+    connect(test, &QPushButton::clicked, this, [this] {
+        m_preview->preview(m_ringFile->text().trimmed(), m_ringDev->currentData().toString());
+    });
+    auto *fileRow = new QHBoxLayout;
+    fileRow->addWidget(m_ringFile, 1);
+    fileRow->addWidget(browse);
+    fileRow->addWidget(test);
     m_ring = new QComboBox(gen);
-    m_ring->addItem(i18n("Once (notification sound, set in System Settings → Notifications)"));
+    m_ring->addItem(i18n("Once"));
     m_ring->addItem(i18n("Continuously until answered"));
     m_ring->setCurrentIndex(s.ringLoop ? 1 : 0);
+    gf->addRow(i18n("Microphone:"), m_mic);
+    gf->addRow(i18n("Speaker / headset:"), m_speaker);
+    gf->addRow(i18n("Ring on:"), m_ringDev);
+    gf->addRow(i18n("Ring tone:"), fileRow);
     gf->addRow(i18n("Ring:"), m_ring);
     lay->addWidget(gen);
 
@@ -114,6 +169,10 @@ Settings SettingsDialog::settings() const
     s.transport = m_transport->currentText();
     s.preferIpv6 = m_ipv6->isChecked();
     s.ringLoop = m_ring->currentIndex() == 1;
+    s.micDevice = m_mic->currentData().toString();
+    s.speakerDevice = m_speaker->currentData().toString();
+    s.ringDevice = m_ringDev->currentData().toString();
+    s.ringFile = m_ringFile->text().trimmed();
     s.displayName = m_display->text().trimmed();
     s.codecs = m_codecs->text().remove(QLatin1Char(' '));
     s.ldapUri = m_ldapUri->text().trimmed();

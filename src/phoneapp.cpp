@@ -2,6 +2,7 @@
 #include "phoneapp.h"
 
 #include "mainwindow.h"
+#include "ringer.h"
 #include "settingsdialog.h"
 
 #include <KLocalizedString>
@@ -37,6 +38,7 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_phonebook(new Phonebook(this))
     , m_window(new MainWindow)
     , m_tray(new KStatusNotifierItem(QStringLiteral("ksipphone"), this))
+    , m_ringer(new Ringer(this))
 {
     m_tray->setCategory(KStatusNotifierItem::Communications);
     m_tray->setTitle(i18n("KSipPhone"));
@@ -181,7 +183,8 @@ void PhoneApp::applySettings()
 {
     const Settings s = Settings::load();
     m_phonebook->configure(s.ldapUri, s.ldapBase);
-    m_engine->setRingLoop(s.ringLoop);
+    m_engine->setAudioDevices(s.speakerDevice, s.micDevice);
+    m_ringer->configure(s.ringFile, s.ringDevice, s.ringLoop);
     Account a;
     a.user = s.user;
     a.server = s.server;
@@ -213,9 +216,7 @@ void PhoneApp::openSettings()
 void PhoneApp::notifyIncoming()
 {
     closeRingNotification();
-    // "incomingCall" plays the KDE ring sound once; with a continuous baresip ring tone use the silent event.
-    m_ring = new KNotification(m_engine->ringLoop() ? QStringLiteral("incomingCallSilent") : QStringLiteral("incomingCall"),
-                               KNotification::Persistent);
+    m_ring = new KNotification(QStringLiteral("incomingCall"), KNotification::Persistent);
     m_ring->setTitle(i18n("Incoming call"));
     m_ring->setText(peerText());
     m_ring->setIconName(QStringLiteral("call-start"));
@@ -231,10 +232,12 @@ void PhoneApp::notifyIncoming()
         m_window->activateWindow();
     });
     m_ring->sendEvent();
+    m_ringer->start();
 }
 
 void PhoneApp::closeRingNotification()
 {
+    m_ringer->stop();
     if (m_ring) {
         m_ring->close();
         m_ring = nullptr;

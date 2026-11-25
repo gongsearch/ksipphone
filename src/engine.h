@@ -35,8 +35,8 @@ public:
     void start();
     void stop();
     void setAccount(const Account &account); // (re)creates the user agent
-    void setRingLoop(bool loop);             // restarts the engine if it changes while running
-    bool ringLoop() const { return m_ringLoop; }
+    // PipeWire node names ("" = default); restarts the engine if they change while idle
+    void setAudioDevices(const QString &player, const QString &source);
 
     void dial(const QString &target);
     void accept();
@@ -81,5 +81,5 @@ private:
     CallState m_callState = CallState::Idle;
     QString m_peer, m_peerName, m_lastError;
     int m_retries = 0;
-    bool m_ringLoop = false;
+    QString m_player, m_source;
 };

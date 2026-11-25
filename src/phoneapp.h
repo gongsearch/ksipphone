@@ -11,6 +11,7 @@
 class KNotification;
 class KStatusNotifierItem;
 class MainWindow;
+class Ringer;
 
 class PhoneApp : public QObject
 {
@@ -37,6 +38,7 @@ private:
     Phonebook *m_phonebook;
     MainWindow *m_window;
     KStatusNotifierItem *m_tray;
+    Ringer *m_ringer;
     QPointer<KNotification> m_ring;
     QString m_peerNumber, m_peerName;
     Engine::CallState m_prevState = Engine::CallState::Idle;
