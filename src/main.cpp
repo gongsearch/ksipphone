@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 
     QCommandLineParser parser;
     parser.addOption({QStringLiteral("minimized"), i18n("Start hidden in the system tray")});
+    parser.addOption({QStringLiteral("settings"), i18n("Open the settings dialog")});
     parser.addPositionalArgument(QStringLiteral("uri"), i18n("tel: or sip: URI to call"), QStringLiteral("[uri]"));
 #ifdef KSIPPHONE_WITH_KDE
     KAboutData about(QStringLiteral("ksipphone"), i18n("KSipPhone"), QStringLiteral(KSIPPHONE_VERSION),

@@ -37,7 +37,7 @@ jobs:
           rc=$?
           if [ $rc -eq 0 ]; then tail -3 "$log"; exit 0; fi
           tail -80 "$log"
-          msg=$(tail -60 "$log" | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
+          msg=$( { grep -E "error|Error|fatal" "$log" | tail -25; echo ----; tail -30 "$log"; } | cut -c1-400 | sed -e 's/%/%25/g' -e 's/\r//g' | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')
           echo "::error title=$name failed::$msg"
           exit $rc
           SH
@@ -46,7 +46,7 @@ jobs:
       - name: Dependencies (Homebrew)
         run: |
           brew update >/dev/null
-          brew install --quiet qt qtkeychain openldap opus spandsp openssl@3 gettext ninja
+          brew install --quiet qt qtkeychain openldap opus spandsp libtiff openssl@3 gettext ninja
 
       - name: ECM and KI18n from source
         run: |
@@ -66,6 +66,9 @@ jobs:
           set -e
           P="$PWD/deps"
           export CMAKE_PREFIX_PATH="$(brew --prefix qt):$(brew --prefix qtkeychain):$(brew --prefix gettext):$(brew --prefix openssl@3):$(brew --prefix opus):$(brew --prefix spandsp):$P"
+          # spandsp.h includes tiffio.h
+          export CPATH="$(brew --prefix libtiff)/include:$(brew --prefix spandsp)/include${CPATH:+:$CPATH}"
+          export LIBRARY_PATH="$(brew --prefix libtiff)/lib:$(brew --prefix spandsp)/lib${LIBRARY_PATH:+:$LIBRARY_PATH}"
           export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix opus)/lib/pkgconfig:$(brew --prefix spandsp)/lib/pkgconfig"
           OL="$(brew --prefix openldap)"
           logrun ksipphone-configure cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \

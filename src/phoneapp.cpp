@@ -14,6 +14,7 @@
 #include <QLocale>
 #include <QMenu>
 #include <QTime>
+#include <QTimer>
 #include <QUrl>
 #include <QWindow>
 
@@ -100,7 +101,11 @@ PhoneApp::PhoneApp(QObject *parent)
     // engine -> ui
     connect(m_engine, &Engine::regStateChanged, this, [this](Engine::RegState s, const QString &info) {
         const Settings st = Settings::load();
-        const QString who = QStringLiteral("%1@%2").arg(st.user, st.server);
+        // user@host without a port, shorter in the status line
+        QString host = st.server;
+        if (!host.startsWith(QLatin1Char('[')) && host.count(QLatin1Char(':')) == 1)
+            host = host.section(QLatin1Char(':'), 0, 0);
+        const QString who = QStringLiteral("%1@%2").arg(st.user, host);
         switch (s) {
         case Engine::RegState::Registered: m_window->setRegistration(i18n("Registered as %1", who), true); break;
         case Engine::RegState::Registering: m_window->setRegistration(i18n("Registering %1 …", who), false); break;
@@ -368,6 +373,10 @@ void PhoneApp::handleArguments(const QStringList &args, bool fromRemote)
                 m_engine->dial(target);
             return;
         }
+    }
+    if (args.contains(QLatin1String("--settings"))) {
+        QTimer::singleShot(0, this, &PhoneApp::openSettings);
+        return;
     }
     if (fromRemote && !args.contains(QLatin1String("--minimized"))) {
         m_window->show();

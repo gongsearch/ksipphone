@@ -71,7 +71,7 @@ Section "tel:, sip: and callto: links" SecLinks
   WriteRegStr HKCU "Software\RegisteredApplications" "KSipPhone" "${CAPKEY}"
 SectionEnd
 
-Section "Start with Windows (in the tray)" SecAutostart
+Section /o "Start with Windows (in the tray)" SecAutostart
   CreateShortCut "$SMSTARTUP\KSipPhone.lnk" "$INSTDIR\ksipphone.exe" "--minimized"
 SectionEnd
 
