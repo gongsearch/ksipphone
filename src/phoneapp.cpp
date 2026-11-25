@@ -6,9 +6,9 @@
 #include "secrets.h"
 #include "settingsdialog.h"
 
+#include "desktop.h"
+
 #include <KLocalizedString>
-#include <KNotification>
-#include <KStatusNotifierItem>
 
 #include <QApplication>
 #include <QLocale>
@@ -35,15 +35,11 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_engine(new Engine(this))
     , m_phonebook(new Phonebook(this))
     , m_window(new MainWindow)
-    , m_tray(new KStatusNotifierItem(QStringLiteral("ksipphone"), this))
+    , m_tray(new Desktop::Tray(m_window, this))
     , m_ringer(new Ringer(this))
 {
-    m_tray->setCategory(KStatusNotifierItem::Communications);
-    m_tray->setTitle(i18n("KSipPhone"));
-    m_tray->setIconByName(QStringLiteral("call-start"));
-    m_tray->setStandardActionsEnabled(false);
-    m_window->winId();
-    m_tray->setAssociatedWindow(m_window->windowHandle());
+    m_tray->setIconName(QStringLiteral("call-start"));
+    Desktop::Notification::setTray(m_tray);
 
     auto *menu = new QMenu;
     menu->addAction(QIcon::fromTheme(QStringLiteral("call-start")), i18n("Show dialer"), this, [this] {
@@ -57,8 +53,8 @@ PhoneApp::PhoneApp(QObject *parent)
     menu->addAction(QIcon::fromTheme(QStringLiteral("configure")), i18n("Settings…"), this, &PhoneApp::openSettings);
     menu->addSeparator();
     menu->addAction(QIcon::fromTheme(QStringLiteral("application-exit")), i18n("Quit"), this, &PhoneApp::quit);
-    m_tray->setContextMenu(menu);
-    connect(m_tray, &KStatusNotifierItem::activateRequested, this, [this](bool) {
+    m_tray->setMenu(menu);
+    connect(m_tray, &Desktop::Tray::activated, this, [this] {
         if (m_missed) {
             m_missed = 0;
             updateTray();
@@ -86,15 +82,16 @@ PhoneApp::PhoneApp(QObject *parent)
         if (nNew > before) {
             if (m_vmNotification)
                 m_vmNotification->close();
-            m_vmNotification = new KNotification(QStringLiteral("newVoicemail"), KNotification::CloseOnTimeout);
+            m_vmNotification = new Desktop::Notification(QStringLiteral("newVoicemail"), Desktop::Notification::Kind::Transient, this);
             m_vmNotification->setTitle(i18n("New voice message"));
             m_vmNotification->setText(i18np("You have 1 new voice message.", "You have %1 new voice messages.", nNew));
             m_vmNotification->setIconName(QStringLiteral("mail-unread-new"));
             if (!Settings::load().voicemail.isEmpty()) {
-                auto *listen = m_vmNotification->addAction(i18n("Listen"));
-                connect(listen, &KNotificationAction::activated, this, &PhoneApp::callVoicemail);
+                m_vmNotification->addAction(i18n("Listen"));
+                connect(m_vmNotification, &Desktop::Notification::actionTriggered, this, &PhoneApp::callVoicemail);
+                connect(m_vmNotification, &Desktop::Notification::defaultTriggered, this, [this] { showWindow(); });
             }
-            m_vmNotification->sendEvent();
+            m_vmNotification->send();
         } else if (nNew == 0 && m_vmNotification) {
             m_vmNotification->close();
         }
@@ -114,7 +111,7 @@ PhoneApp::PhoneApp(QObject *parent)
     });
     connect(m_engine, &Engine::engineError, this, [this](const QString &msg) {
         m_window->setRegistration(msg, false);
-        KNotification::event(KNotification::Error, i18n("KSipPhone"), msg);
+        Desktop::Notification::error(i18n("KSipPhone"), msg);
     });
     connect(m_engine, &Engine::incomingCall, this, [this](const QString &uri, const QString &name) {
         m_peerNumber = userPart(uri);
@@ -151,8 +148,15 @@ PhoneApp::PhoneApp(QObject *parent)
         }
         if (s == Engine::CallState::Established)
             m_wasEstablished = true;
-        if (s != Engine::CallState::Incoming)
+        if (s != Engine::CallState::Incoming) {
             closeRingNotification();
+            if (m_window->windowFlags() & Qt::WindowStaysOnTopHint) {
+                const bool vis = m_window->isVisible();
+                m_window->setWindowFlag(Qt::WindowStaysOnTopHint, false);
+                if (vis)
+                    m_window->show(); // changing flags hides the window
+            }
+        }
         if (s == Engine::CallState::Idle) {
             const QString reason = m_engine->closeReason();
             const bool elsewhere = reason.contains(QLatin1String("elsewhere"), Qt::CaseInsensitive)
@@ -201,7 +205,7 @@ void PhoneApp::writePassword(const QString &key, const QString &password)
 {
     const QString err = Secrets::writePassword(key, password);
     if (!err.isEmpty())
-        KNotification::event(KNotification::Error, i18n("KSipPhone"), i18n("The password could not be stored: %1", err));
+        Desktop::Notification::error(i18n("KSipPhone"), i18n("The password could not be stored: %1", err));
 }
 
 void PhoneApp::applySettings()
@@ -243,30 +247,33 @@ void PhoneApp::openSettings()
 void PhoneApp::notifyIncoming()
 {
     closeRingNotification();
-    m_ring = new KNotification(QStringLiteral("incomingCall"), KNotification::Persistent);
+    m_ring = new Desktop::Notification(QStringLiteral("incomingCall"), Desktop::Notification::Kind::Persistent, this);
     m_ring->setTitle(i18n("Incoming call"));
     m_ring->setText(peerText());
     m_ring->setIconName(QStringLiteral("call-start"));
-    m_ring->setUrgency(KNotification::CriticalUrgency);
-    auto *acc = m_ring->addAction(i18n("Accept"));
-    connect(acc, &KNotificationAction::activated, m_engine, &Engine::accept);
-    auto *dec = m_ring->addAction(i18n("Decline"));
-    connect(dec, &KNotificationAction::activated, m_engine, &Engine::hangup);
-    auto *def = m_ring->addDefaultAction(i18n("Show dialer"));
-    connect(def, &KNotificationAction::activated, this, [this] {
-        m_window->show();
-        m_window->raise();
-        m_window->activateWindow();
+    m_ring->setUrgent(true);
+    const int acc = m_ring->addAction(i18n("Accept"));
+    const int dec = m_ring->addAction(i18n("Decline"));
+    connect(m_ring, &Desktop::Notification::actionTriggered, this, [this, acc, dec](int i) {
+        if (i == acc)
+            m_engine->accept();
+        else if (i == dec)
+            m_engine->hangup();
     });
-    m_ring->sendEvent();
+    m_ring->setDefaultAction(i18n("Show dialer"));
+    connect(m_ring, &Desktop::Notification::defaultTriggered, this, [this] { showWindow(); });
+    m_ring->send();
     m_ringer->start();
+    // Without notification buttons the dialer window (with Accept / Decline) comes to the front.
+    if (!Desktop::richNotifications())
+        showWindow(true);
 }
 
 void PhoneApp::notifyMissed()
 {
     // Times out normally; Plasma then keeps it in the notification history, where "Call back"
     // keeps working while KSipPhone runs.
-    auto *n = new KNotification(QStringLiteral("missedCall"), KNotification::CloseOnTimeout);
+    auto *n = new Desktop::Notification(QStringLiteral("missedCall"), Desktop::Notification::Kind::Transient, this);
     n->setTitle(i18n("Missed call"));
     n->setText(i18n("%1 at %2", peerText(), QLocale().toString(QTime::currentTime(), QLocale::ShortFormat)));
     n->setIconName(QStringLiteral("call-missed"));
@@ -274,19 +281,17 @@ void PhoneApp::notifyMissed()
         n->setPixmap(m_peerPhoto);
     const QString number = m_peerNumber;
     if (!number.isEmpty() && number != QLatin1String("anonymous")) {
-        auto *cb = n->addAction(i18n("Call back"));
-        connect(cb, &KNotificationAction::activated, this, [this, number] { callBack(number); });
+        n->addAction(i18n("Call back"));
+        connect(n, &Desktop::Notification::actionTriggered, this, [this, number] { callBack(number); });
     }
-    auto *def = n->addDefaultAction(i18n("Show dialer"));
-    connect(def, &KNotificationAction::activated, this, [this, number] {
+    n->setDefaultAction(i18n("Show dialer"));
+    connect(n, &Desktop::Notification::defaultTriggered, this, [this, number] {
         m_missed = 0;
         updateTray();
         m_window->setNumber(number);
-        m_window->show();
-        m_window->raise();
-        m_window->activateWindow();
+        showWindow();
     });
-    n->sendEvent();
+    n->send();
 }
 
 void PhoneApp::callBack(const QString &number)
@@ -341,10 +346,9 @@ void PhoneApp::updateTray()
     tip << (rs == Engine::RegState::Registered ? i18n("Registered") : i18n("Not registered"));
     if (vm)
         tip << i18np("1 new voice message", "%1 new voice messages", m_voicemails);
-    m_tray->setIconByName(icon);
-    m_tray->setAttentionIconByName(icon);
-    m_tray->setStatus(vm ? KStatusNotifierItem::NeedsAttention : KStatusNotifierItem::Active);
-    m_tray->setToolTip(icon, i18n("KSipPhone"), tip.join(QStringLiteral("<br>")));
+    m_tray->setIconName(icon);
+    m_tray->setAttention(vm);
+    m_tray->setToolTip(i18n("KSipPhone"), tip.join(QStringLiteral("<br>")));
 }
 
 void PhoneApp::handleArguments(const QStringList &args, bool fromRemote)
@@ -370,6 +374,18 @@ void PhoneApp::handleArguments(const QStringList &args, bool fromRemote)
         m_window->raise();
         m_window->activateWindow();
     }
+}
+
+void PhoneApp::showWindow(bool onTop)
+{
+    if (onTop) {
+        // bring the dialer in front of other windows while it rings (no notification buttons)
+        m_window->setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    }
+    m_window->show();
+    m_window->showNormal();
+    m_window->raise();
+    m_window->activateWindow();
 }
 
 void PhoneApp::quit()

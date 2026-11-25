@@ -3,6 +3,7 @@
 
 #include <QAudioDevice>
 #include <QAudioOutput>
+#include <QCoreApplication>
 #include <QFile>
 #include <QMediaDevices>
 #include <QMediaPlayer>
@@ -41,7 +42,8 @@ QString Ringer::defaultFile()
 {
     for (const auto &f : {QStringLiteral("/usr/share/sounds/ocean/stereo/phone-incoming-call.oga"),
                           QStringLiteral("/usr/share/sounds/freedesktop/stereo/phone-incoming-call.oga"),
-                          QStringLiteral("/usr/share/baresip/ring.wav")}) {
+                          QStringLiteral("/usr/share/baresip/ring.wav"),
+                          QString(QCoreApplication::applicationDirPath() + QStringLiteral("/share/baresip/ring.wav"))}) {
         if (QFile::exists(f))
             return f;
     }

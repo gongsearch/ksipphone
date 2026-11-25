@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include "engine.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QHostAddress>
@@ -38,15 +39,27 @@ const char *const kAudioModule = "audiounit";
 const char *const kAudioModule = "pipewire";
 #endif
 
+// relative paths are taken relative to the directory of the ksipphone executable
+QString resolve(const QString &path)
+{
+    if (path.isEmpty() || QDir::isAbsolutePath(path) || !path.contains(QLatin1Char('/')))
+        return path;
+    return QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(path);
+}
+
 QString envOr(const char *name, const QString &fallback)
 {
     const QString v = qEnvironmentVariable(name);
-    return v.isEmpty() ? fallback : v;
+    return resolve(v.isEmpty() ? fallback : v);
 }
 
 QString baresipExecutable()
 {
+#if defined(Q_OS_WIN)
+    return envOr("KSIPPHONE_BARESIP", QStringLiteral("./baresip.exe"));
+#else
     return envOr("KSIPPHONE_BARESIP", QStringLiteral("baresip"));
+#endif
 }
 
 QString moduleExt()

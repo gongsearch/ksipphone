@@ -1,0 +1,118 @@
+name: Windows
+
+on:
+  push:
+    branches: [main, 'windows-*']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  BARESIP_VERSION: v4.6.0
+
+jobs:
+  windows:
+    name: Windows (MSYS2 UCRT64, installer)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: git zip
+          pacboy: >-
+            cc:p cmake:p ninja:p pkgconf:p
+            qt6-base:p qt6-multimedia:p qt6-svg:p qt6-tools:p qt6-translations:p
+            qtkeychain:p ki18n:p extra-cmake-modules:p gettext-tools:p
+            openldap:p opus:p spandsp:p openssl:p zlib:p nsis:p
+
+      - uses: actions/checkout@v4
+
+      - name: Build re and baresip (static, only the modules KSipPhone uses)
+        run: |
+          set -e
+          D="$PWD/deps"
+          git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/re.git
+          cmake -S re -B re/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$D"
+          cmake --build re/build
+          cmake --install re/build
+          git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/baresip.git
+          cmake -S baresip -B baresip/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$D" -DCMAKE_INSTALL_PREFIX="$D" -DSTATIC=ON \
+            -DMODULES="g711;g722;opus;winwave;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
+          cmake --build baresip/build
+          cmake --install baresip/build
+          ls -la "$D/bin"
+
+      - name: Build KSipPhone
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DKSIPPHONE_WITH_KDE=OFF \
+            -DBARESIP_MODULE_PATH=modules -DBARESIP_SHARE_PATH=share/baresip
+          cmake --build build
+
+      - name: Bundle
+        run: |
+          set -e
+          B="$PWD/bundle"; mkdir -p "$B/share/baresip" "$B/data/locale"
+          cp build/bin/ksipphone.exe "$B/"
+          cp deps/bin/baresip.exe "$B/"
+          cp baresip/share/*.wav "$B/share/baresip/" 2>/dev/null || cp deps/share/baresip/*.wav "$B/share/baresip/"
+          # translations: KI18n looks in <app dir>/data/locale on Windows
+          for po in po/*/ksipphone.po; do
+            l=$(basename "$(dirname "$po")"); mkdir -p "$B/data/locale/$l/LC_MESSAGES"
+            msgfmt -o "$B/data/locale/$l/LC_MESSAGES/ksipphone.mo" "$po"
+          done
+          cp LICENSE "$B/LICENSE.txt"; cp src/icons/LICENSE-icons "$B/LICENSE-icons.txt"
+          WDQ=$(command -v windeployqt6 || command -v windeployqt-qt6 || ls /ucrt64/share/qt6/bin/windeployqt* /ucrt64/lib/qt6/bin/windeployqt* 2>/dev/null | head -1)
+          echo "windeployqt: $WDQ"
+          "$WDQ" --release --no-compiler-runtime --no-system-d3d-compiler --no-opengl-sw \
+            --translations de,en "$B/ksipphone.exe"
+          # all remaining MSYS2 DLLs needed by the executables and Qt plugins
+          for round in 1 2 3 4; do
+            find "$B" -iname '*.exe' -o -iname '*.dll' | while read -r f; do
+              ldd "$f" | awk '/\/ucrt64\// {print $3}'
+            done | sort -u | while read -r dll; do
+              [ -f "$B/$(basename "$dll")" ] || cp "$dll" "$B/"
+            done
+          done
+          ls -la "$B" | head -80
+          du -sh "$B"
+
+      - name: Smoke test
+        run: |
+          set -e
+          # ksipphone.exe is a GUI program (no console), so only check that every DLL resolves
+          ! ldd bundle/ksipphone.exe | grep -i "not found"
+          ! ldd bundle/baresip.exe | grep -i "not found"
+          ./bundle/baresip.exe -h 2>&1 | head -5 || true
+
+      - name: Installer
+        run: |
+          set -e
+          VER=$(sed -n 's/^project(ksipphone VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          cp packaging/windows/ksipphone.nsi packaging/windows/ksipphone.ico .
+          makensis -DVERSION="$VER" -DSRCDIR="$(cygpath -w "$PWD/bundle")" ksipphone.nsi
+          (cd bundle && zip -qr "../KSipPhone-$VER-windows-portable.zip" .)
+          ls -la KSipPhone-*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KSipPhone-windows
+          path: |
+            KSipPhone-*-setup.exe
+            KSipPhone-*-windows-portable.zip
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
+          gh release upload "$GITHUB_REF_NAME" KSipPhone-*-setup.exe KSipPhone-*-windows-portable.zip --clobber
+
+permissions:
+  contents: write

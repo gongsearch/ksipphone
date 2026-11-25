@@ -9,8 +9,11 @@
 #include <QPixmap>
 #include <QPointer>
 
-class KNotification;
-class KStatusNotifierItem;
+namespace Desktop
+{
+class Tray;
+class Notification;
+}
 class MainWindow;
 class Ringer;
 
@@ -37,13 +40,14 @@ private:
     void callBack(const QString &number);
     void callVoicemail();
     void quit();
+    void showWindow(bool onTop = false);
 
     Engine *m_engine;
     Phonebook *m_phonebook;
     MainWindow *m_window;
-    KStatusNotifierItem *m_tray;
+    Desktop::Tray *m_tray;
     Ringer *m_ringer;
-    QPointer<KNotification> m_ring;
+    QPointer<Desktop::Notification> m_ring;
     QString m_peerNumber, m_peerName;
     QPixmap m_peerPhoto;
     Engine::CallState m_prevState = Engine::CallState::Idle;
@@ -51,5 +55,5 @@ private:
     int m_lookupId = 0;
     int m_missed = 0;
     int m_voicemails = 0;
-    QPointer<KNotification> m_vmNotification;
+    QPointer<Desktop::Notification> m_vmNotification;
 };

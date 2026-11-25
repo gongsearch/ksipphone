@@ -2,9 +2,7 @@
 #include "settingsdialog.h"
 #include "ringer.h"
 
-#include <KConfigGroup>
 #include <KLocalizedString>
-#include <KSharedConfig>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -12,60 +10,86 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLineEdit>
 #include <QVBoxLayout>
 
+// Same file and keys as KConfig used in 0.1 (~/.config/ksipphonerc on Linux).
+static QSettings &store()
+{
+    static QSettings settings(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QStringLiteral("/ksipphonerc"),
+                              QSettings::IniFormat);
+    return settings;
+}
+
+// KConfig wrote comma separated values unquoted; QSettings reads those as a list.
+static QString str(const QSettings &s, const QString &key, const QString &def = {})
+{
+    const QVariant v = s.value(key, def);
+    if (v.metaType().id() == QMetaType::QStringList)
+        return v.toStringList().join(QLatin1Char(','));
+    return v.toString();
+}
+
 Settings Settings::load()
 {
-    const auto cfg = KSharedConfig::openConfig();
-    const KConfigGroup a(cfg, QStringLiteral("Account"));
-    const KConfigGroup p(cfg, QStringLiteral("Phonebook"));
+    QSettings &c = store();
+    c.sync();
     Settings s;
-    s.user = a.readEntry("User", QString());
-    s.server = a.readEntry("Server", QString());
-    s.transport = a.readEntry("Transport", QStringLiteral("udp"));
-    s.displayName = a.readEntry("DisplayName", QString());
-    s.codecs = a.readEntry("Codecs", QStringLiteral("G722,PCMA,PCMU"));
-    s.voicemail = a.readEntry("Voicemail", QString());
-    s.dtmfMode = a.readEntry("DtmfMode", QStringLiteral("rtpevent"));
-    s.preferIpv6 = a.readEntry("PreferIPv6", false);
-    const KConfigGroup au(cfg, QStringLiteral("Audio"));
-    s.ringLoop = au.readEntry("RingContinuously", false);
-    s.echoCancel = au.readEntry("EchoCancellation", false);
-    s.micDevice = au.readEntry("Microphone", QString());
-    s.speakerDevice = au.readEntry("Speaker", QString());
-    s.ringDevice = au.readEntry("RingDevice", QString());
-    s.ringFile = au.readEntry("RingTone", QString());
-    s.ldapUri = p.readEntry("Uri", QString());
-    s.ldapBase = p.readEntry("BaseDn", QString());
+    c.beginGroup(QStringLiteral("Account"));
+    s.user = str(c, QStringLiteral("User"));
+    s.server = str(c, QStringLiteral("Server"));
+    s.transport = str(c, QStringLiteral("Transport"), QStringLiteral("udp"));
+    s.displayName = str(c, QStringLiteral("DisplayName"));
+    s.codecs = str(c, QStringLiteral("Codecs"), QStringLiteral("G722,PCMA,PCMU"));
+    s.voicemail = str(c, QStringLiteral("Voicemail"));
+    s.dtmfMode = str(c, QStringLiteral("DtmfMode"), QStringLiteral("rtpevent"));
+    s.preferIpv6 = c.value(QStringLiteral("PreferIPv6"), false).toBool();
+    c.endGroup();
+    c.beginGroup(QStringLiteral("Audio"));
+    s.ringLoop = c.value(QStringLiteral("RingContinuously"), false).toBool();
+    s.echoCancel = c.value(QStringLiteral("EchoCancellation"), false).toBool();
+    s.micDevice = str(c, QStringLiteral("Microphone"));
+    s.speakerDevice = str(c, QStringLiteral("Speaker"));
+    s.ringDevice = str(c, QStringLiteral("RingDevice"));
+    s.ringFile = str(c, QStringLiteral("RingTone"));
+    c.endGroup();
+    c.beginGroup(QStringLiteral("Phonebook"));
+    s.ldapUri = str(c, QStringLiteral("Uri"));
+    s.ldapBase = str(c, QStringLiteral("BaseDn"));
+    c.endGroup();
     return s;
 }
 
 void Settings::save() const
 {
-    auto cfg = KSharedConfig::openConfig();
-    KConfigGroup a(cfg, QStringLiteral("Account"));
-    a.writeEntry("User", user);
-    a.writeEntry("Server", server);
-    a.writeEntry("Transport", transport);
-    a.writeEntry("DisplayName", displayName);
-    a.writeEntry("Codecs", codecs);
-    a.writeEntry("Voicemail", voicemail);
-    a.writeEntry("DtmfMode", dtmfMode);
-    a.writeEntry("PreferIPv6", preferIpv6);
-    KConfigGroup au(cfg, QStringLiteral("Audio"));
-    au.writeEntry("RingContinuously", ringLoop);
-    au.writeEntry("EchoCancellation", echoCancel);
-    au.writeEntry("Microphone", micDevice);
-    au.writeEntry("Speaker", speakerDevice);
-    au.writeEntry("RingDevice", ringDevice);
-    au.writeEntry("RingTone", ringFile);
-    KConfigGroup p(cfg, QStringLiteral("Phonebook"));
-    p.writeEntry("Uri", ldapUri);
-    p.writeEntry("BaseDn", ldapBase);
-    cfg->sync();
+    QSettings &c = store();
+    c.beginGroup(QStringLiteral("Account"));
+    c.setValue(QStringLiteral("User"), user);
+    c.setValue(QStringLiteral("Server"), server);
+    c.setValue(QStringLiteral("Transport"), transport);
+    c.setValue(QStringLiteral("DisplayName"), displayName);
+    c.setValue(QStringLiteral("Codecs"), codecs);
+    c.setValue(QStringLiteral("Voicemail"), voicemail);
+    c.setValue(QStringLiteral("DtmfMode"), dtmfMode);
+    c.setValue(QStringLiteral("PreferIPv6"), preferIpv6);
+    c.endGroup();
+    c.beginGroup(QStringLiteral("Audio"));
+    c.setValue(QStringLiteral("RingContinuously"), ringLoop);
+    c.setValue(QStringLiteral("EchoCancellation"), echoCancel);
+    c.setValue(QStringLiteral("Microphone"), micDevice);
+    c.setValue(QStringLiteral("Speaker"), speakerDevice);
+    c.setValue(QStringLiteral("RingDevice"), ringDevice);
+    c.setValue(QStringLiteral("RingTone"), ringFile);
+    c.endGroup();
+    c.beginGroup(QStringLiteral("Phonebook"));
+    c.setValue(QStringLiteral("Uri"), ldapUri);
+    c.setValue(QStringLiteral("BaseDn"), ldapBase);
+    c.endGroup();
+    c.sync();
 }
 
 SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidget *parent)

@@ -1,0 +1,4 @@
+The SVG icons in this directory are taken unmodified from the Breeze icon theme
+(https://invent.kde.org/frameworks/breeze-icons), Copyright The KDE Visual Design Group,
+licensed under the GNU Lesser General Public License version 3 or later (LGPL-3.0-or-later).
+They are only bundled into builds without KDE Frameworks (Windows, macOS).

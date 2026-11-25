@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 #include "phoneapp.h"
 
-#include <KAboutData>
 #include <KLocalizedString>
+#ifdef KSIPPHONE_WITH_KDE
+#include <KAboutData>
+#endif
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -40,6 +42,10 @@ int main(int argc, char **argv)
     app.setQuitOnLastWindowClosed(false);
     KLocalizedString::setApplicationDomain("ksipphone");
 
+    QCommandLineParser parser;
+    parser.addOption({QStringLiteral("minimized"), i18n("Start hidden in the system tray")});
+    parser.addPositionalArgument(QStringLiteral("uri"), i18n("tel: or sip: URI to call"), QStringLiteral("[uri]"));
+#ifdef KSIPPHONE_WITH_KDE
     KAboutData about(QStringLiteral("ksipphone"), i18n("KSipPhone"), QStringLiteral(KSIPPHONE_VERSION),
                      i18n("A small SIP phone for KDE Plasma"), KAboutLicense::MIT);
     about.setOrganizationDomain("gongsearch.github.io");
@@ -47,14 +53,26 @@ int main(int argc, char **argv)
     about.setBugAddress("https://github.com/gongsearch/ksipphone/issues");
     about.setDesktopFileName(QStringLiteral("io.github.gongsearch.KSipPhone"));
     KAboutData::setApplicationData(about);
-    QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("call-start")));
-
-    QCommandLineParser parser;
-    parser.addOption({QStringLiteral("minimized"), i18n("Start hidden in the system tray")});
-    parser.addPositionalArgument(QStringLiteral("uri"), i18n("tel: or sip: URI to call"), QStringLiteral("[uri]"));
     about.setupCommandLine(&parser);
     parser.process(app);
     about.processCommandLine(&parser);
+#else
+    QCoreApplication::setApplicationName(QStringLiteral("ksipphone"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(KSIPPHONE_VERSION));
+    QCoreApplication::setOrganizationDomain(QStringLiteral("gongsearch.github.io"));
+    QGuiApplication::setApplicationDisplayName(i18n("KSipPhone"));
+    QGuiApplication::setDesktopFileName(QStringLiteral("io.github.gongsearch.KSipPhone"));
+    parser.setApplicationDescription(i18n("A small SIP phone for KDE Plasma"));
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.process(app);
+    // Bundled Breeze subset: fallback for icons the platform theme lacks (Windows, macOS)
+    QIcon::setThemeSearchPaths(QIcon::themeSearchPaths() << QStringLiteral(":/icons"));
+    QIcon::setFallbackThemeName(QStringLiteral("breeze"));
+    if (QIcon::themeName().isEmpty() || QIcon::fromTheme(QStringLiteral("call-start")).isNull())
+        QIcon::setThemeName(QStringLiteral("breeze"));
+#endif
+    QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("call-start")));
 
     if (forwardToRunningInstance(QCoreApplication::arguments()))
         return 0;
