@@ -1,31 +1,72 @@
 // SPDX-License-Identifier: MIT
 #include "engine.h"
 
-#include <QDBusConnection>
-#include <QDBusConnectionInterface>
-#include <QDBusInterface>
-#include <QDBusReply>
-#include <QDBusServiceWatcher>
 #include <QDir>
 #include <QFile>
 #include <QHostAddress>
 #include <QHostInfo>
 #include <QJsonDocument>
 #include <QLoggingCategory>
-#include <QStandardPaths>
 #include <QRegularExpression>
+#include <QStandardPaths>
+#include <QTcpServer>
+#include <QTcpSocket>
 #include <QTimer>
+
+#ifdef Q_OS_LINUX
+#include <csignal>
+#include <sys/prctl.h>
+#endif
 
 Q_LOGGING_CATEGORY(ENGINE, "ksipphone.engine")
 
-static const QString kBusName = QStringLiteral("com.github.Baresip");
-static const QString kPath = QStringLiteral("/baresip");
-static const QString kIface = QStringLiteral("com.github.Baresip");
+#ifndef KSIPPHONE_BARESIP_MODULE_PATH
+#define KSIPPHONE_BARESIP_MODULE_PATH "/usr/lib/baresip/modules"
+#endif
+#ifndef KSIPPHONE_BARESIP_SHARE_PATH
+#define KSIPPHONE_BARESIP_SHARE_PATH "/usr/share/baresip"
+#endif
+
+namespace
+{
+// baresip's audio driver per platform
+#if defined(Q_OS_WIN)
+const char *const kAudioModule = "winwave";
+#elif defined(Q_OS_MACOS)
+const char *const kAudioModule = "audiounit";
+#else
+const char *const kAudioModule = "pipewire";
+#endif
+
+QString envOr(const char *name, const QString &fallback)
+{
+    const QString v = qEnvironmentVariable(name);
+    return v.isEmpty() ? fallback : v;
+}
+
+QString baresipExecutable()
+{
+    return envOr("KSIPPHONE_BARESIP", QStringLiteral("baresip"));
+}
+
+QString moduleExt()
+{
+#if defined(Q_OS_WIN)
+    return QStringLiteral(".dll");
+#else
+    return QStringLiteral(".so");
+#endif
+}
+} // namespace
 
 Engine::Engine(QObject *parent)
     : QObject(parent)
 {
     m_proc.setProcessChannelMode(QProcess::MergedChannels);
+#ifdef Q_OS_LINUX
+    // never leave an orphaned baresip behind if KSipPhone dies
+    m_proc.setChildProcessModifier([] { ::prctl(PR_SET_PDEATHSIG, SIGTERM); });
+#endif
     connect(&m_proc, &QProcess::readyRead, this, [this] {
         const auto out = QString::fromUtf8(m_proc.readAll()).trimmed();
         if (!out.isEmpty())
@@ -33,15 +74,33 @@ Engine::Engine(QObject *parent)
     });
     connect(&m_proc, &QProcess::finished, this, [this](int code, QProcess::ExitStatus st) {
         qCWarning(ENGINE) << "baresip exited" << code << st;
-        delete m_iface;
-        m_iface = nullptr;
+        if (m_sock)
+            m_sock->abort();
+        m_connected = false;
         m_uaCreated = false;
+        m_pending.clear();
         setCallState(CallState::Idle);
         setRegState(RegState::Offline, QStringLiteral("engine stopped"));
-        if (st == QProcess::CrashExit && m_retries++ < 5) {
+        if (st == QProcess::CrashExit && m_retries++ < 5)
             QTimer::singleShot(3000, this, &Engine::start);
-        }
     });
+
+    m_sock = new QTcpSocket(this);
+    connect(m_sock, &QTcpSocket::readyRead, this, &Engine::onReadyRead);
+    connect(m_sock, &QTcpSocket::connected, this, [this] {
+        m_connected = true;
+        m_connectTimer->stop();
+        m_retries = 0;
+        qCDebug(ENGINE) << "connected to baresip ctrl_tcp on port" << m_port;
+        Q_EMIT ready();
+        if (m_account.isValid())
+            setAccount(m_account);
+    });
+    connect(m_sock, &QTcpSocket::disconnected, this, [this] { m_connected = false; });
+
+    m_connectTimer = new QTimer(this);
+    m_connectTimer->setInterval(250);
+    connect(m_connectTimer, &QTimer::timeout, this, &Engine::tryConnect);
 }
 
 Engine::~Engine()
@@ -54,46 +113,55 @@ bool Engine::writeConfig(QString *dir)
     const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/baresip");
     if (!QDir().mkpath(base))
         return false;
+
+    // A free loopback port for ctrl_tcp. Note: ctrl_tcp has no authentication, so any local
+    // process could talk to it while KSipPhone runs; it only listens on 127.0.0.1.
+    {
+        QTcpServer probe;
+        if (!probe.listen(QHostAddress::LocalHost, 0))
+            return false;
+        m_port = probe.serverPort();
+    }
+
     // Generated on every start; the account (with password) is never written to disk,
     // it is created at runtime via "uanew".
     QFile cfg(base + QStringLiteral("/config"));
     if (!cfg.open(QIODevice::WriteOnly | QIODevice::Truncate))
         return false;
-    const QByteArray player = "pipewire," + (m_player.isEmpty() ? QByteArray("default") : m_player.toUtf8());
-    const QByteArray source = "pipewire," + (m_source.isEmpty() ? QByteArray("default") : m_source.toUtf8());
-    const QByteArray conf =
+    const QByteArray mod = kAudioModule;
+    const QByteArray player = mod + "," + (m_player.isEmpty() ? QByteArray("default") : m_player.toUtf8());
+    const QByteArray source = mod + "," + (m_source.isEmpty() ? QByteArray("default") : m_source.toUtf8());
+    const QByteArray ext = moduleExt().toUtf8();
+    const QByteArray modulePath = QDir::fromNativeSeparators(envOr("KSIPPHONE_BARESIP_MODULES", QStringLiteral(KSIPPHONE_BARESIP_MODULE_PATH))).toUtf8();
+    QByteArray conf =
         "# generated by ksipphone - changes are overwritten\n"
         // no sip_listen: baresip binds all local IPv4 and IPv6 addresses
         "call_local_timeout\t120\n"
         "audio_player\t\t" + player + "\n"
         "audio_source\t\t" + source + "\n"
         "audio_alert\t\t" + player + "\n"
-        "audio_path\t\t" + base.toUtf8() + "\n"
+        "audio_path\t\t" + QDir::fromNativeSeparators(base).toUtf8() + "\n"
         "ausrc_srate\t\t48000\n"
         "auplay_srate\t\t48000\n"
-        "module_path\t\t/usr/lib/baresip/modules\n"
-        "module\t\t\tg722.so\n"
-        "module\t\t\tg711.so\n"
-        "module\t\t\topus.so\n"
-        "module\t\t\tpipewire.so\n"
-        "module\t\t\tauconv.so\n"
-        "module\t\t\tauresamp.so\n"
-        "module\t\t\tsrtp.so\n"
-        "module_app\t\tmenu.so\n"
-        "module_app\t\tmwi.so\n"
-        "module_app\t\tctrl_dbus.so\n"
-        "ctrl_dbus_use\t\tsession\n"
-        "ringback_disabled\tno\n";
+        "module_path\t\t" + modulePath + "\n";
+    for (const char *m : {"g722", "g711", "opus", kAudioModule, "auconv", "auresamp", "srtp"})
+        conf += QByteArray("module\t\t\t") + m + ext + "\n";
+    if (m_aec) // baresip's own echo canceller; off when e.g. PipeWire already cancels echo
+        conf += "module\t\t\twebrtc_aec" + ext + "\n";
+    for (const char *m : {"menu", "mwi", "ctrl_tcp"})
+        conf += QByteArray("module_app\t\t") + m + ext + "\n";
+    conf += "ctrl_tcp_listen\t\t127.0.0.1:" + QByteArray::number(m_port) + "\n"
+            "ringback_disabled\tno\n";
     cfg.write(conf);
-    if (m_aec) // baresip's own echo canceller; off when PipeWire already cancels echo on the source
-        cfg.write("module\t\t\twebrtc_aec.so\n");
     cfg.close();
+
     // Sounds: baresip's own tones, except the ring tone: ring.wav is silence, KSipPhone rings itself
     // (configurable file, device, once/continuous - see Ringer).
+    const QString share = envOr("KSIPPHONE_BARESIP_SHARE", QStringLiteral(KSIPPHONE_BARESIP_SHARE_PATH));
     for (const auto &f : {QStringLiteral("ringback.wav"), QStringLiteral("busy.wav"), QStringLiteral("error.wav"),
                           QStringLiteral("notfound.wav"), QStringLiteral("callwaiting.wav")}) {
         QFile::remove(base + QLatin1Char('/') + f);
-        QFile::copy(QStringLiteral("/usr/share/baresip/") + f, base + QLatin1Char('/') + f);
+        QFile::copy(share + QLatin1Char('/') + f, base + QLatin1Char('/') + f);
     }
     QFile::remove(base + QStringLiteral("/ring.wav"));
     {
@@ -122,40 +190,37 @@ void Engine::start()
 {
     if (m_proc.state() != QProcess::NotRunning)
         return;
-    auto bus = QDBusConnection::sessionBus();
-    if (bus.interface()->isServiceRegistered(kBusName)) {
-        m_lastError = QStringLiteral("Another baresip instance already owns %1 on the session bus.").arg(kBusName);
-        Q_EMIT engineError(m_lastError);
-        return;
-    }
     QString dir;
     if (!writeConfig(&dir)) {
         Q_EMIT engineError(QStringLiteral("Cannot write baresip configuration"));
         return;
     }
-    auto *watcher = new QDBusServiceWatcher(kBusName, bus, QDBusServiceWatcher::WatchForRegistration, this);
-    connect(watcher, &QDBusServiceWatcher::serviceRegistered, this, [this, watcher] {
-        watcher->deleteLater();
-        connectBus();
-    });
-    m_proc.start(QStringLiteral("baresip"), {QStringLiteral("-f"), dir});
+    m_buf.clear();
+    m_pending.clear();
+    m_proc.start(baresipExecutable(), {QStringLiteral("-f"), QDir::toNativeSeparators(dir)});
     if (!m_proc.waitForStarted(5000)) {
-        watcher->deleteLater();
-        m_lastError = QStringLiteral("Cannot start baresip: %1").arg(m_proc.errorString());
+        m_lastError = QStringLiteral("Cannot start baresip (%1): %2").arg(baresipExecutable(), m_proc.errorString());
         Q_EMIT engineError(m_lastError);
+        return;
     }
+    m_connectTries = 0;
+    m_connectTimer->start();
 }
 
-void Engine::connectBus()
+void Engine::tryConnect()
 {
-    auto bus = QDBusConnection::sessionBus();
-    delete m_iface;
-    m_iface = new QDBusInterface(kBusName, kPath, kIface, bus, this);
-    bus.connect(kBusName, kPath, kIface, QStringLiteral("event"), this, SLOT(onEvent(QString, QString, QString)));
-    m_retries = 0;
-    Q_EMIT ready();
-    if (m_account.isValid())
-        setAccount(m_account);
+    if (m_connected || m_proc.state() == QProcess::NotRunning) {
+        m_connectTimer->stop();
+        return;
+    }
+    if (++m_connectTries > 40) { // 10 s
+        m_connectTimer->stop();
+        m_lastError = QStringLiteral("baresip does not answer on its control port (ctrl_tcp module missing?)");
+        Q_EMIT engineError(m_lastError);
+        return;
+    }
+    if (m_sock->state() == QAbstractSocket::UnconnectedState)
+        m_sock->connectToHost(QHostAddress::LocalHost, m_port);
 }
 
 void Engine::setAudioDevices(const QString &player, const QString &source, bool echoCancel)
@@ -175,8 +240,11 @@ void Engine::stop()
 {
     if (m_proc.state() == QProcess::NotRunning)
         return;
-    if (m_iface)
-        invoke(QStringLiteral("quit"));
+    m_connectTimer->stop();
+    if (m_connected) {
+        send(QStringLiteral("quit"));
+        m_sock->flush();
+    }
     if (!m_proc.waitForFinished(3000)) {
         m_proc.terminate();
         if (!m_proc.waitForFinished(2000))
@@ -184,25 +252,72 @@ void Engine::stop()
     }
 }
 
-QString Engine::invoke(const QString &command)
+void Engine::send(const QString &commandLine, Reply reply)
 {
-    if (!m_iface)
-        return {};
-    QDBusReply<QString> r = m_iface->call(QStringLiteral("invoke"), command);
-    if (!r.isValid()) {
-        qCWarning(ENGINE) << "invoke failed" << command.section(QLatin1Char(' '), 0, 0) << r.error().message();
-        return {};
+    if (!m_connected) {
+        if (reply)
+            reply(false, QStringLiteral("not connected"));
+        return;
     }
-    return r.value();
+    const QString cmd = commandLine.section(QLatin1Char(' '), 0, 0);
+    const QString params = commandLine.section(QLatin1Char(' '), 1);
+    const QString token = QString::number(++m_token);
+    if (reply)
+        m_pending.insert(token, reply);
+    const QByteArray json = QJsonDocument(QJsonObject{{QStringLiteral("command"), cmd},
+                                                      {QStringLiteral("params"), params},
+                                                      {QStringLiteral("token"), token}})
+                                .toJson(QJsonDocument::Compact);
+    m_sock->write(QByteArray::number(json.size()) + ':' + json + ',');
+}
+
+void Engine::onReadyRead()
+{
+    m_buf += m_sock->readAll();
+    // netstrings: <length>:<payload>,
+    for (;;) {
+        const int colon = m_buf.indexOf(':');
+        if (colon <= 0)
+            break;
+        bool ok = false;
+        const int len = m_buf.left(colon).toInt(&ok);
+        if (!ok || len < 0) { // garbage - resync by dropping the buffer
+            qCWarning(ENGINE) << "invalid netstring from baresip";
+            m_buf.clear();
+            break;
+        }
+        if (m_buf.size() < colon + 1 + len + 1)
+            break; // incomplete
+        const QByteArray payload = m_buf.mid(colon + 1, len);
+        m_buf.remove(0, colon + 1 + len + 1);
+        const QJsonObject msg = QJsonDocument::fromJson(payload).object();
+        if (!msg.isEmpty())
+            handleMessage(msg);
+    }
+}
+
+void Engine::handleMessage(const QJsonObject &msg)
+{
+    if (msg.value(QStringLiteral("response")).toBool()) {
+        const QString token = msg.value(QStringLiteral("token")).toString();
+        const Reply r = m_pending.take(token);
+        if (r)
+            r(msg.value(QStringLiteral("ok")).toBool(), msg.value(QStringLiteral("data")).toString());
+        else if (!msg.value(QStringLiteral("ok")).toBool())
+            qCWarning(ENGINE) << "command failed" << msg.value(QStringLiteral("data")).toString().trimmed();
+        return;
+    }
+    if (msg.value(QStringLiteral("event")).toBool())
+        onEvent(msg);
 }
 
 void Engine::setAccount(const Account &account)
 {
     m_account = account;
-    if (!m_iface)
+    if (!m_connected)
         return;
     if (m_uaCreated) {
-        invoke(QStringLiteral("uadelall"));
+        send(QStringLiteral("uadelall"));
         m_uaCreated = false;
     }
     if (!account.isValid()) {
@@ -258,7 +373,12 @@ void Engine::setAccount(const Account &account)
         }
         line += QStringLiteral(";audio_codecs=%1").arg(list.join(QLatin1Char(',')));
     }
-    invoke(QStringLiteral("uanew ") + line);
+    send(QStringLiteral("uanew ") + line, [this](bool ok, const QString &data) {
+        if (!ok) {
+            setRegState(RegState::Failed, data.trimmed());
+            return;
+        }
+    });
     m_uaCreated = true;
     setRegState(RegState::Registering);
 }
@@ -287,33 +407,33 @@ void Engine::dial(const QString &target)
         return;
     m_peer = targetUri(target);
     m_peerName.clear();
-    invoke(QStringLiteral("dial ") + m_peer);
+    send(QStringLiteral("dial ") + m_peer);
 }
 
 void Engine::accept()
 {
-    invoke(QStringLiteral("accept"));
+    send(QStringLiteral("accept"));
 }
 
 void Engine::hangup()
 {
-    invoke(QStringLiteral("hangup"));
+    send(QStringLiteral("hangup"));
 }
 
 void Engine::setMuted(bool muted)
 {
     Q_UNUSED(muted) // baresip toggles
-    invoke(QStringLiteral("mute"));
+    send(QStringLiteral("mute"));
 }
 
 void Engine::setHold(bool hold)
 {
-    invoke(hold ? QStringLiteral("hold") : QStringLiteral("resume"));
+    send(hold ? QStringLiteral("hold") : QStringLiteral("resume"));
 }
 
 void Engine::sendDtmf(const QString &digit)
 {
-    invoke(QStringLiteral("sndcode ") + digit);
+    send(QStringLiteral("sndcode ") + digit);
 }
 
 void Engine::queryCodec(int attempt)
@@ -321,26 +441,27 @@ void Engine::queryCodec(int attempt)
     if (m_callState != CallState::Established)
         return;
     // "callstat" prints the audio stream incl. the codec; pick the first known codec name.
-    static const QStringList known = {QStringLiteral("G722"), QStringLiteral("opus"), QStringLiteral("PCMA"),
-                                      QStringLiteral("PCMU"), QStringLiteral("L16"), QStringLiteral("G726"),
-                                      QStringLiteral("GSM"), QStringLiteral("G729"), QStringLiteral("AMR-WB"),
-                                      QStringLiteral("AMR")};
-    const QString out = invoke(QStringLiteral("callstat"));
-    int best = -1;
-    QString codec;
-    for (const QString &k : known) {
-        const int i = out.indexOf(k, 0, Qt::CaseInsensitive);
-        if (i >= 0 && (best < 0 || i < best)) {
-            best = i;
-            codec = k;
+    send(QStringLiteral("callstat"), [this, attempt](bool, const QString &out) {
+        static const QStringList known = {QStringLiteral("G722"), QStringLiteral("opus"), QStringLiteral("PCMA"),
+                                          QStringLiteral("PCMU"), QStringLiteral("L16"), QStringLiteral("G726"),
+                                          QStringLiteral("GSM"), QStringLiteral("G729"), QStringLiteral("AMR-WB"),
+                                          QStringLiteral("AMR")};
+        int best = -1;
+        QString codec;
+        for (const QString &k : known) {
+            const int i = out.indexOf(k, 0, Qt::CaseInsensitive);
+            if (i >= 0 && (best < 0 || i < best)) {
+                best = i;
+                codec = k;
+            }
         }
-    }
-    if (codec.isEmpty() && attempt < 5) {
-        QTimer::singleShot(1000, this, [this, attempt] { queryCodec(attempt + 1); });
-        return;
-    }
-    qCDebug(ENGINE) << "codec" << codec;
-    Q_EMIT codecChanged(codec);
+        if (codec.isEmpty() && attempt < 5) {
+            QTimer::singleShot(1000, this, [this, attempt] { queryCodec(attempt + 1); });
+            return;
+        }
+        qCDebug(ENGINE) << "codec" << codec;
+        Q_EMIT codecChanged(codec);
+    });
 }
 
 void Engine::setRegState(RegState s, const QString &info)
@@ -359,19 +480,17 @@ void Engine::setCallState(CallState s)
     Q_EMIT callStateChanged(s);
 }
 
-void Engine::onEvent(const QString &cls, const QString &type, const QString &param)
+void Engine::onEvent(const QJsonObject &ev)
 {
-    QJsonObject ev = QJsonDocument::fromJson(param.toUtf8()).object();
-    const QString t = ev.value(QStringLiteral("type")).toString(type);
-    const QString text = ev.value(QStringLiteral("param")).toString(ev.isEmpty() ? param : QString());
-    qCDebug(ENGINE) << "event" << cls << t << text;
+    const QString t = ev.value(QStringLiteral("type")).toString();
+    const QString text = ev.value(QStringLiteral("param")).toString();
+    qCDebug(ENGINE) << "event" << ev.value(QStringLiteral("class")).toString() << t << text;
 
     if (t == QLatin1String("MWI_NOTIFY")) {
         // body like "Messages-Waiting: yes\r\nVoice-Message: 2/5 (0/0)"
-        const QString body = text.isEmpty() ? param : text;
         bool waiting = false;
         int nNew = 0, nOld = 0;
-        for (const QString &raw : body.split(QRegularExpression(QStringLiteral("[\r\n]+")), Qt::SkipEmptyParts)) {
+        for (const QString &raw : text.split(QRegularExpression(QStringLiteral("[\r\n]+")), Qt::SkipEmptyParts)) {
             const QString l = raw.trimmed();
             if (l.startsWith(QLatin1String("Messages-Waiting"), Qt::CaseInsensitive))
                 waiting = l.section(QLatin1Char(':'), 1).trimmed().startsWith(QLatin1String("yes"), Qt::CaseInsensitive);

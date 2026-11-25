@@ -3,12 +3,12 @@
 
 #include "mainwindow.h"
 #include "ringer.h"
+#include "secrets.h"
 #include "settingsdialog.h"
 
 #include <KLocalizedString>
 #include <KNotification>
 #include <KStatusNotifierItem>
-#include <KWallet>
 
 #include <QApplication>
 #include <QLocale>
@@ -16,10 +16,6 @@
 #include <QTime>
 #include <QUrl>
 #include <QWindow>
-
-using KWallet::Wallet;
-
-static const QString kWalletFolder = QStringLiteral("KSipPhone");
 
 static QString userPart(const QString &uri)
 {
@@ -198,24 +194,14 @@ QString PhoneApp::peerText() const
 
 QString PhoneApp::readPassword(const QString &key)
 {
-    QString pw;
-    std::unique_ptr<Wallet> w(Wallet::openWallet(Wallet::NetworkWallet(), 0, Wallet::Synchronous));
-    if (w && w->hasFolder(kWalletFolder) && w->setFolder(kWalletFolder))
-        w->readPassword(key, pw);
-    return pw;
+    return Secrets::readPassword(key);
 }
 
 void PhoneApp::writePassword(const QString &key, const QString &password)
 {
-    std::unique_ptr<Wallet> w(Wallet::openWallet(Wallet::NetworkWallet(), 0, Wallet::Synchronous));
-    if (!w) {
-        KNotification::event(KNotification::Error, i18n("KSipPhone"), i18n("KWallet is not available; the password was not stored."));
-        return;
-    }
-    if (!w->hasFolder(kWalletFolder))
-        w->createFolder(kWalletFolder);
-    w->setFolder(kWalletFolder);
-    w->writePassword(key, password);
+    const QString err = Secrets::writePassword(key, password);
+    if (!err.isEmpty())
+        KNotification::event(KNotification::Error, i18n("KSipPhone"), i18n("The password could not be stored: %1", err));
 }
 
 void PhoneApp::applySettings()

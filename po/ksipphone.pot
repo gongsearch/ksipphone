@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-25 23:00+0100\n"
+"POT-Creation-Date: 2026-11-25 23:31+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,23 +18,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: src/main.cpp:18 src/mainwindow.cpp:28 src/phoneapp.cpp:46
-#: src/phoneapp.cpp:121 src/phoneapp.cpp:212 src/phoneapp.cpp:361
+#: src/main.cpp:43 src/mainwindow.cpp:28 src/phoneapp.cpp:42
+#: src/phoneapp.cpp:117 src/phoneapp.cpp:204 src/phoneapp.cpp:347
 #, kde-format
 msgid "KSipPhone"
 msgstr ""
 
-#: src/main.cpp:19
+#: src/main.cpp:44
 #, kde-format
 msgid "A small SIP phone for KDE Plasma"
 msgstr ""
 
-#: src/main.cpp:28
+#: src/main.cpp:53
 #, kde-format
 msgid "Start hidden in the system tray"
 msgstr ""
 
-#: src/main.cpp:29
+#: src/main.cpp:54
 #, kde-format
 msgid "tel: or sip: URI to call"
 msgstr ""
@@ -44,7 +44,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/mainwindow.cpp:45 src/mainwindow.cpp:272 src/phoneapp.cpp:58
+#: src/mainwindow.cpp:45 src/mainwindow.cpp:272 src/phoneapp.cpp:54
 #, kde-format
 msgid "Call voicemail"
 msgstr ""
@@ -74,17 +74,17 @@ msgstr ""
 msgid "Call"
 msgstr ""
 
-#: src/mainwindow.cpp:166 src/mainwindow.cpp:215 src/phoneapp.cpp:59
+#: src/mainwindow.cpp:166 src/mainwindow.cpp:215 src/phoneapp.cpp:55
 #, kde-format
 msgid "Hang up"
 msgstr ""
 
-#: src/mainwindow.cpp:177 src/phoneapp.cpp:115 src/phoneapp.cpp:355
+#: src/mainwindow.cpp:177 src/phoneapp.cpp:111 src/phoneapp.cpp:341
 #, kde-format
 msgid "Not registered"
 msgstr ""
 
-#: src/mainwindow.cpp:195 src/phoneapp.cpp:261
+#: src/mainwindow.cpp:195 src/phoneapp.cpp:247
 #, kde-format
 msgid "Incoming call"
 msgstr ""
@@ -104,12 +104,12 @@ msgstr ""
 msgid "Connected"
 msgstr ""
 
-#: src/mainwindow.cpp:213 src/phoneapp.cpp:265
+#: src/mainwindow.cpp:213 src/phoneapp.cpp:251
 #, kde-format
 msgid "Accept"
 msgstr ""
 
-#: src/mainwindow.cpp:215 src/phoneapp.cpp:267
+#: src/mainwindow.cpp:215 src/phoneapp.cpp:253
 #, kde-format
 msgid "Decline"
 msgstr ""
@@ -146,99 +146,99 @@ msgstr[1] ""
 msgid "Codec: %1"
 msgstr ""
 
-#: src/phoneapp.cpp:53 src/phoneapp.cpp:269 src/phoneapp.cpp:294
+#: src/phoneapp.cpp:49 src/phoneapp.cpp:255 src/phoneapp.cpp:280
 #, kde-format
 msgid "Show dialer"
 msgstr ""
 
-#: src/phoneapp.cpp:61
+#: src/phoneapp.cpp:57
 #, kde-format
 msgid "Settings…"
 msgstr ""
 
-#: src/phoneapp.cpp:63
+#: src/phoneapp.cpp:59
 #, kde-format
 msgid "Quit"
 msgstr ""
 
-#: src/phoneapp.cpp:94
+#: src/phoneapp.cpp:90
 #, kde-format
 msgid "New voice message"
 msgstr ""
 
-#: src/phoneapp.cpp:95
+#: src/phoneapp.cpp:91
 #, kde-format
 msgid "You have 1 new voice message."
 msgid_plural "You have %1 new voice messages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/phoneapp.cpp:98
+#: src/phoneapp.cpp:94
 #, kde-format
 msgid "Listen"
 msgstr ""
 
-#: src/phoneapp.cpp:112
+#: src/phoneapp.cpp:108
 #, kde-format
 msgid "Registered as %1"
 msgstr ""
 
-#: src/phoneapp.cpp:113
+#: src/phoneapp.cpp:109
 #, kde-format
 msgid "Registering %1 …"
 msgstr ""
 
-#: src/phoneapp.cpp:114
+#: src/phoneapp.cpp:110
 #, kde-format
 msgid "Registration failed: %1"
 msgstr ""
 
-#: src/phoneapp.cpp:196
+#: src/phoneapp.cpp:192
 #, kde-format
 msgid "unknown"
 msgstr ""
 
-#: src/phoneapp.cpp:212
+#: src/phoneapp.cpp:204
 #, kde-format
-msgid "KWallet is not available; the password was not stored."
+msgid "The password could not be stored: %1"
 msgstr ""
 
-#: src/phoneapp.cpp:240
+#: src/phoneapp.cpp:226
 #, kde-format
 msgid "No SIP account configured"
 msgstr ""
 
-#: src/phoneapp.cpp:284
+#: src/phoneapp.cpp:270
 #, kde-format
 msgid "Missed call"
 msgstr ""
 
-#: src/phoneapp.cpp:285
+#: src/phoneapp.cpp:271
 #, kde-format
 msgid "%1 at %2"
 msgstr ""
 
-#: src/phoneapp.cpp:291
+#: src/phoneapp.cpp:277
 #, kde-format
 msgid "Call back"
 msgstr ""
 
-#: src/phoneapp.cpp:352
+#: src/phoneapp.cpp:338
 #, kde-format
 msgid "Incoming call from %1"
 msgstr ""
 
-#: src/phoneapp.cpp:354
+#: src/phoneapp.cpp:340
 #, kde-format
 msgid "In call with %1"
 msgstr ""
 
-#: src/phoneapp.cpp:355
+#: src/phoneapp.cpp:341
 #, kde-format
 msgid "Registered"
 msgstr ""
 
-#: src/phoneapp.cpp:357
+#: src/phoneapp.cpp:343
 #, kde-format
 msgid "1 new voice message"
 msgid_plural "%1 new voice messages"

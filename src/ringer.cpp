@@ -4,36 +4,27 @@
 #include <QAudioDevice>
 #include <QAudioOutput>
 #include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QMediaDevices>
 #include <QMediaPlayer>
-#include <QProcess>
 #include <QUrl>
 
-QList<AudioNode> pipewireNodes(bool sources)
+QString audioDeviceKey(const QAudioDevice &device)
+{
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
+    return QString::fromUtf8(device.id());
+#else
+    return device.description();
+#endif
+}
+
+QList<AudioNode> audioDevices(bool inputs)
 {
     QList<AudioNode> list;
-    QProcess p;
-    p.start(QStringLiteral("pw-dump"), {});
-    if (!p.waitForFinished(5000))
-        return list;
-    const QJsonArray all = QJsonDocument::fromJson(p.readAllStandardOutput()).array();
-    const QString cls = sources ? QStringLiteral("Audio/Source") : QStringLiteral("Audio/Sink");
-    for (const QJsonValue &v : all) {
-        const QJsonObject o = v.toObject();
-        if (o.value(QStringLiteral("type")).toString() != QLatin1String("PipeWire:Interface:Node"))
+    const QList<QAudioDevice> devs = inputs ? QMediaDevices::audioInputs() : QMediaDevices::audioOutputs();
+    for (const QAudioDevice &d : devs) {
+        if (QString::fromUtf8(d.id()).endsWith(QLatin1String(".monitor")))
             continue;
-        const QJsonObject props = o.value(QStringLiteral("info")).toObject().value(QStringLiteral("props")).toObject();
-        const QString mc = props.value(QStringLiteral("media.class")).toString();
-        if (mc != cls && !(sources && mc == QLatin1String("Audio/Source/Virtual")))
-            continue;
-        AudioNode n;
-        n.name = props.value(QStringLiteral("node.name")).toString();
-        n.description = props.value(QStringLiteral("node.description")).toString(n.name);
-        if (!n.name.isEmpty())
-            list.append(n);
+        list.append({audioDeviceKey(d), d.description()});
     }
     std::sort(list.begin(), list.end(), [](const AudioNode &a, const AudioNode &b) {
         return a.description.localeAwareCompare(b.description) < 0;
@@ -87,7 +78,7 @@ void Ringer::play(const QString &file, const QString &deviceNode, bool loop)
     QAudioDevice dev = QMediaDevices::defaultAudioOutput();
     if (!deviceNode.isEmpty()) {
         for (const QAudioDevice &d : QMediaDevices::audioOutputs()) {
-            if (QString::fromUtf8(d.id()) == deviceNode) {
+            if (audioDeviceKey(d) == deviceNode) {
                 dev = d;
                 break;
             }

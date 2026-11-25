@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: MIT
-// Baresip engine: runs baresip as a child process and talks to it via its ctrl_dbus module.
+// Baresip engine: runs baresip as a child process and controls it through its ctrl_tcp module
+// (netstring-framed JSON on a loopback port). Works on Linux, Windows and macOS.
 #pragma once
 
+#include <QByteArray>
+#include <QHash>
 #include <QJsonObject>
 #include <QObject>
 #include <QProcess>
 #include <QString>
+#include <QStringList>
 
-class QDBusInterface;
+#include <functional>
+
+class QTcpSocket;
+class QTimer;
 
 struct Account {
     QString user;
@@ -36,7 +43,8 @@ public:
     void start();
     void stop();
     void setAccount(const Account &account); // (re)creates the user agent
-    // PipeWire node names ("" = default); restarts the engine if they change while idle
+    // Audio device keys as used by baresip's audio module ("" = default, see audioDeviceKey());
+    // restarts the engine if they change while idle.
     void setAudioDevices(const QString &player, const QString &source, bool echoCancel = false);
 
     void dial(const QString &target);
@@ -63,21 +71,28 @@ Q_SIGNALS:
     void engineError(const QString &message);
     void ready();
 
-private Q_SLOTS:
-    void onEvent(const QString &cls, const QString &type, const QString &param);
-
 private:
-    QString invoke(const QString &command);
+    using Reply = std::function<void(bool ok, const QString &data)>;
+    void send(const QString &commandLine, Reply reply = {});
+    void onReadyRead();
+    void handleMessage(const QJsonObject &msg);
+    void onEvent(const QJsonObject &ev);
     bool writeConfig(QString *dir);
-    void connectBus();
+    void tryConnect();
     void setRegState(RegState s, const QString &info = {});
     void setCallState(CallState s);
     void queryCodec(int attempt = 0);
     QString targetUri(const QString &target) const;
 
     QProcess m_proc;
-    QDBusInterface *m_iface = nullptr;
-    QString m_busName;
+    QTcpSocket *m_sock = nullptr;
+    QTimer *m_connectTimer = nullptr;
+    QByteArray m_buf;
+    QHash<QString, Reply> m_pending;
+    quint64 m_token = 0;
+    quint16 m_port = 0;
+    int m_connectTries = 0;
+    bool m_connected = false;
     Account m_account;
     bool m_uaCreated = false;
     RegState m_regState = RegState::Offline;

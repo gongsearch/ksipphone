@@ -16,7 +16,7 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed git gcc cmake ninja extra-cmake-modules gettext appstream \
             qt6-base qt6-multimedia kcoreaddons ki18n kconfig knotifications kstatusnotifieritem \
-            kdbusaddons kwallet kwidgetsaddons libldap baresip
+            kwallet kwidgetsaddons qtkeychain-qt6 libldap baresip
 
       - uses: actions/checkout@v4
 

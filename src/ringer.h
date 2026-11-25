@@ -10,12 +10,16 @@ class QMediaPlayer;
 class QAudioOutput;
 
 struct AudioNode {
-    QString name;        // PipeWire node.name (used by baresip and to pick the Qt output)
+    QString name;        // device key as understood by baresip's audio module (see audioDeviceKey)
     QString description; // human readable
 };
 
-// Lists PipeWire sinks or sources (monitors excluded) via pw-dump.
-QList<AudioNode> pipewireNodes(bool sources);
+class QAudioDevice;
+// Key that identifies a device for baresip: the PipeWire/PulseAudio node name on Linux,
+// the device name on Windows (winwave) and macOS (audiounit).
+QString audioDeviceKey(const QAudioDevice &device);
+// Audio inputs or outputs as reported by Qt Multimedia.
+QList<AudioNode> audioDevices(bool inputs);
 
 class Ringer : public QObject
 {

@@ -6,17 +6,24 @@ add_executable(ksipphone
     settingsdialog.cpp
     phoneapp.cpp
     ringer.cpp
+    secrets.cpp
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})
-target_compile_definitions(ksipphone PRIVATE LDAP_DEPRECATED=0 KSIPPHONE_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(ksipphone PRIVATE LDAP_DEPRECATED=0 KSIPPHONE_VERSION="${PROJECT_VERSION}"
+    KSIPPHONE_BARESIP_MODULE_PATH="${BARESIP_MODULE_PATH}" KSIPPHONE_BARESIP_SHARE_PATH="${BARESIP_SHARE_PATH}")
 
 target_link_libraries(ksipphone PRIVATE
-    Qt6::Widgets Qt6::DBus Qt6::Concurrent Qt6::Network Qt6::Multimedia
+    Qt6::Widgets Qt6::Concurrent Qt6::Network Qt6::Multimedia Qt6Keychain::Qt6Keychain
     KF6::CoreAddons KF6::I18n KF6::ConfigCore KF6::Notifications
-    KF6::StatusNotifierItem KF6::DBusAddons KF6::Wallet KF6::WidgetsAddons
+    KF6::StatusNotifierItem KF6::WidgetsAddons
     ${LDAP_LIBRARY} ${LBER_LIBRARY}
 )
+
+if (KF6Wallet_FOUND)
+    target_link_libraries(ksipphone PRIVATE KF6::Wallet)
+    target_compile_definitions(ksipphone PRIVATE HAVE_KWALLET)
+endif()
 
 install(TARGETS ksipphone ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES ksipphone.notifyrc DESTINATION ${KDE_INSTALL_KNOTIFYRCDIR})

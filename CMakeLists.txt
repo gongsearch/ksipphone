@@ -12,9 +12,17 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(FeatureSummary)
 
-find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Widgets DBus Concurrent Network Multimedia)
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Widgets Concurrent Network Multimedia)
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
-    CoreAddons I18n Config Notifications StatusNotifierItem DBusAddons Wallet WidgetsAddons)
+    CoreAddons I18n Config Notifications StatusNotifierItem WidgetsAddons)
+find_package(Qt6Keychain REQUIRED)
+
+# Optional: read passwords stored by KSipPhone 0.1 in KWallet once and move them to the keychain.
+find_package(KF6Wallet ${KF_MIN_VERSION} QUIET)
+set_package_properties(KF6Wallet PROPERTIES TYPE OPTIONAL PURPOSE "migrate passwords from KSipPhone 0.1")
+
+set(BARESIP_MODULE_PATH "/usr/lib/baresip/modules" CACHE PATH "Where baresip's modules are installed")
+set(BARESIP_SHARE_PATH "/usr/share/baresip" CACHE PATH "Where baresip's sound files are installed")
 
 find_library(LDAP_LIBRARY NAMES ldap REQUIRED)
 find_library(LBER_LIBRARY NAMES lber REQUIRED)

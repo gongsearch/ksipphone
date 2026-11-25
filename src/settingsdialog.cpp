@@ -123,9 +123,9 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
         }
         c->setCurrentIndex(qMax(0, i));
     };
-    const auto sinks = pipewireNodes(false);
+    const auto sinks = audioDevices(false);
     m_mic = new QComboBox(gen);
-    fill(m_mic, pipewireNodes(true), s.micDevice);
+    fill(m_mic, audioDevices(true), s.micDevice);
     m_speaker = new QComboBox(gen);
     fill(m_speaker, sinks, s.speakerDevice);
     m_ringDev = new QComboBox(gen);

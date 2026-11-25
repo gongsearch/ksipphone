@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Engine control via baresip's `ctrl_tcp` (loopback TCP) instead of D-Bus; no fixed bus name any more
+- Passwords in the system keychain via QtKeychain; passwords from 0.1 are taken over from KWallet
+- Audio devices listed through Qt Multimedia instead of `pw-dump`
+- Single instance via a local socket instead of D-Bus
+- baresip is stopped automatically if KSipPhone dies (Linux)
+- Groundwork for Windows / macOS (platform audio driver, configurable baresip paths)
+
 ## 0.1.0 – 2026-11-25
 
 First public release: an audio-only SIP softphone for KDE Plasma on top of baresip.

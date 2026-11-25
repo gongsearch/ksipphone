@@ -7,8 +7,9 @@ A small, audio-only SIP softphone for KDE Plasma.
 KSipPhone is a thin Qt 6 / KDE Frameworks 6 front end on top of the
 [baresip](https://github.com/baresip/baresip) SIP stack. Baresip does all the SIP and
 media work (registration, codecs, SRTP, PipeWire audio); KSipPhone runs it as a child
-process, controls it over D-Bus (`ctrl_dbus` module) and integrates it into the desktop:
-system tray, KDE notifications, KWallet, `tel:` links and an LDAP phonebook.
+process, controls it over a loopback TCP connection (`ctrl_tcp` module) and integrates it into
+the desktop: system tray, notifications, the system keychain, `tel:` links and an LDAP phonebook.
+It is written for KDE Plasma but has no hard Plasma or D-Bus dependency of its own.
 
 > Status: early (0.1). Developed and tested against Asterisk (PJSIP); not tested with many other
 > servers yet. Issues and pull requests are welcome.
@@ -30,27 +31,28 @@ system tray, KDE notifications, KWallet, `tel:` links and an LDAP phonebook.
 - **Keypad / DTMF** (RFC 4733, SIP INFO or automatic), mute, hold.
 - **`tel:`, `sip:`, `sips:`, `callto:` URL handler**, single instance (a click on a phone number
   dials in the running instance).
-- **Password in KWallet**, never written to disk by KSipPhone.
+- **Password in the system keychain** (QtKeychain: KWallet / Secret Service, Windows Credential
+  Manager, macOS Keychain), never written to disk by KSipPhone.
 - **IPv6**: optionally prefer the server's IPv6 address.
 
 Not (yet) supported: video, chat/presence, call transfer, multiple accounts, conference.
 
 ## Requirements
 
-- Qt ≥ 6.6: Core, Gui, Widgets, DBus, Concurrent, Network, Multimedia
+- Qt ≥ 6.6: Core, Gui, Widgets, Concurrent, Network, Multimedia
 - KDE Frameworks ≥ 6.0: CoreAddons, I18n, Config, Notifications, StatusNotifierItem,
-  DBusAddons, Wallet, WidgetsAddons; extra-cmake-modules
+  WidgetsAddons; extra-cmake-modules (optional: Wallet, to migrate passwords from 0.1)
+- [QtKeychain](https://github.com/frankosterfeld/qtkeychain) for Qt 6
 - OpenLDAP client library (`libldap`)
-- **baresip ≥ 4** with the modules `ctrl_dbus`, `menu`, `pipewire`, `g711`, `g722`, `opus`,
-  `auconv`, `auresamp`, `srtp`, `mwi` (optional: `webrtc_aec`), installed in
-  `/usr/lib/baresip/modules`
-- PipeWire (`pw-dump` is used to list audio devices)
+- **baresip ≥ 4** with the modules `ctrl_tcp`, `menu`, `g711`, `g722`, `opus`, `auconv`,
+  `auresamp`, `srtp`, `mwi` and the platform's audio driver (`pipewire` on Linux; `winwave` /
+  `audiounit` on Windows / macOS), optional `webrtc_aec`
 
 On Arch Linux:
 
 ```sh
-sudo pacman -S --needed baresip cmake extra-cmake-modules ninja qt6-base qt6-multimedia \
-    kstatusnotifieritem knotifications kwallet kdbusaddons kconfig ki18n kcoreaddons kwidgetsaddons libldap
+sudo pacman -S --needed baresip cmake extra-cmake-modules ninja qt6-base qt6-multimedia qtkeychain-qt6 \
+    kstatusnotifieritem knotifications kconfig ki18n kcoreaddons kwidgetsaddons libldap
 ```
 
 ## Build and install
@@ -74,7 +76,7 @@ Autostart (hidden in the tray): add `ksipphone --minimized` in *System Settings 
 ## Configuration
 
 Everything is set in the settings dialog (gear icon) and stored in `~/.config/ksipphonerc`;
-the SIP password goes to KWallet (folder *KSipPhone*).
+the SIP password goes to the system keychain (service *KSipPhone*).
 
 | Setting | Notes |
 |---|---|
@@ -83,15 +85,20 @@ the SIP password goes to KWallet (folder *KSipPhone*).
 | Codecs | preference order, e.g. `G722,PCMA,PCMU,opus` |
 | Voicemail | number to dial for the mailbox |
 | DTMF | must match the server (Asterisk `dtmf_mode`) |
-| Audio devices | PipeWire nodes, or system default |
+| Audio devices | as listed by Qt (PipeWire nodes on Linux), or system default |
 | Ring tone | sound file, once or continuously, on its own device |
 | LDAP | `ldap://host` and base DN; anonymous read of `cn`, `telephoneNumber`, `mobile`, `homePhone`, `jpegPhoto` |
 
 Baresip's configuration is generated on every start in `~/.local/share/ksipphone/baresip/`;
 the account (with password) only exists at runtime.
 
-Note: baresip's `ctrl_dbus` uses the fixed bus name `com.github.Baresip`, so only one
-baresip instance with D-Bus control can run per session.
+Where baresip lives is set at build time (`-DBARESIP_MODULE_PATH=…`, `-DBARESIP_SHARE_PATH=…`)
+or at run time with the environment variables `KSIPPHONE_BARESIP` (executable),
+`KSIPPHONE_BARESIP_MODULES` and `KSIPPHONE_BARESIP_SHARE`.
+
+Security note: baresip's `ctrl_tcp` has no authentication. KSipPhone binds it to a random port
+on `127.0.0.1` only, but on a multi-user machine other local users could reach that port while
+KSipPhone runs.
 
 ## Translations
 

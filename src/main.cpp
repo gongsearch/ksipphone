@@ -2,12 +2,37 @@
 #include "phoneapp.h"
 
 #include <KAboutData>
-#include <KDBusService>
 #include <KLocalizedString>
 
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QIcon>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QLocalServer>
+#include <QLocalSocket>
+
+// Single instance without D-Bus (works on all platforms): the first instance listens on a
+// per-user local socket; later starts hand their arguments (e.g. a tel: link) to it and exit.
+static QString instanceName()
+{
+    QString user = qEnvironmentVariable("USER");
+    if (user.isEmpty())
+        user = qEnvironmentVariable("USERNAME");
+    return QStringLiteral("ksipphone-") + user;
+}
+
+static bool forwardToRunningInstance(const QStringList &args)
+{
+    QLocalSocket sock;
+    sock.connectToServer(instanceName());
+    if (!sock.waitForConnected(500))
+        return false;
+    sock.write(QJsonDocument(QJsonArray::fromStringList(args)).toJson(QJsonDocument::Compact));
+    sock.waitForBytesWritten(1000);
+    sock.disconnectFromServer();
+    return true;
+}
 
 int main(int argc, char **argv)
 {
@@ -31,11 +56,28 @@ int main(int argc, char **argv)
     parser.process(app);
     about.processCommandLine(&parser);
 
-    KDBusService service(KDBusService::Unique);
+    if (forwardToRunningInstance(QCoreApplication::arguments()))
+        return 0;
+
+    QLocalServer server;
+    server.setSocketOptions(QLocalServer::UserAccessOption);
+    if (!server.listen(instanceName())) {
+        QLocalServer::removeServer(instanceName()); // stale socket after a crash
+        server.listen(instanceName());
+    }
 
     PhoneApp phone;
-    QObject::connect(&service, &KDBusService::activateRequested, &phone, [&phone](const QStringList &args, const QString &) {
-        phone.handleArguments(args, true);
+    QObject::connect(&server, &QLocalServer::newConnection, &phone, [&server, &phone] {
+        while (QLocalSocket *c = server.nextPendingConnection()) {
+            QObject::connect(c, &QLocalSocket::disconnected, c, &QObject::deleteLater);
+            QObject::connect(c, &QLocalSocket::readyRead, &phone, [c, &phone] {
+                const QJsonArray a = QJsonDocument::fromJson(c->readAll()).array();
+                QStringList args;
+                for (const auto &v : a)
+                    args << v.toString();
+                phone.handleArguments(args, true);
+            });
+        }
     });
     phone.start(parser.isSet(QStringLiteral("minimized")));
     phone.handleArguments(QCoreApplication::arguments(), false);
