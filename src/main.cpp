@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     if (QIcon::themeName().isEmpty() || QIcon::fromTheme(QStringLiteral("call-start")).isNull())
         QIcon::setThemeName(QStringLiteral("breeze"));
 #endif
-    QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("call-start")));
+    QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("io.github.gongsearch.KSipPhone"), QIcon::fromTheme(QStringLiteral("call-start"))));
 
     if (forwardToRunningInstance(QCoreApplication::arguments()))
         return 0;

@@ -39,8 +39,9 @@ jobs:
           # logrun <name> <command...>: run, keep a log; on failure publish the log tail as annotation
           name="$1"; shift
           log="/tmp/$name.log"
-          if "$@" > "$log" 2>&1; then tail -3 "$log"; exit 0; fi
+          "$@" > "$log" 2>&1
           rc=$?
+          if [ $rc -eq 0 ]; then tail -3 "$log"; exit 0; fi
           tail -80 "$log"
           msg=$(tail -60 "$log" | sed -e 's/%/%25/g' -e 's/\r//g' | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::error title=$name failed::$msg"
@@ -54,7 +55,9 @@ jobs:
           set -e
           D="$PWD/deps"
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/re.git
-          logrun re-configure cmake -S re -B re/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$D"
+          # re 4.6 + OpenSSL 4 (const X509_NAME getters): GCC >= 14 makes the pointer mismatch an error
+          logrun re-configure cmake -S re -B re/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$D" \
+            "-DCMAKE_C_FLAGS=-Wno-error=incompatible-pointer-types -Wno-deprecated-declarations"
           logrun re-build cmake --build re/build
           logrun re-install cmake --install re/build
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/baresip.git

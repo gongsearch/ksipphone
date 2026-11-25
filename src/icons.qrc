@@ -11,4 +11,5 @@
   <file alias="breeze/22/media-playback-pause.svg">icons/breeze/22/media-playback-pause.svg</file>
   <file alias="breeze/22/media-playback-start.svg">icons/breeze/22/media-playback-start.svg</file>
   <file alias="breeze/22/microphone-sensitivity-muted.svg">icons/breeze/22/microphone-sensitivity-muted.svg</file>
+  <file alias="breeze/22/io.github.gongsearch.KSipPhone.svg">icons/app/io.github.gongsearch.KSipPhone.svg</file>
 </qresource></RCC>
