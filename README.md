@@ -1,5 +1,7 @@
 # KSipPhone
 
+[![Build](https://github.com/gongsearch/ksipphone/actions/workflows/build.yml/badge.svg)](https://github.com/gongsearch/ksipphone/actions/workflows/build.yml)
+
 A small, audio-only SIP softphone for KDE Plasma.
 
 KSipPhone is a thin Qt 6 / KDE Frameworks 6 front end on top of the
@@ -90,6 +92,13 @@ the account (with password) only exists at runtime.
 
 Note: baresip's `ctrl_dbus` uses the fixed bus name `com.github.Baresip`, so only one
 baresip instance with D-Bus control can run per session.
+
+## Translations
+
+KSipPhone uses KDE's gettext-based i18n. Available: German (`po/de`).
+After changing user-visible strings run `scripts/update-translations.sh` to update
+`po/ksipphone.pot` and merge it into all languages. A new language is a copy of the
+template as `po/<lang>/ksipphone.po`; pull requests are welcome.
 
 ## License
 

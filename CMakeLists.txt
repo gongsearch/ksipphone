@@ -21,5 +21,6 @@ find_library(LBER_LIBRARY NAMES lber REQUIRED)
 find_path(LDAP_INCLUDE_DIR ldap.h REQUIRED)
 
 add_subdirectory(src)
+ki18n_install(po)
 
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)

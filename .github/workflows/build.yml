@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  arch:
+    name: Arch Linux (Qt 6 / KF 6)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed git gcc cmake ninja extra-cmake-modules gettext appstream \
+            qt6-base qt6-multimedia kcoreaddons ki18n kconfig knotifications kstatusnotifieritem \
+            kdbusaddons kwallet kwidgetsaddons libldap baresip
+
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: ninja -C build
+
+      - name: Install (staging)
+        run: DESTDIR="$PWD/stage" ninja -C build install
+
+      - name: Check translations
+        run: for po in po/*/ksipphone.po; do msgfmt --check --statistics -o /dev/null "$po"; done
+
+      - name: Validate AppStream metadata
+        run: appstreamcli validate --no-net --explain src/io.github.gongsearch.KSipPhone.metainfo.xml
+
+      - name: Smoke test
+        run: QT_QPA_PLATFORM=offscreen ./build/bin/ksipphone --version
