@@ -21,6 +21,9 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 include(FeatureSummary)
 
+# We use no deprecated KF API; hiding it also avoids KI18n 6.32 headers that older GCC (11) cannot parse.
+add_compile_definitions(KF_DISABLE_DEPRECATED_BEFORE_AND_AT=0x060800)
+
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Widgets Concurrent Network Multimedia)
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS I18n)
 if (KSIPPHONE_WITH_KDE)
