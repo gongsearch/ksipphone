@@ -37,7 +37,7 @@ public:
     void stop();
     void setAccount(const Account &account); // (re)creates the user agent
     // PipeWire node names ("" = default); restarts the engine if they change while idle
-    void setAudioDevices(const QString &player, const QString &source);
+    void setAudioDevices(const QString &player, const QString &source, bool echoCancel = false);
 
     void dial(const QString &target);
     void accept();
@@ -85,4 +85,5 @@ private:
     QString m_peer, m_peerName, m_lastError, m_closeReason;
     int m_retries = 0;
     QString m_player, m_source;
+    bool m_aec = false;
 };

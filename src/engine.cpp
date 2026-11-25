@@ -85,6 +85,8 @@ bool Engine::writeConfig(QString *dir)
         "ctrl_dbus_use\t\tsession\n"
         "ringback_disabled\tno\n";
     cfg.write(conf);
+    if (m_aec) // baresip's own echo canceller; off when PipeWire already cancels echo on the source
+        cfg.write("module\t\t\twebrtc_aec.so\n");
     cfg.close();
     // Sounds: baresip's own tones, except the ring tone: ring.wav is silence, KSipPhone rings itself
     // (configurable file, device, once/continuous - see Ringer).
@@ -156,12 +158,13 @@ void Engine::connectBus()
         setAccount(m_account);
 }
 
-void Engine::setAudioDevices(const QString &player, const QString &source)
+void Engine::setAudioDevices(const QString &player, const QString &source, bool echoCancel)
 {
-    if (player == m_player && source == m_source)
+    if (player == m_player && source == m_source && echoCancel == m_aec)
         return;
     m_player = player;
     m_source = source;
+    m_aec = echoCancel;
     if (m_proc.state() != QProcess::NotRunning && m_callState == CallState::Idle) {
         stop();
         QTimer::singleShot(500, this, &Engine::start);

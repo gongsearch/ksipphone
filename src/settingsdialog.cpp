@@ -33,6 +33,7 @@ Settings Settings::load()
     s.preferIpv6 = a.readEntry("PreferIPv6", false);
     const KConfigGroup au(cfg, QStringLiteral("Audio"));
     s.ringLoop = au.readEntry("RingContinuously", false);
+    s.echoCancel = au.readEntry("EchoCancellation", false);
     s.micDevice = au.readEntry("Microphone", QString());
     s.speakerDevice = au.readEntry("Speaker", QString());
     s.ringDevice = au.readEntry("RingDevice", QString());
@@ -56,6 +57,7 @@ void Settings::save() const
     a.writeEntry("PreferIPv6", preferIpv6);
     KConfigGroup au(cfg, QStringLiteral("Audio"));
     au.writeEntry("RingContinuously", ringLoop);
+    au.writeEntry("EchoCancellation", echoCancel);
     au.writeEntry("Microphone", micDevice);
     au.writeEntry("Speaker", speakerDevice);
     au.writeEntry("RingDevice", ringDevice);
@@ -153,6 +155,11 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_ring->setCurrentIndex(s.ringLoop ? 1 : 0);
     gf->addRow(i18n("Microphone:"), m_mic);
     gf->addRow(i18n("Speaker / headset:"), m_speaker);
+    m_aec = new QCheckBox(i18n("Echo cancellation in KSipPhone (WebRTC)"), gen);
+    m_aec->setChecked(s.echoCancel);
+    m_aec->setToolTip(i18n("Leave off if the microphone already comes through PipeWire's echo cancellation "
+                           "(module-echo-cancel / an \"Echo Cancellation Source\"), otherwise the echo is cancelled twice."));
+    gf->addRow(QString(), m_aec);
     gf->addRow(i18n("Ring on:"), m_ringDev);
     gf->addRow(i18n("Ring tone:"), fileRow);
     gf->addRow(i18n("Ring:"), m_ring);
@@ -183,6 +190,7 @@ Settings SettingsDialog::settings() const
     s.transport = m_transport->currentText();
     s.preferIpv6 = m_ipv6->isChecked();
     s.ringLoop = m_ring->currentIndex() == 1;
+    s.echoCancel = m_aec->isChecked();
     s.micDevice = m_mic->currentData().toString();
     s.speakerDevice = m_speaker->currentData().toString();
     s.ringDevice = m_ringDev->currentData().toString();
