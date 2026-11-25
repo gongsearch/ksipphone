@@ -11,7 +11,9 @@
 #include <KWallet>
 
 #include <QApplication>
+#include <QLocale>
 #include <QMenu>
+#include <QTime>
 #include <QUrl>
 #include <QWindow>
 
@@ -133,10 +135,12 @@ PhoneApp::PhoneApp(QObject *parent)
         if (s != Engine::CallState::Incoming)
             closeRingNotification();
         if (s == Engine::CallState::Idle) {
-            if (m_prevState == Engine::CallState::Incoming && !m_wasEstablished) {
+            const QString reason = m_engine->closeReason();
+            const bool elsewhere = reason.contains(QLatin1String("elsewhere"), Qt::CaseInsensitive)
+                || reason.contains(QLatin1String("cause=200"));
+            if (m_prevState == Engine::CallState::Incoming && !m_wasEstablished && !elsewhere) {
                 ++m_missed;
-                KNotification::event(QStringLiteral("missedCall"), i18n("Missed call"), peerText(),
-                                     QStringLiteral("call-missed"), KNotification::Persistent);
+                notifyMissed();
             }
             m_wasEstablished = false;
             m_window->setPeerPhoto({});
@@ -245,6 +249,45 @@ void PhoneApp::notifyIncoming()
     });
     m_ring->sendEvent();
     m_ringer->start();
+}
+
+void PhoneApp::notifyMissed()
+{
+    // Times out normally; Plasma then keeps it in the notification history, where "Call back"
+    // keeps working while KSipPhone runs.
+    auto *n = new KNotification(QStringLiteral("missedCall"), KNotification::CloseOnTimeout);
+    n->setTitle(i18n("Missed call"));
+    n->setText(i18n("%1 at %2", peerText(), QLocale().toString(QTime::currentTime(), QLocale::ShortFormat)));
+    n->setIconName(QStringLiteral("call-missed"));
+    if (!m_peerPhoto.isNull())
+        n->setPixmap(m_peerPhoto);
+    const QString number = m_peerNumber;
+    if (!number.isEmpty() && number != QLatin1String("anonymous")) {
+        auto *cb = n->addAction(i18n("Call back"));
+        connect(cb, &KNotificationAction::activated, this, [this, number] { callBack(number); });
+    }
+    auto *def = n->addDefaultAction(i18n("Show dialer"));
+    connect(def, &KNotificationAction::activated, this, [this, number] {
+        m_missed = 0;
+        updateTray();
+        m_window->setNumber(number);
+        m_window->show();
+        m_window->raise();
+        m_window->activateWindow();
+    });
+    n->sendEvent();
+}
+
+void PhoneApp::callBack(const QString &number)
+{
+    m_missed = qMax(0, m_missed - 1);
+    updateTray();
+    m_window->setNumber(number);
+    m_window->show();
+    m_window->raise();
+    m_window->activateWindow();
+    if (m_engine->callState() == Engine::CallState::Idle)
+        m_engine->dial(number);
 }
 
 void PhoneApp::closeRingNotification()

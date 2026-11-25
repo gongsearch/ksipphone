@@ -12,3 +12,5 @@ Action=Popup
 Name=Missed call
 Comment=A call was not answered
 Action=Popup
+Urgency=Normal
+ShowInHistory=true

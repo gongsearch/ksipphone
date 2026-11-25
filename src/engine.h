@@ -50,6 +50,7 @@ public:
     QString peer() const { return m_peer; }
     QString peerName() const { return m_peerName; }
     QString lastError() const { return m_lastError; }
+    QString closeReason() const { return m_closeReason; } // of the last CALL_CLOSED
 
 Q_SIGNALS:
     void regStateChanged(Engine::RegState state, const QString &info);
@@ -79,7 +80,7 @@ private:
     bool m_uaCreated = false;
     RegState m_regState = RegState::Offline;
     CallState m_callState = CallState::Idle;
-    QString m_peer, m_peerName, m_lastError;
+    QString m_peer, m_peerName, m_lastError, m_closeReason;
     int m_retries = 0;
     QString m_player, m_source;
 };

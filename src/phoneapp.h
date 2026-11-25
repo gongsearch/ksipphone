@@ -33,6 +33,8 @@ private:
     void updateTray();
     void notifyIncoming();
     void closeRingNotification();
+    void notifyMissed();
+    void callBack(const QString &number);
     void quit();
 
     Engine *m_engine;

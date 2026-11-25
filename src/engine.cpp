@@ -382,6 +382,7 @@ void Engine::onEvent(const QString &cls, const QString &type, const QString &par
         setCallState(CallState::Established);
         QTimer::singleShot(300, this, [this] { queryCodec(); });
     } else if (t == QLatin1String("CALL_CLOSED")) {
+        m_closeReason = text;
         setCallState(CallState::Idle);
         Q_EMIT codecChanged(QString());
         Q_EMIT callEnded(text);
