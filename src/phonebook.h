@@ -14,6 +14,7 @@ struct PhonebookEntry {
     QString name;
     QString number;
     QString kind; // "telephoneNumber", "mobile", "homePhone"
+    QByteArray photo; // jpegPhoto, only filled by lookupNumber()
 };
 
 struct PhonebookResult {
@@ -38,10 +39,10 @@ public:
 
 Q_SIGNALS:
     void searchFinished(int requestId, const QList<PhonebookEntry> &entries);
-    void lookupFinished(int requestId, const QString &name);
+    void lookupFinished(int requestId, const QString &name, const QByteArray &photo);
     void errorOccurred(const QString &message); // empty message = OK again
 
 private:
-    static PhonebookResult query(const QString &uri, const QString &base, const QString &filter, int limit);
+    static PhonebookResult query(const QString &uri, const QString &base, const QString &filter, int limit, bool withPhoto);
     QString m_uri, m_base;
 };

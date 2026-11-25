@@ -27,6 +27,7 @@ public:
     void setSearchResults(int requestId, const QList<PhonebookEntry> &entries);
     void setPhonebookError(const QString &message);
     void setCodec(const QString &codec);
+    void setPeerPhoto(const QPixmap &photo); // null pixmap hides it
 
 Q_SIGNALS:
     void dialRequested(const QString &target);
@@ -46,7 +47,7 @@ private:
     void keypad(const QString &digit);
     void callClicked();
 
-    QLabel *m_reg, *m_status, *m_pbError, *m_codec;
+    QLabel *m_reg, *m_status, *m_pbError, *m_codec, *m_photo;
     QLineEdit *m_number;
     QPushButton *m_call, *m_hangup;
     QToolButton *m_mute, *m_hold;

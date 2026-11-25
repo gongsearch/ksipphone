@@ -6,6 +6,7 @@
 #include "phonebook.h"
 
 #include <QObject>
+#include <QPixmap>
 #include <QPointer>
 
 class KNotification;
@@ -41,6 +42,7 @@ private:
     Ringer *m_ringer;
     QPointer<KNotification> m_ring;
     QString m_peerNumber, m_peerName;
+    QPixmap m_peerPhoto;
     Engine::CallState m_prevState = Engine::CallState::Idle;
     bool m_wasEstablished = false;
     int m_lookupId = 0;

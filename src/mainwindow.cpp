@@ -12,6 +12,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPixmap>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -71,6 +72,11 @@ MainWindow::MainWindow(QWidget *parent)
     m_pbError->setStyleSheet(QStringLiteral("color:#c0392b"));
     m_pbError->hide();
     lay->addWidget(m_pbError);
+
+    m_photo = new QLabel(this);
+    m_photo->setAlignment(Qt::AlignCenter);
+    m_photo->hide();
+    lay->addWidget(m_photo);
 
     auto *statusRow = new QHBoxLayout;
     m_status = new QLabel(this);
@@ -181,6 +187,17 @@ void MainWindow::setPhonebookError(const QString &message)
 {
     m_pbError->setText(message.isEmpty() ? QString() : i18n("Phonebook: %1", message));
     m_pbError->setVisible(!message.isEmpty());
+}
+
+void MainWindow::setPeerPhoto(const QPixmap &photo)
+{
+    if (photo.isNull()) {
+        m_photo->clear();
+        m_photo->hide();
+        return;
+    }
+    m_photo->setPixmap(photo.scaled(96 * devicePixelRatioF(), 96 * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_photo->show();
 }
 
 void MainWindow::setCodec(const QString &codec)

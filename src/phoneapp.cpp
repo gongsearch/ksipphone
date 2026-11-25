@@ -98,12 +98,21 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_engine, &Engine::incomingCall, this, [this](const QString &uri, const QString &name) {
         m_peerNumber = userPart(uri);
         m_peerName = name;
+        m_peerPhoto = QPixmap();
+        m_window->setPeerPhoto({});
         const int id = ++m_lookupId;
         m_phonebook->lookupNumber(m_peerNumber, id);
         notifyIncoming();
     });
-    connect(m_phonebook, &Phonebook::lookupFinished, this, [this](int id, const QString &name) {
-        if (id != m_lookupId || name.isEmpty())
+    connect(m_phonebook, &Phonebook::lookupFinished, this, [this](int id, const QString &name, const QByteArray &photo) {
+        if (id != m_lookupId)
+            return;
+        if (!photo.isEmpty() && m_peerPhoto.loadFromData(photo)) {
+            m_window->setPeerPhoto(m_peerPhoto);
+            if (m_ring)
+                m_ring->setPixmap(m_peerPhoto);
+        }
+        if (name.isEmpty())
             return;
         m_peerName = name;
         m_window->setCall(m_engine->callState(), peerText());
@@ -114,6 +123,8 @@ PhoneApp::PhoneApp(QObject *parent)
         if (s == Engine::CallState::Outgoing) {
             m_peerNumber = userPart(m_engine->peer());
             m_peerName.clear();
+            m_peerPhoto = QPixmap();
+            m_window->setPeerPhoto({});
             const int id = ++m_lookupId;
             m_phonebook->lookupNumber(m_peerNumber, id);
         }
@@ -128,6 +139,7 @@ PhoneApp::PhoneApp(QObject *parent)
                                      QStringLiteral("call-missed"), KNotification::Persistent);
             }
             m_wasEstablished = false;
+            m_window->setPeerPhoto({});
         }
         m_prevState = s;
         m_window->setCall(s, peerText());

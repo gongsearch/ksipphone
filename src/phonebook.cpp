@@ -11,6 +11,7 @@
 Q_LOGGING_CATEGORY(PHONEBOOK, "ksipphone.phonebook")
 
 static const char *const kAttrs[] = {"cn", "telephoneNumber", "mobile", "homePhone", nullptr};
+static const char *const kAttrsPhoto[] = {"cn", "telephoneNumber", "mobile", "homePhone", "jpegPhoto", nullptr};
 
 static QString escapeFilter(const QString &in)
 {
@@ -53,7 +54,7 @@ QString Phonebook::normalize(const QString &number)
     return n;
 }
 
-PhonebookResult Phonebook::query(const QString &uri, const QString &base, const QString &filter, int limit)
+PhonebookResult Phonebook::query(const QString &uri, const QString &base, const QString &filter, int limit, bool withPhoto)
 {
     PhonebookResult result;
     LDAP *ld = nullptr;
@@ -77,7 +78,7 @@ PhonebookResult Phonebook::query(const QString &uri, const QString &base, const 
     }
     LDAPMessage *res = nullptr;
     rc = ldap_search_ext_s(ld, base.toUtf8().constData(), LDAP_SCOPE_SUBTREE, filter.toUtf8().constData(),
-                           const_cast<char **>(kAttrs), 0, nullptr, nullptr, &tv, limit, &res);
+                           const_cast<char **>(withPhoto ? kAttrsPhoto : kAttrs), 0, nullptr, nullptr, &tv, limit, &res);
     if (rc != LDAP_SUCCESS && rc != LDAP_SIZELIMIT_EXCEEDED) {
         qCWarning(PHONEBOOK) << "search failed" << ldap_err2string(rc);
         result.error = QString::fromUtf8(ldap_err2string(rc));
@@ -89,12 +90,20 @@ PhonebookResult Phonebook::query(const QString &uri, const QString &base, const 
                 name = QString::fromUtf8(v[0]->bv_val, int(v[0]->bv_len));
             ldap_value_free_len(v);
         }
+        QByteArray photo;
+        if (withPhoto) {
+            if (berval **v = ldap_get_values_len(ld, e, "jpegPhoto")) {
+                if (v[0])
+                    photo = QByteArray(v[0]->bv_val, int(v[0]->bv_len));
+                ldap_value_free_len(v);
+            }
+        }
         for (const char *attr : {"telephoneNumber", "mobile", "homePhone"}) {
             berval **v = ldap_get_values_len(ld, e, attr);
             if (!v)
                 continue;
             for (int i = 0; v[i]; ++i)
-                result.entries.append({name, QString::fromUtf8(v[i]->bv_val, int(v[i]->bv_len)), QString::fromLatin1(attr)});
+                result.entries.append({name, QString::fromUtf8(v[i]->bv_val, int(v[i]->bv_len)), QString::fromLatin1(attr), photo});
             ldap_value_free_len(v);
         }
     }
@@ -134,14 +143,14 @@ void Phonebook::search(const QString &text, int requestId)
         }
         w->deleteLater();
     });
-    w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 25));
+    w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 25, false));
 }
 
 void Phonebook::lookupNumber(const QString &number, int requestId)
 {
     const QString n = normalize(number);
     if (!isConfigured() || n.size() < 3) {
-        Q_EMIT lookupFinished(requestId, {});
+        Q_EMIT lookupFinished(requestId, {}, {});
         return;
     }
     const QString e = escapeFilter(n);
@@ -152,9 +161,10 @@ void Phonebook::lookupNumber(const QString &number, int requestId)
         const PhonebookResult r = w->result();
         if (self) {
             Q_EMIT self->errorOccurred(r.error);
-            Q_EMIT self->lookupFinished(requestId, r.entries.isEmpty() ? QString() : r.entries.first().name);
+            Q_EMIT self->lookupFinished(requestId, r.entries.isEmpty() ? QString() : r.entries.first().name,
+                                        r.entries.isEmpty() ? QByteArray() : r.entries.first().photo);
         }
         w->deleteLater();
     });
-    w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 1));
+    w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 1, true));
 }
