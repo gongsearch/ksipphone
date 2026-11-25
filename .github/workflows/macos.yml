@@ -47,7 +47,7 @@ jobs:
         run: |
           set -e
           P="$PWD/deps"
-          export CMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix gettext);$P"
+          export CMAKE_PREFIX_PATH="$(brew --prefix qt):$(brew --prefix gettext):$P"   # env var: ":" separated
           for fw in extra-cmake-modules ki18n; do
             git clone -q --depth 1 -b "$KF_VERSION" "https://invent.kde.org/frameworks/$fw.git"
             logrun "$fw-configure" cmake -S "$fw" -B "$fw/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -60,7 +60,7 @@ jobs:
         run: |
           set -e
           P="$PWD/deps"
-          export CMAKE_PREFIX_PATH="$(brew --prefix qt);$(brew --prefix qtkeychain);$(brew --prefix gettext);$(brew --prefix openssl@3);$(brew --prefix opus);$(brew --prefix spandsp);$P"
+          export CMAKE_PREFIX_PATH="$(brew --prefix qt):$(brew --prefix qtkeychain):$(brew --prefix gettext):$(brew --prefix openssl@3):$(brew --prefix opus):$(brew --prefix spandsp):$P"
           export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix opus)/lib/pkgconfig:$(brew --prefix spandsp)/lib/pkgconfig"
           OL="$(brew --prefix openldap)"
           logrun ksipphone-configure cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
