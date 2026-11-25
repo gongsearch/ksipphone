@@ -6,6 +6,7 @@
 #include <QAbstractItemView>
 #include <QCloseEvent>
 #include <QCompleter>
+#include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -27,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(i18n("KSipPhone"));
     setWindowIcon(QIcon::fromTheme(QStringLiteral("call-start")));
     auto *lay = new QVBoxLayout(this);
+    lay->setContentsMargins(16, 12, 16, 16);
+    lay->setSpacing(12);
 
     auto *top = new QHBoxLayout;
     m_reg = new QLabel(this);
@@ -73,49 +76,89 @@ MainWindow::MainWindow(QWidget *parent)
     m_pbError->hide();
     lay->addWidget(m_pbError);
 
-    m_photo = new QLabel(this);
+    // peer area (only visible during a call): photo, name, state + duration + codec
+    m_peerBox = new QWidget(this);
+    auto *pb = new QVBoxLayout(m_peerBox);
+    pb->setContentsMargins(0, 8, 0, 8);
+    pb->setSpacing(6);
+    m_photo = new QLabel(m_peerBox);
     m_photo->setAlignment(Qt::AlignCenter);
     m_photo->hide();
-    lay->addWidget(m_photo);
-
+    pb->addWidget(m_photo);
+    m_peerName = new QLabel(m_peerBox);
+    m_peerName->setAlignment(Qt::AlignCenter);
+    m_peerName->setWordWrap(true);
+    m_peerName->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    QFont pf = m_peerName->font();
+    pf.setPointSizeF(pf.pointSizeF() * 1.35);
+    pf.setBold(true);
+    m_peerName->setFont(pf);
+    pb->addWidget(m_peerName);
     auto *statusRow = new QHBoxLayout;
-    m_status = new QLabel(this);
-    m_status->setAlignment(Qt::AlignCenter);
-    m_status->setWordWrap(true);
-    m_codec = new QLabel(this);
+    statusRow->setSpacing(10);
+    m_status = new QLabel(m_peerBox);
+    m_status->setForegroundRole(QPalette::PlaceholderText);
+    m_duration = new QLabel(m_peerBox);
+    m_duration->setForegroundRole(QPalette::PlaceholderText);
+    m_duration->hide();
+    m_codec = new QLabel(m_peerBox);
     m_codec->hide();
     statusRow->addStretch();
     statusRow->addWidget(m_status);
+    statusRow->addWidget(m_duration);
     statusRow->addWidget(m_codec);
     statusRow->addStretch();
-    lay->addLayout(statusRow);
+    pb->addLayout(statusRow);
+    m_peerBox->hide();
+    lay->addWidget(m_peerBox);
+
+    m_callTimer = new QTimer(this);
+    m_callTimer->setInterval(1000);
+    connect(m_callTimer, &QTimer::timeout, this, [this] {
+        const qint64 s = (QDateTime::currentMSecsSinceEpoch() - m_callStartMs) / 1000;
+        m_duration->setText(s >= 3600 ? QStringLiteral("%1:%2:%3").arg(s / 3600).arg((s / 60) % 60, 2, 10, QLatin1Char('0')).arg(s % 60, 2, 10, QLatin1Char('0'))
+                                      : QStringLiteral("%1:%2").arg(s / 60, 2, 10, QLatin1Char('0')).arg(s % 60, 2, 10, QLatin1Char('0')));
+    });
 
     auto *grid = new QGridLayout;
+    grid->setSpacing(8);
+    QFont kf = font();
+    kf.setPointSizeF(kf.pointSizeF() * 1.25);
     const QStringList keys = {QStringLiteral("1"), QStringLiteral("2"), QStringLiteral("3"), QStringLiteral("4"),
                               QStringLiteral("5"), QStringLiteral("6"), QStringLiteral("7"), QStringLiteral("8"),
                               QStringLiteral("9"), QStringLiteral("*"), QStringLiteral("0"), QStringLiteral("#")};
     for (int i = 0; i < keys.size(); ++i) {
         auto *b = new QPushButton(keys[i], this);
         b->setFocusPolicy(Qt::NoFocus);
-        b->setMinimumHeight(36);
+        b->setMinimumHeight(44);
+        b->setFont(kf);
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
         grid->addWidget(b, i / 3, i % 3);
     }
     lay->addLayout(grid);
 
     auto *row = new QHBoxLayout;
+    row->setSpacing(8);
     m_mute = new QToolButton(this);
+    m_mute->setText(i18n("Mute"));
+    m_mute->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_mute->setMinimumHeight(38);
     m_mute->setIcon(QIcon::fromTheme(QStringLiteral("microphone-sensitivity-muted")));
     m_mute->setToolTip(i18n("Mute microphone"));
     m_mute->setCheckable(true);
     connect(m_mute, &QToolButton::toggled, this, &MainWindow::muteToggled);
     m_hold = new QToolButton(this);
+    m_hold->setText(i18n("Hold"));
+    m_hold->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_hold->setMinimumHeight(38);
     m_hold->setIcon(QIcon::fromTheme(QStringLiteral("media-playback-pause")));
     m_hold->setToolTip(i18n("Hold"));
     m_hold->setCheckable(true);
     connect(m_hold, &QToolButton::toggled, this, &MainWindow::holdToggled);
     m_call = new QPushButton(QIcon::fromTheme(QStringLiteral("call-start")), i18n("Call"), this);
     m_hangup = new QPushButton(QIcon::fromTheme(QStringLiteral("call-stop")), i18n("Hang up"), this);
+    m_call->setMinimumHeight(38);
+    m_hangup->setMinimumHeight(38);
     connect(m_call, &QPushButton::clicked, this, &MainWindow::callClicked);
     connect(m_hangup, &QPushButton::clicked, this, &MainWindow::hangupRequested);
     row->addWidget(m_mute);
@@ -126,7 +169,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     setRegistration(i18n("Not registered"), false);
     setCall(Engine::CallState::Idle, {});
-    resize(320, sizeHint().height());
+    setMinimumWidth(360);
+    resize(380, sizeHint().height());
 }
 
 void MainWindow::setRegistration(const QString &text, bool ok)
@@ -141,11 +185,23 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
     const bool inCall = state == Engine::CallState::Established;
     switch (state) {
     case Engine::CallState::Idle: m_status->clear(); break;
-    case Engine::CallState::Incoming: m_status->setText(i18n("Incoming call from %1", peerText)); break;
-    case Engine::CallState::Outgoing: m_status->setText(i18n("Calling %1 …", peerText)); break;
-    case Engine::CallState::Ringing: m_status->setText(i18n("%1 is ringing …", peerText)); break;
-    case Engine::CallState::Established: m_status->setText(i18n("In call with %1", peerText)); break;
+    case Engine::CallState::Incoming: m_status->setText(i18n("Incoming call")); break;
+    case Engine::CallState::Outgoing: m_status->setText(i18n("Calling …")); break;
+    case Engine::CallState::Ringing: m_status->setText(i18n("Ringing …")); break;
+    case Engine::CallState::Established: m_status->setText(i18n("Connected")); break;
     }
+    m_peerName->setText(peerText);
+    m_peerBox->setVisible(!idle);
+    if (inCall && !m_callTimer->isActive()) {
+        m_callStartMs = QDateTime::currentMSecsSinceEpoch();
+        m_duration->setText(QStringLiteral("00:00"));
+        m_duration->show();
+        m_callTimer->start();
+    } else if (!inCall) {
+        m_callTimer->stop();
+        m_duration->hide();
+    }
+    adjustSize();
     m_call->setEnabled(idle || state == Engine::CallState::Incoming);
     m_call->setText(state == Engine::CallState::Incoming ? i18n("Accept") : i18n("Call"));
     m_hangup->setEnabled(!idle);

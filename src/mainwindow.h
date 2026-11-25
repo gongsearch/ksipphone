@@ -47,7 +47,10 @@ private:
     void keypad(const QString &digit);
     void callClicked();
 
-    QLabel *m_reg, *m_status, *m_pbError, *m_codec, *m_photo;
+    QLabel *m_reg, *m_status, *m_pbError, *m_codec, *m_photo, *m_peerName, *m_duration;
+    QWidget *m_peerBox;
+    QTimer *m_callTimer;
+    qint64 m_callStartMs = 0;
     QLineEdit *m_number;
     QPushButton *m_call, *m_hangup;
     QToolButton *m_mute, *m_hold;
