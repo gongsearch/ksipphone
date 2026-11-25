@@ -33,6 +33,7 @@ jobs:
 
       - name: Error reporting helper
         run: |
+          mkdir -p /usr/local/bin
           cat > /usr/local/bin/logrun <<'SH'
           #!/bin/bash
           # logrun <name> <command...>: run, keep a log; on failure publish the log tail as annotation
