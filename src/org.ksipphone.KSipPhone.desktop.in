@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=KSipPhone
+GenericName=SIP Phone
+Comment=A small SIP phone for KDE Plasma
+Exec=@KDE_INSTALL_FULL_BINDIR@/ksipphone %u
+Icon=call-start
+Categories=Network;Telephony;Qt;KDE;
+MimeType=x-scheme-handler/tel;x-scheme-handler/sip;x-scheme-handler/sips;x-scheme-handler/callto;
+Keywords=phone;sip;voip;call;
+StartupNotify=false
+X-DBUS-StartupType=Unique
+X-PulseAudio-Properties=media.role=phone

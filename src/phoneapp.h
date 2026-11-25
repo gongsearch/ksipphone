@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Ties engine, phonebook, dialer window, tray icon and notifications together.
+#pragma once
+
+#include "engine.h"
+#include "phonebook.h"
+
+#include <QObject>
+#include <QPointer>
+
+class KNotification;
+class KStatusNotifierItem;
+class MainWindow;
+
+class PhoneApp : public QObject
+{
+    Q_OBJECT
+public:
+    explicit PhoneApp(QObject *parent = nullptr);
+    ~PhoneApp() override;
+
+    void start(bool minimized);
+    void handleArguments(const QStringList &args, bool fromRemote);
+
+private:
+    void applySettings();
+    void openSettings();
+    QString readPassword(const QString &key);
+    void writePassword(const QString &key, const QString &password);
+    QString peerText() const;
+    void updateTray();
+    void notifyIncoming();
+    void closeRingNotification();
+    void quit();
+
+    Engine *m_engine;
+    Phonebook *m_phonebook;
+    MainWindow *m_window;
+    KStatusNotifierItem *m_tray;
+    QPointer<KNotification> m_ring;
+    QString m_peerNumber, m_peerName;
+    Engine::CallState m_prevState = Engine::CallState::Idle;
+    bool m_wasEstablished = false;
+    int m_lookupId = 0;
+    int m_missed = 0;
+};
