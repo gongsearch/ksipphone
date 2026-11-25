@@ -1,0 +1,147 @@
+name: Linux packages
+
+on:
+  push:
+    branches: [main, 'windows-*']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deb:
+    name: .deb (Debian testing, bundled baresip)
+    runs-on: ubuntu-latest
+    container: debian:testing
+    steps:
+      - name: Dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends build-essential cmake ninja-build pkg-config file dpkg-dev \
+            ca-certificates git extra-cmake-modules qt6-base-dev qt6-multimedia-dev qtkeychain-qt6-dev \
+            libkf6i18n-dev libkf6coreaddons-dev libkf6notifications-dev libkf6statusnotifieritem-dev libldap-dev \
+            gettext libssl-dev zlib1g-dev libopus-dev libspandsp-dev libpipewire-0.3-dev
+          apt-get install -y -qq --no-install-recommends libwebrtc-audio-processing-dev || true
+      - uses: actions/checkout@v5
+      - name: Build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+            -DKSIPPHONE_BUNDLE_BARESIP=ON -DCMAKE_DISABLE_FIND_PACKAGE_KF6Wallet=ON
+          cmake --build build
+      - name: Package
+        run: |
+          cd build && cpack -G DEB
+          dpkg-deb -I ksipphone_*.deb
+      - name: Install test (clean dependency resolution)
+        run: |
+          apt-get install -y -qq ./build/ksipphone_*.deb
+          ! ldd /usr/bin/ksipphone | grep "not found"
+          /usr/lib/*/ksipphone/baresip -h 2>&1 | head -1
+      - uses: actions/upload-artifact@v5
+        with:
+          name: KSipPhone-deb
+          path: build/ksipphone_*.deb
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apt-get install -y -qq gh
+          git config --global --add safe.directory "$PWD"
+          for i in $(seq 10); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
+          gh release upload "$GITHUB_REF_NAME" build/ksipphone_*.deb --clobber
+
+  rpm:
+    name: .rpm (Fedora, distribution baresip)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Dependencies
+        run: |
+          dnf -q install -y git gcc-c++ cmake ninja-build rpm-build extra-cmake-modules qt6-qtbase-devel \
+            qt6-qtmultimedia-devel qtkeychain-qt6-devel kf6-ki18n-devel kf6-kcoreaddons-devel \
+            kf6-knotifications-devel kf6-kstatusnotifieritem-devel openldap-devel gettext
+      - uses: actions/checkout@v5
+      - name: Build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+            -DBARESIP_MODULE_PATH=/usr/lib64/baresip/modules -DCMAKE_DISABLE_FIND_PACKAGE_KF6Wallet=ON
+          cmake --build build
+      - name: Package
+        run: |
+          cd build && cpack -G RPM
+          rpm -qpR ksipphone-*.rpm | grep -i baresip
+      - name: Install test (clean dependency resolution)
+        run: |
+          dnf -q install -y ./build/ksipphone-*.rpm
+          ! ldd /usr/bin/ksipphone | grep "not found"
+          ls /usr/lib64/baresip/modules/ctrl_tcp.so /usr/lib64/baresip/modules/pipewire.so
+      - uses: actions/upload-artifact@v5
+        with:
+          name: KSipPhone-rpm
+          path: build/ksipphone-*.rpm
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dnf -q install -y gh
+          git config --global --add safe.directory "$PWD"
+          for i in $(seq 10); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
+          gh release upload "$GITHUB_REF_NAME" build/ksipphone-*.rpm --clobber
+
+  appimage:
+    name: AppImage (Ubuntu 22.04 base, Qt only, bundled baresip)
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    steps:
+      - name: git for checkout
+        run: apt-get update -qq && apt-get install -y -qq git ca-certificates
+      - uses: actions/checkout@v5
+      - name: Build AppImage
+        run: OUTDIR="$PWD" packaging/appimage/build-appimage.sh
+      - uses: actions/upload-artifact@v5
+        with:
+          name: KSipPhone-AppImage
+          path: KSipPhone-*.AppImage
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (type -p gh >/dev/null) || { apt-get install -y -qq curl gpg >/dev/null; \
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli.gpg; \
+            echo "deb [signed-by=/usr/share/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/gh.list; \
+            apt-get update -qq && apt-get install -y -qq gh; }
+          git config --global --add safe.directory "$PWD"
+          for i in $(seq 10); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
+          gh release upload "$GITHUB_REF_NAME" KSipPhone-*.AppImage --clobber
+
+  flatpak:
+    name: Flatpak (KDE runtime 6.11)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.11
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v5
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6.8
+        with:
+          bundle: KSipPhone.flatpak
+          manifest-path: packaging/flatpak/io.github.gongsearch.KSipPhone.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+          upload-artifact: true
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (type -p gh >/dev/null) || dnf -q install -y gh || true
+          git config --global --add safe.directory "$PWD"
+          VER="${GITHUB_REF_NAME#v}"
+          cp KSipPhone.flatpak "KSipPhone-$VER.flatpak"
+          for i in $(seq 10); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
+          gh release upload "$GITHUB_REF_NAME" "KSipPhone-$VER.flatpak" --clobber

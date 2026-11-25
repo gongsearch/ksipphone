@@ -30,7 +30,8 @@ cmake --version | head -1
 if [ ! -d "$W/qt/$QT_VERSION" ]; then
   python3 -m aqt install-qt -O "$W/qt" linux desktop "$QT_VERSION" linux_gcc_64 -m qtmultimedia qtshadertools >/dev/null
 fi
-QTDIR=$(ls -d "$W/qt/$QT_VERSION"/gcc_64 "$W/qt/$QT_VERSION"/linux_gcc_64 2>/dev/null | head -1)
+QTDIR=$( (ls -d "$W/qt/$QT_VERSION"/gcc_64 "$W/qt/$QT_VERSION"/linux_gcc_64 2>/dev/null || true) | head -1)
+echo "Qt: $QTDIR"
 export CMAKE_PREFIX_PATH="$QTDIR;$PREFIX"
 export LD_LIBRARY_PATH="$QTDIR/lib:$PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
@@ -61,7 +62,7 @@ rm -rf "$W/AppDir"
 DESTDIR="$W/AppDir" cmake --install "$W/ksip" >/dev/null
 
 # The AppImage has no fixed /usr; AppRun sets KSIPPHONE_BARESIP* to the bundled baresip.
-BARESIP_BIN=$(ls "$W"/AppDir/usr/lib/*/ksipphone/baresip "$W"/AppDir/usr/lib/ksipphone/baresip 2>/dev/null | head -1)
+BARESIP_BIN=$( (ls "$W"/AppDir/usr/lib/*/ksipphone/baresip "$W"/AppDir/usr/lib/ksipphone/baresip 2>/dev/null || true) | head -1)
 echo "bundled baresip: $BARESIP_BIN"
 cd "$W"
 for t in linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage; do
