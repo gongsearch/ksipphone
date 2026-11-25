@@ -19,7 +19,8 @@ apt-get install -y -qq --no-install-recommends build-essential cmake ninja-build
   libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
   libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libegl1 libfontconfig1 libdbus-1-3 \
   libldap2-dev libsecret-1-dev libssl-dev zlib1g-dev libopus-dev libspandsp-dev libpipewire-0.3-dev \
-  libpulse0 libgstreamer1.0-0 >/dev/null
+  libpulse0 libgstreamer1.0-0 libwayland-client0 libwayland-cursor0 libwayland-egl1 libdecor-0-0 \
+  libva2 libva-drm2 libva-x11-2 libvdpau1 libdrm2 libxrandr2 libxss1 libxtst6 libasound2 >/dev/null
 # KF6 needs a newer CMake than Ubuntu 22.04 has
 pip3 install -q cmake ninja aqtinstall
 export PATH="/usr/local/bin:$PATH"
