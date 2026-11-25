@@ -70,7 +70,7 @@ for t in linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage; do
   [ -f "$t" ] || curl -sfLO "https://github.com/linuxdeploy/$(echo $t | sed 's/-x86_64.AppImage//')/releases/download/continuous/$t"
   chmod +x "$t"
 done
-export APPIMAGE_EXTRACT_AND_RUN=1 QMAKE="$QTDIR/bin/qmake" EXTRA_QT_MODULES="svg" EXTRA_PLATFORM_PLUGINS="libqwayland-generic.so"
+export APPIMAGE_EXTRACT_AND_RUN=1 QMAKE="$QTDIR/bin/qmake" EXTRA_QT_MODULES="svg" EXTRA_PLATFORM_PLUGINS="libqwayland.so"
 VERSION=$(sed -n 's/^project(ksipphone VERSION \([0-9.]*\).*/\1/p' "$SRC/CMakeLists.txt")
 export LDAI_OUTPUT="KSipPhone-$VERSION-x86_64.AppImage" VERSION
 # baresip is an extra executable inside the AppDir: let linuxdeploy bundle its libraries too
