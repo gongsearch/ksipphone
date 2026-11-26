@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- "Back" during a consultation (attended transfer) hangs up the consultation and returns to the waiting caller (did nothing before)
 - One click is enough on Call (and other buttons) while the search drop-down is open (the first click used to only close it)
 
 ## 1.1.0 – 2026-11-26

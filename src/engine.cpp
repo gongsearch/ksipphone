@@ -554,13 +554,15 @@ void Engine::abortConsult()
     if (m_consultState == CallState::Idle && !m_consultPending)
         return;
     m_consultPending = false;
-    if (m_secondKind == SecondCall::Waiting) {
-        // hang up the active (second) call; its CALL_CLOSED resumes the held one
+    if (!m_consultId.isEmpty()) {
+        // hang up the second call (consultation or accepted waiting call) by its id; its CALL_CLOSED
+        // resumes the held one. baresip's atransferabort acts on the "current" call, which is not
+        // necessarily the consultation (callfind elsewhere changes it) - then it did nothing.
         send(QStringLiteral("callfind ") + m_consultId);
         send(QStringLiteral("hangup"));
         return;
     }
-    send(QStringLiteral("atransferabort"));
+    send(QStringLiteral("atransferabort")); // consultation still being set up (no call id yet)
 }
 
 void Engine::acceptWaiting()
