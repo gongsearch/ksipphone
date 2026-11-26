@@ -506,6 +506,9 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
         auto *l = new QLabel(text, ctl);
         l->setWordWrap(true);
         l->setForegroundRole(QPalette::PlaceholderText);
+        // wrapped labels in a tab page don't get their height from the layout: reserve it
+        l->setMinimumWidth(340);
+        l->setMinimumHeight(l->heightForWidth(340));
         return l;
     };
     if (MuteControl::systemMicAvailable()) {
@@ -542,6 +545,7 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
                                  "</table>"),
                             ctl);
     keys->setTextFormat(Qt::RichText);
+    keys->setText(keys->text().replace(QLatin1String("</td><td>"), QLatin1String("</td><td style=\"padding-left:16px\">")));
     cf->addRow(i18n("In the window:"), keys);
     tabs->addTab(ctl, QIcon::fromTheme(QStringLiteral("configure-shortcuts")), i18n("Controls"));
 
