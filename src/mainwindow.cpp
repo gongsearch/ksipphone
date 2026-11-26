@@ -178,6 +178,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         auto *b = new QPushButton(keys[i], this);
         b->setFocusPolicy(Qt::NoFocus);
         b->setMinimumHeight(44);
+        b->setMinimumWidth(80);
         b->setFont(kf);
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
         grid->addWidget(b, i / 3, i % 3);
@@ -298,11 +299,11 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         else
             Q_EMIT hangupRequested();
     });
-    row->addWidget(m_mute);
-    row->addWidget(m_hold);
-    row->addWidget(m_transfer);
-    row->addWidget(m_call, 1);
-    row->addWidget(m_hangup, 1);
+    // all buttons share extra width evenly
+    for (QAbstractButton *b : std::initializer_list<QAbstractButton *>{m_mute, m_hold, m_transfer, m_call, m_hangup}) {
+        b->setSizePolicy(QSizePolicy::Expanding, b->sizePolicy().verticalPolicy());
+        row->addWidget(b, 1);
+    }
     lay->addLayout(row);
 
     setRegistration(i18n("Not registered"), false);
