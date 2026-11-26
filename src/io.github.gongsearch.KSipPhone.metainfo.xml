@@ -80,6 +80,14 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.1" date="2026-11-26">
+      <description>
+        <ul>
+          <li>"Back" during a consultation returns to the waiting caller</li>
+          <li>One click on Call is enough while search results are shown</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-11-26">
       <description>
         <ul>
