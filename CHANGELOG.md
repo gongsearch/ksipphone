@@ -1,13 +1,26 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 – 2026-11-26
 
+Packages for all platforms and a more portable engine.
+
+**Downloads**
+- Windows: installer (per user, registers `tel:`/`sip:`/`callto:` links, optional autostart) and portable ZIP
+- macOS (Apple Silicon): `.dmg` – unsigned, open it the first time with right-click → Open
+- Linux: `.deb` (Debian testing, Ubuntu ≥ 25.04; ships its own baresip 4.6), `.rpm` (Fedora; uses the distribution's baresip),
+  AppImage (runs on distributions from about 2022 on), Flatpak bundle
+- Arch: `PKGBUILD`s for the AUR in `packaging/aur`
+
+**Changes**
 - Engine control via baresip's `ctrl_tcp` (loopback TCP) instead of D-Bus; no fixed bus name any more
-- Passwords in the system keychain via QtKeychain; passwords from 0.1 are taken over from KWallet
+- Passwords in the system keychain via QtKeychain (KWallet / Secret Service, Windows Credential Manager,
+  macOS Keychain); passwords stored by 0.1 are taken over from KWallet
 - Audio devices listed through Qt Multimedia instead of `pw-dump`
-- Single instance via a local socket instead of D-Bus
+- Single instance via a local socket instead of D-Bus; new `--settings` option
 - baresip is stopped automatically if KSipPhone dies (Linux)
-- Groundwork for Windows / macOS (platform audio driver, configurable baresip paths)
+- baresip's module directory is found automatically on Arch, Debian/Ubuntu and Fedora
+- Builds without KDE Frameworks (Windows, macOS): Qt tray icon, incoming calls bring the dialer to the front
+- Application icon; status line shows the account without port
 
 ## 0.1.0 – 2026-11-25
 
