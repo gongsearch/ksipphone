@@ -68,7 +68,7 @@ private:
     QLineEdit *m_extFilter;
     QList<QPair<QString, QString>> m_extensions; // number, name
     int m_extSort = 0;                           // 0 number, 1 first name, 2 last name, 3 status
-    bool m_onlyFree = false;
+    int m_extShow = 0; // 0 all, 1 online (free or busy), 2 only free
     QHash<QString, Engine::Presence> m_presence;
     Engine::CallState m_consult = Engine::CallState::Idle;
     QPushButton *m_call, *m_hangup;

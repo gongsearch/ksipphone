@@ -202,7 +202,8 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     auto *sortGroup = new QActionGroup(menu);
     QSettings &cfg = appSettings();
     m_extSort = cfg.value(QStringLiteral("Presence/Sort"), 0).toInt();
-    m_onlyFree = cfg.value(QStringLiteral("Presence/OnlyFree"), false).toBool();
+    // 0 all, 1 online (free or busy), 2 only free; "OnlyFree" was the older on/off setting
+    m_extShow = cfg.value(QStringLiteral("Presence/Show"), cfg.value(QStringLiteral("Presence/OnlyFree"), false).toBool() ? 2 : 0).toInt();
     const QStringList sorts = {i18n("Sort by number"), i18n("Sort by first name"), i18n("Sort by last name"), i18n("Sort by status")};
     for (int i = 0; i < sorts.size(); ++i) {
         QAction *a = menu->addAction(sorts[i]);
@@ -216,14 +217,20 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         });
     }
     menu->addSeparator();
-    QAction *onlyFree = menu->addAction(i18n("Only free extensions"));
-    onlyFree->setCheckable(true);
-    onlyFree->setChecked(m_onlyFree);
-    connect(onlyFree, &QAction::toggled, this, [this](bool on) {
-        m_onlyFree = on;
-        appSettings().setValue(QStringLiteral("Presence/OnlyFree"), on);
-        refreshExtList();
-    });
+    auto *showGroup = new QActionGroup(menu);
+    const QStringList shows = {i18n("Show all extensions"), i18n("Only online (free or busy)"), i18n("Only free extensions")};
+    for (int i = 0; i < shows.size(); ++i) {
+        QAction *a = menu->addAction(shows[i]);
+        a->setCheckable(true);
+        a->setChecked(i == m_extShow);
+        showGroup->addAction(a);
+        connect(a, &QAction::triggered, this, [this, i] {
+            m_extShow = i;
+            appSettings().setValue(QStringLiteral("Presence/Show"), i);
+            appSettings().remove(QStringLiteral("Presence/OnlyFree"));
+            refreshExtList();
+        });
+    }
     extOptions->setMenu(menu);
     extTop->addWidget(m_extFilter, 1);
     extTop->addWidget(extOptions);
@@ -365,7 +372,7 @@ void MainWindow::setExtensions(const QList<QPair<QString, QString>> &extensions)
 void MainWindow::setPresence(const QHash<QString, Engine::Presence> &states)
 {
     m_presence = states;
-    if (m_extSort == 3 || m_onlyFree)
+    if (m_extSort == 3 || m_extShow != 0)
         refreshExtList(); // order or visibility depends on the status
     else
         updatePresenceIcons();
@@ -378,7 +385,10 @@ void MainWindow::refreshExtList()
     for (const auto &e : std::as_const(m_extensions)) {
         if (!filter.isEmpty() && !e.first.contains(filter, Qt::CaseInsensitive) && !e.second.contains(filter, Qt::CaseInsensitive))
             continue;
-        if (m_onlyFree && m_presence.value(e.first, Engine::Presence::Unknown) != Engine::Presence::Online)
+        const Engine::Presence st = m_presence.value(e.first, Engine::Presence::Unknown);
+        if (m_extShow == 2 && st != Engine::Presence::Online)
+            continue;
+        if (m_extShow == 1 && st != Engine::Presence::Online && st != Engine::Presence::Busy)
             continue;
         list.append(e);
     }
