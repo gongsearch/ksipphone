@@ -497,14 +497,26 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
 
     // controls: window, microphone, shortcuts
     auto *ctl = new QWidget(tabs);
-    auto *cf = new QFormLayout(ctl);
+    // a grid instead of QFormLayout: row labels must sit level with the first line of multi-line texts
+    auto *cg = new QGridLayout(ctl);
+    cg->setColumnStretch(1, 1);
+    int cRow = 0;
+    auto addRow = [ctl, cg, &cRow](const QString &label, QWidget *field, bool multiLine = false) {
+        if (!label.isEmpty()) {
+            auto *l = new QLabel(label, ctl);
+            cg->addWidget(l, cRow, 0, Qt::AlignRight | (multiLine ? Qt::AlignTop : Qt::AlignVCenter));
+        }
+        cg->addWidget(field, cRow, 1, multiLine ? Qt::AlignTop : Qt::AlignVCenter);
+        ++cRow;
+    };
     m_onTop = new QCheckBox(i18n("Keep above other windows"), ctl);
     m_onTop->setChecked(s.alwaysOnTop);
-    cf->addRow(i18n("Window:"), m_onTop);
+    addRow(i18n("Window:"), m_onTop);
     // short check box texts; the explanations wrap underneath
     auto hint = [ctl](const QString &text) {
         auto *l = new QLabel(text, ctl);
         l->setWordWrap(true);
+        l->setAlignment(Qt::AlignLeft | Qt::AlignTop);
         l->setForegroundRole(QPalette::PlaceholderText);
         // wrapped labels in a tab page don't get their height from the layout: reserve it
         l->setMinimumWidth(340);
@@ -514,17 +526,17 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     if (MuteControl::systemMicAvailable()) {
         m_muteSystem = new QCheckBox(i18n("Follow the system microphone mute"), ctl);
         m_muteSystem->setChecked(s.muteFollowsSystem);
-        cf->addRow(i18n("Microphone:"), m_muteSystem);
-        cf->addRow(QString(), hint(i18n("The mute button shows a microphone muted elsewhere (mic-mute key, desktop, headset) "
+        addRow(i18n("Microphone:"), m_muteSystem);
+        addRow(QString(), hint(i18n("The mute button shows a microphone muted elsewhere (mic-mute key, desktop, headset) "
                                         "and mutes system-wide. Restored after the call.")));
     }
     if (GlobalShortcuts::isAvailable()) {
         m_ptt = new QCheckBox(i18n("Push to talk"), ctl);
         m_ptt->setChecked(s.pushToTalk);
-        cf->addRow(m_muteSystem ? QString() : i18n("Microphone:"), m_ptt);
-        cf->addRow(QString(), hint(i18n("During calls the microphone is only open while the push-to-talk key is held.")));
-        cf->addRow(i18n("Global:"), hint(i18n("Keys for accept, hang up, mute, push to talk, show dialer, do not disturb and "
-                                              "calling the number in the clipboard: System Settings > Keyboard > Shortcuts > KSipPhone.")));
+        addRow(m_muteSystem ? QString() : i18n("Microphone:"), m_ptt);
+        addRow(QString(), hint(i18n("During calls the microphone is only open while the push-to-talk key is held.")));
+        addRow(i18n("Global:"), hint(i18n("Keys for accept, hang up, mute, push to talk, show dialer, do not disturb and "
+                                              "calling the number in the clipboard: System Settings > Keyboard > Shortcuts > KSipPhone.")), true);
     }
     auto *keys = new QLabel(i18n("<table>"
                                  "<tr><td>Ctrl+Enter</td><td>Call / accept</td></tr>"
@@ -545,8 +557,11 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
                                  "</table>"),
                             ctl);
     keys->setTextFormat(Qt::RichText);
-    keys->setText(keys->text().replace(QLatin1String("</td><td>"), QLatin1String("</td><td style=\"padding-left:16px\">")));
-    cf->addRow(i18n("In the window:"), keys);
+    keys->setText(keys->text()
+                      .replace(QLatin1String("<table>"), QLatin1String("<table cellspacing=\"0\" cellpadding=\"0\">"))
+                      .replace(QLatin1String("</td><td>"), QLatin1String("</td><td style=\"padding-left:16px\">")));
+    addRow(i18n("In the window:"), keys, true);
+    cg->setRowStretch(cRow, 1);
     tabs->addTab(ctl, QIcon::fromTheme(QStringLiteral("configure-shortcuts")), i18n("Controls"));
 
     auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
