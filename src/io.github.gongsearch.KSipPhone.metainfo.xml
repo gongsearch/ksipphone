@@ -64,6 +64,17 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="0.2.4" date="2026-11-26">
+      <description>
+        <ul>
+          <li>Call transfer (blind and attended)</li>
+          <li>Presence list of internal extensions with filter and sorting</li>
+          <li>Keep-alive for firewalls and NAT</li>
+          <li>Better search: from the first letter, sorted, name format, icons</li>
+          <li>Window layout is remembered; extension list can be hidden</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.3" date="2026-11-26">
       <description>
         <ul>

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.4 – 2026-11-26
+
+- Call transfer: blind, or attended (consult the target first, then connect or go back)
+- Presence: list of internal extensions next to the keypad (free / busy / offline), with its own filter,
+  sorting (number, first name, last name, status) and "only online" / "only free"; click to call,
+  during a call click to transfer. Needs presence on the server (Asterisk: hints and modules, see README)
+- Keep-alive for firewalls/NAT (on by default): re-registers every 90 s so incoming calls and status
+  updates are not dropped by stateful firewalls
+- Search: results from the first letter, sorted alphabetically, name format "First Last" or "Last, First",
+  icons for source (LDAP / address book) and number type (mobile / home / work), drop-down closes when
+  the field is cleared
+- Codec list: clear gap between check box and name in every style (Windows 11 overlapped)
+- Window: two columns (keypad, extension list), list can be hidden, size and layout are remembered;
+  smaller search font
+
 ## 0.2.3 – 2026-11-26
 
 - Settings in tabs: Account, Audio, Phonebook
