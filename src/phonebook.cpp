@@ -3,6 +3,7 @@
 #include "localcontacts.h"
 
 #include <QCollator>
+#include <QRegularExpression>
 #include <QSet>
 
 #include <algorithm>
@@ -208,6 +209,40 @@ void Phonebook::search(const QString &text, int requestId)
         w->deleteLater();
     });
     w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 50, false));
+}
+
+void Phonebook::fetchInternal(int minDigits, int maxDigits)
+{
+    if (!isConfigured()) {
+        Q_EMIT internalFetched({});
+        return;
+    }
+    const QString filter = QStringLiteral("(&(objectClass=inetOrgPerson)(|(telephoneNumber=*)(mobile=*)(homePhone=*)))");
+    QPointer<Phonebook> self(this);
+    auto *w = new QFutureWatcher<PhonebookResult>(this);
+    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, minDigits, maxDigits] {
+        const PhonebookResult r = w->result();
+        w->deleteLater();
+        if (!self)
+            return;
+        if (!r.error.isEmpty()) {
+            Q_EMIT self->errorOccurred(r.error);
+            return; // keep the current list on errors
+        }
+        const QRegularExpression internal(QStringLiteral("^\\d{%1,%2}$").arg(minDigits).arg(maxDigits));
+        QList<PhonebookEntry> out;
+        QSet<QString> seen;
+        for (PhonebookEntry e : r.entries) {
+            e.number = e.number.trimmed();
+            if (!internal.match(e.number).hasMatch() || seen.contains(e.number))
+                continue;
+            seen.insert(e.number);
+            e.display = displayName(e, self->m_nameFormat);
+            out.append(e);
+        }
+        Q_EMIT self->internalFetched(out);
+    });
+    w->setFuture(QtConcurrent::run(&Phonebook::query, m_uri, m_base, filter, 2000, false));
 }
 
 void Phonebook::lookupNumber(const QString &number, int requestId)

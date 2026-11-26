@@ -41,6 +41,8 @@ public:
 
     // Asynchronous; results are delivered via the signals.
     void search(const QString &text, int requestId);
+    // all LDAP entries with internal numbers (minDigits..maxDigits digits): for the extension list
+    void fetchInternal(int minDigits, int maxDigits);
     void lookupNumber(const QString &number, int requestId);
 
     static QString normalize(const QString &number); // "0171.." -> "+49171..", "0049.." -> "+49.."
@@ -48,6 +50,7 @@ public:
 Q_SIGNALS:
     void searchFinished(int requestId, const QList<PhonebookEntry> &entries);
     void lookupFinished(int requestId, const QString &name, const QByteArray &photo);
+    void internalFetched(const QList<PhonebookEntry> &entries); // number + name, one per number
     void errorOccurred(const QString &message); // empty message = OK again
 
 private:

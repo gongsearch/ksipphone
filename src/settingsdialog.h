@@ -16,7 +16,9 @@ struct Settings {
     bool useLocalContacts = true; // desktop address book (KPeople)
     int nameFormat = 0;           // Phonebook::NameFormat: 0 first last, 1 last, first
     QString voicemail; // number to dial for the mailbox
-    QStringList watched; // extensions shown with presence status
+    QStringList watched; // extensions shown with presence status (automatic mode: additional ones)
+    bool watchAuto = false;   // extensions = phonebook entries with internal numbers
+    int watchMaxDigits = 5;   // internal number: 2..watchMaxDigits digits
     QString dtmfMode;  // rtpevent | info | auto
     bool preferIpv6 = false;
     bool keepAlive = true;
@@ -46,6 +48,8 @@ public:
 private:
     QLineEdit *m_voicemail;
     QLineEdit *m_watched;
+    class QCheckBox *m_watchAuto;
+    class QSpinBox *m_watchDigits;
     QLineEdit *m_user, *m_server, *m_display, *m_password, *m_ldapUri, *m_ldapBase;
     class QListWidget *m_codecs;
     QComboBox *m_transport;

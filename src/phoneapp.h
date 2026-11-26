@@ -9,6 +9,8 @@
 #include <QObject>
 #include <QPixmap>
 #include <QPointer>
+#include <QTimer>
+#include <QSet>
 
 namespace Desktop
 {
@@ -53,6 +55,8 @@ private:
     void showHistory();
     void logCall(CallLog::Direction dir, const QString &number, const QString &name, int seconds, bool elsewhere = false);
     void updateExtensions();
+    void setWatched(const QStringList &list, const QHash<QString, QString> &names);
+    void recomputeWatch();
 
     Engine *m_engine;
     Phonebook *m_phonebook;
@@ -74,6 +78,14 @@ private:
     QHash<QString, QString> m_extNames;
     QHash<int, QString> m_extLookups; // lookup id -> extension
     int m_nextExtLookup = 1000000;
+    // automatic extension list from the phonebook
+    bool m_watchAuto = false;
+    int m_watchDigits = 5;
+    QStringList m_watchExtra;
+    QString m_voicemailNumber;
+    QList<PhonebookEntry> m_autoEntries;
+    QSet<QString> m_notOffered; // the server offers no presence for these (remembered for a week)
+    QTimer *m_extRefresh = nullptr;
     QString m_consultName, m_consultNumber;
     QPixmap m_consultPhoto;
     QPointer<Desktop::Notification> m_waitNote;

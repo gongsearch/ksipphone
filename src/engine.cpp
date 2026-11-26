@@ -106,6 +106,14 @@ Engine::Engine(QObject *parent)
         }
         if (found)
             Codecs::setRegistered(m_registeredCodecs);
+        // "presence: subscriber closed <sip:112@server>: 404 Not Found; will retry ..."
+        static const QRegularExpression rejected(QStringLiteral("subscriber closed <sip:([^@>]+)@[^>]*>: (\\d{3})"));
+        for (auto it = rejected.globalMatch(out); it.hasNext();) {
+            const auto m = it.next();
+            const int code = m.captured(2).toInt();
+            if (code == 403 || code == 404 || code == 405 || code == 489 || code == 501)
+                Q_EMIT presenceRejected(m.captured(1), code);
+        }
     });
     connect(&m_proc, &QProcess::finished, this, [this](int code, QProcess::ExitStatus st) {
         qCWarning(ENGINE) << "baresip exited" << code << st;

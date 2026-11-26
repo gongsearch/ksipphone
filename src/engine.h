@@ -99,6 +99,7 @@ Q_SIGNALS:
     void waitingEnded(Engine::WaitingEnd how);
     void callsSwapped();                                              // main and second call changed roles
     void presenceChanged(const QHash<QString, Engine::Presence> &states); // extension -> state
+    void presenceRejected(const QString &extension, int sipCode);          // server offers no presence for it
     void ready();
 
 private:

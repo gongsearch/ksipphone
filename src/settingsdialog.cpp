@@ -23,6 +23,7 @@
 #include <QTabWidget>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QSpinBox>
 #include <QRegularExpression>
 #include <QApplication>
 #include <QKeyEvent>
@@ -65,6 +66,8 @@ Settings Settings::load()
     s.codecs = str(c, QStringLiteral("Codecs"), QStringLiteral("G722,PCMA,PCMU"));
     s.voicemail = str(c, QStringLiteral("Voicemail"));
     s.watched = c.value(QStringLiteral("WatchedExtensions")).toStringList();
+    s.watchAuto = c.value(QStringLiteral("ExtensionsFromPhonebook"), false).toBool();
+    s.watchMaxDigits = qBound(2, c.value(QStringLiteral("ExtensionMaxDigits"), 5).toInt(), 8);
     s.dtmfMode = str(c, QStringLiteral("DtmfMode"), QStringLiteral("rtpevent"));
     s.preferIpv6 = c.value(QStringLiteral("PreferIPv6"), false).toBool();
     s.keepAlive = c.value(QStringLiteral("KeepAlive"), true).toBool();
@@ -104,6 +107,8 @@ void Settings::save() const
     c.setValue(QStringLiteral("Codecs"), codecs);
     c.setValue(QStringLiteral("Voicemail"), voicemail);
     c.setValue(QStringLiteral("WatchedExtensions"), watched);
+    c.setValue(QStringLiteral("ExtensionsFromPhonebook"), watchAuto);
+    c.setValue(QStringLiteral("ExtensionMaxDigits"), watchMaxDigits);
     c.setValue(QStringLiteral("DtmfMode"), dtmfMode);
     c.setValue(QStringLiteral("PreferIPv6"), preferIpv6);
     c.setValue(QStringLiteral("KeepAlive"), keepAlive);
@@ -378,11 +383,33 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_voicemail = new QLineEdit(s.voicemail, acc);
     m_voicemail->setPlaceholderText(i18n("number of the mailbox, e.g. 9000"));
     f->addRow(i18n("Voicemail:"), m_voicemail);
+    // extensions with presence: automatically from the LDAP phonebook (+ additional ones) or a fixed list
+    auto *autoRow = new QWidget(acc);
+    auto *ar = new QHBoxLayout(autoRow);
+    ar->setContentsMargins(0, 0, 0, 0);
+    m_watchAuto = new QCheckBox(i18n("From the phonebook, numbers with up to"), autoRow);
+    m_watchAuto->setChecked(s.watchAuto);
+    m_watchAuto->setToolTip(i18n("All LDAP phonebook entries with internal numbers (2 digits or more). Numbers the server "
+                                 "offers no status for (e.g. emergency numbers) are left out automatically."));
+    m_watchDigits = new QSpinBox(autoRow);
+    m_watchDigits->setRange(2, 8);
+    m_watchDigits->setValue(s.watchMaxDigits);
+    ar->addWidget(m_watchAuto);
+    ar->addWidget(m_watchDigits);
+    ar->addWidget(new QLabel(i18n("digits"), autoRow));
+    ar->addStretch(1);
+    f->addRow(i18n("Extensions:"), autoRow);
     m_watched = new QLineEdit(s.watched.join(QStringLiteral(", ")), acc);
-    m_watched->setPlaceholderText(i18n("e.g. 100, 1000, 2000"));
     m_watched->setToolTip(i18n("Internal extensions shown in a list with their status (free, busy, offline).\n"
                                "The server must offer presence for them (Asterisk: a hint per extension)."));
-    f->addRow(i18n("Extensions:"), m_watched);
+    auto updateWatch = [this] {
+        m_watchDigits->setEnabled(m_watchAuto->isChecked());
+        m_watched->setPlaceholderText(m_watchAuto->isChecked() ? i18n("additional extensions not in the phonebook, e.g. 10, 20")
+                                                               : i18n("e.g. 100, 1000, 2000"));
+    };
+    connect(m_watchAuto, &QCheckBox::toggled, this, updateWatch);
+    updateWatch();
+    f->addRow(QString(), m_watched);
     m_dtmf = new QComboBox(acc);
     m_dtmf->addItem(i18n("RFC 4733 / RTP events (recommended)"), QStringLiteral("rtpevent"));
     m_dtmf->addItem(i18n("SIP INFO"), QStringLiteral("info"));
@@ -600,6 +627,8 @@ Settings SettingsDialog::settings() const
     }
     s.codecs = codecs.join(QLatin1Char(','));
     s.voicemail = m_voicemail->text().trimmed();
+    s.watchAuto = m_watchAuto->isChecked();
+    s.watchMaxDigits = m_watchDigits->value();
     s.watched.clear();
     for (const QString &e : m_watched->text().split(QRegularExpression(QStringLiteral("[\\s,;]+")), Qt::SkipEmptyParts)) {
         if (!s.watched.contains(e))

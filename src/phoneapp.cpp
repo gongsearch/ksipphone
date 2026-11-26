@@ -6,6 +6,9 @@
 #include "localcontacts.h"
 #include "ringer.h"
 #include "transferdialog.h"
+
+#include <QLoggingCategory>
+Q_LOGGING_CATEGORY(lcPhoneApp, "ksipphone.app")
 #include "calllogdialog.h"
 #include "mediacontrol.h"
 #include "globalshortcuts.h"
@@ -13,6 +16,8 @@
 #include "windowplacer.h"
 
 #include <QClipboard>
+#include <algorithm>
+#include <QDateTime>
 #include <QGuiApplication>
 #include <QRegularExpression>
 
@@ -171,6 +176,42 @@ PhoneApp::PhoneApp(QObject *parent)
         Desktop::Notification::error(i18n("Transfer failed"), reason.isEmpty() ? i18n("The call could not be transferred.") : reason);
     });
     connect(m_engine, &Engine::presenceChanged, m_window, &MainWindow::setPresence);
+    // automatic extension list
+    {
+        QSettings &cfg = appSettings();
+        const QDateTime since = cfg.value(QStringLiteral("Presence/NotOfferedSince")).toDateTime();
+        if (since.isValid() && since.daysTo(QDateTime::currentDateTime()) < 7) {
+            const QStringList l = cfg.value(QStringLiteral("Presence/NotOffered")).toStringList();
+            m_notOffered = QSet<QString>(l.begin(), l.end());
+        } else {
+            cfg.remove(QStringLiteral("Presence/NotOffered")); // try again once a week (a hint may have been added)
+            cfg.remove(QStringLiteral("Presence/NotOfferedSince"));
+        }
+    }
+    m_extRefresh = new QTimer(this);
+    m_extRefresh->setInterval(15 * 60 * 1000);
+    connect(m_extRefresh, &QTimer::timeout, this, [this] {
+        if (m_watchAuto)
+            m_phonebook->fetchInternal(2, m_watchDigits);
+    });
+    connect(m_phonebook, &Phonebook::internalFetched, this, [this](const QList<PhonebookEntry> &entries) {
+        if (!m_watchAuto)
+            return;
+        m_autoEntries = entries;
+        recomputeWatch();
+    });
+    connect(m_engine, &Engine::presenceRejected, this, [this](const QString &ext, int code) {
+        // automatic mode: the server offers no status for this number (no hint, emergency number, ...)
+        if (!m_watchAuto || m_watchExtra.contains(ext) || m_notOffered.contains(ext))
+            return;
+        qCInfo(lcPhoneApp) << "no presence for" << ext << code << "- left out of the extension list";
+        m_notOffered.insert(ext);
+        QSettings &cfg = appSettings();
+        cfg.setValue(QStringLiteral("Presence/NotOffered"), QStringList(m_notOffered.begin(), m_notOffered.end()));
+        if (!cfg.contains(QStringLiteral("Presence/NotOfferedSince")))
+            cfg.setValue(QStringLiteral("Presence/NotOfferedSince"), QDateTime::currentDateTime());
+        recomputeWatch();
+    });
     // call waiting
     connect(m_window, &MainWindow::acceptWaitingRequested, m_engine, &Engine::acceptWaiting);
     connect(m_window, &MainWindow::rejectWaitingRequested, m_engine, &Engine::rejectWaiting);
@@ -431,21 +472,66 @@ void PhoneApp::applySettings()
         a.password = readPassword(QStringLiteral("sip:%1@%2").arg(s.user, s.server));
     m_engine->setAccount(a);
     m_window->setVoicemail(m_voicemails, !s.voicemail.isEmpty());
-    // extensions with presence; names from the phonebook (LDAP / address book)
-    m_engine->setWatchList(s.watched);
-    if (s.watched != m_watched) {
-        m_watched = s.watched;
-        m_extNames.clear();
+    // extensions with presence: from the phonebook (+ additional ones) or a fixed list
+    m_watchAuto = s.watchAuto;
+    m_watchDigits = s.watchMaxDigits;
+    m_watchExtra = s.watched;
+    m_voicemailNumber = s.voicemail;
+    if (m_watchAuto) {
+        recomputeWatch();                         // with what we have, until the phonebook answers
+        m_phonebook->fetchInternal(2, m_watchDigits);
+        m_extRefresh->start();
+    } else {
+        m_extRefresh->stop();
+        setWatched(s.watched, {});
+    }
+    if (!a.isValid())
+        m_window->setRegistration(i18n("No SIP account configured"), false);
+}
+
+void PhoneApp::setWatched(const QStringList &list, const QHash<QString, QString> &names)
+{
+    m_engine->setWatchList(list);
+    if (list == m_watched && names.isEmpty())
+        return;
+    const bool changed = list != m_watched;
+    m_watched = list;
+    for (auto it = names.constBegin(); it != names.constEnd(); ++it)
+        m_extNames.insert(it.key(), it.value());
+    if (changed) {
+        // names of entries not from the phonebook query (manual / additional ones)
         m_extLookups.clear();
         for (const QString &ext : std::as_const(m_watched)) {
+            if (m_extNames.contains(ext))
+                continue;
             const int id = ++m_nextExtLookup;
             m_extLookups.insert(id, ext);
             m_phonebook->lookupNumber(ext, id);
         }
-        updateExtensions();
     }
-    if (!a.isValid())
-        m_window->setRegistration(i18n("No SIP account configured"), false);
+    updateExtensions();
+}
+
+void PhoneApp::recomputeWatch()
+{
+    static const QSet<QString> emergency = {QStringLiteral("110"), QStringLiteral("112"), QStringLiteral("911"), QStringLiteral("999"),
+                                            QStringLiteral("000"), QStringLiteral("115"), QStringLiteral("116117")};
+    QStringList list;
+    QHash<QString, QString> names;
+    for (const PhonebookEntry &e : std::as_const(m_autoEntries)) {
+        if (emergency.contains(e.number) || e.number == m_voicemailNumber || m_notOffered.contains(e.number) || list.contains(e.number))
+            continue;
+        list << e.number;
+        names.insert(e.number, e.display.isEmpty() ? e.name : e.display);
+    }
+    for (const QString &x : std::as_const(m_watchExtra)) {
+        if (!list.contains(x))
+            list << x;
+    }
+    std::sort(list.begin(), list.end(), [](const QString &a, const QString &b) {
+        return a.size() != b.size() ? a.size() < b.size() : a < b;
+    });
+    setWatched(list, names);
 }
 
 void PhoneApp::updateExtensions()
