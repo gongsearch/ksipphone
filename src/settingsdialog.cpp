@@ -4,6 +4,8 @@
 #include "codecs.h"
 #include "localcontacts.h"
 #include "mediacontrol.h"
+#include "globalshortcuts.h"
+#include "mutecontrol.h"
 
 #include <KLocalizedString>
 
@@ -73,6 +75,9 @@ Settings Settings::load()
     s.dndFollowSystem = c.value(QStringLiteral("DndFollowSystem"), true).toBool();
     s.pauseMedia = c.value(QStringLiteral("PauseMedia"), true).toBool();
     s.mediaKeys = c.value(QStringLiteral("MediaKeys"), true).toBool();
+    s.alwaysOnTop = c.value(QStringLiteral("AlwaysOnTop"), false).toBool();
+    s.muteFollowsSystem = c.value(QStringLiteral("MuteFollowsSystem"), true).toBool();
+    s.pushToTalk = c.value(QStringLiteral("PushToTalk"), false).toBool();
     s.echoCancel = c.value(QStringLiteral("EchoCancellation"), false).toBool();
     s.micDevice = str(c, QStringLiteral("Microphone"));
     s.speakerDevice = str(c, QStringLiteral("Speaker"));
@@ -109,6 +114,9 @@ void Settings::save() const
     c.setValue(QStringLiteral("DndFollowSystem"), dndFollowSystem);
     c.setValue(QStringLiteral("PauseMedia"), pauseMedia);
     c.setValue(QStringLiteral("MediaKeys"), mediaKeys);
+    c.setValue(QStringLiteral("AlwaysOnTop"), alwaysOnTop);
+    c.setValue(QStringLiteral("MuteFollowsSystem"), muteFollowsSystem);
+    c.setValue(QStringLiteral("PushToTalk"), pushToTalk);
     c.setValue(QStringLiteral("EchoCancellation"), echoCancel);
     c.setValue(QStringLiteral("Microphone"), micDevice);
     c.setValue(QStringLiteral("Speaker"), speakerDevice);
@@ -487,6 +495,52 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     g->addRow(i18n("Names:"), m_nameFormat);
     tabs->addTab(pb, QIcon::fromTheme(QStringLiteral("x-office-address-book")), i18n("Phonebook"));
 
+    // controls: window, microphone, shortcuts
+    auto *ctl = new QWidget(tabs);
+    auto *cf = new QFormLayout(ctl);
+    m_onTop = new QCheckBox(i18n("Keep the dialer window above other windows"), ctl);
+    m_onTop->setChecked(s.alwaysOnTop);
+    cf->addRow(i18n("Window:"), m_onTop);
+    if (MuteControl::systemMicAvailable()) {
+        m_muteSystem = new QCheckBox(i18n("Mute button follows the system microphone mute"), ctl);
+        m_muteSystem->setChecked(s.muteFollowsSystem);
+        m_muteSystem->setToolTip(i18n("Shows when the microphone is muted elsewhere (mic-mute key, desktop, headset) "
+                                      "and mutes the microphone system-wide. Restored after the call."));
+        cf->addRow(i18n("Microphone:"), m_muteSystem);
+    }
+    if (GlobalShortcuts::isAvailable()) {
+        m_ptt = new QCheckBox(i18n("Push to talk: microphone only open while the key is held"), ctl);
+        m_ptt->setChecked(s.pushToTalk);
+        m_ptt->setToolTip(i18n("Assign the key in System Settings > Keyboard > Shortcuts > KSipPhone > \"Push to talk (hold)\""));
+        cf->addRow(m_muteSystem ? QString() : i18n("Microphone:"), m_ptt);
+        auto *global = new QLabel(i18n("Global shortcuts (accept, hang up, mute, push to talk, show dialer, do not disturb, "
+                                       "call the number in the clipboard) are set in System Settings > Keyboard > Shortcuts > KSipPhone."),
+                                  ctl);
+        global->setWordWrap(true);
+        cf->addRow(i18n("Global:"), global);
+    }
+    auto *keys = new QLabel(i18n("<table>"
+                                 "<tr><td>Ctrl+Enter</td><td>Call / accept</td></tr>"
+                                 "<tr><td>Esc</td><td>Hang up / decline</td></tr>"
+                                 "<tr><td>Ctrl+M</td><td>Mute</td></tr>"
+                                 "<tr><td>Ctrl+P</td><td>Hold</td></tr>"
+                                 "<tr><td>Ctrl+T</td><td>Transfer / connect / swap</td></tr>"
+                                 "<tr><td>Ctrl+F</td><td>Search</td></tr>"
+                                 "<tr><td>Ctrl+E</td><td>Filter extensions</td></tr>"
+                                 "<tr><td>Ctrl+L</td><td>Show / hide extension list</td></tr>"
+                                 "<tr><td>Ctrl+H</td><td>Call history</td></tr>"
+                                 "<tr><td>Ctrl+D</td><td>Do not disturb</td></tr>"
+                                 "<tr><td>Ctrl+Shift+M</td><td>Call voicemail</td></tr>"
+                                 "<tr><td>Ctrl+Shift+T</td><td>Keep window on top</td></tr>"
+                                 "<tr><td>Ctrl+,</td><td>Settings</td></tr>"
+                                 "<tr><td>Ctrl+W</td><td>Hide window</td></tr>"
+                                 "<tr><td>Ctrl+Q</td><td>Quit</td></tr>"
+                                 "</table>"),
+                            ctl);
+    keys->setTextFormat(Qt::RichText);
+    cf->addRow(i18n("In the window:"), keys);
+    tabs->addTab(ctl, QIcon::fromTheme(QStringLiteral("configure-shortcuts")), i18n("Controls"));
+
     auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     connect(bb, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(bb, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -507,6 +561,9 @@ Settings SettingsDialog::settings() const
     s.dndFollowSystem = m_dndSystem ? m_dndSystem->isChecked() : s.dndFollowSystem;
     s.pauseMedia = m_pauseMedia ? m_pauseMedia->isChecked() : s.pauseMedia;
     s.mediaKeys = m_mediaKeys ? m_mediaKeys->isChecked() : s.mediaKeys;
+    s.alwaysOnTop = m_onTop->isChecked();
+    s.muteFollowsSystem = m_muteSystem ? m_muteSystem->isChecked() : s.muteFollowsSystem;
+    s.pushToTalk = m_ptt ? m_ptt->isChecked() : s.pushToTalk;
     s.echoCancel = m_aec->isChecked();
     s.micDevice = m_mic->currentData().toString();
     s.speakerDevice = m_speaker->currentData().toString();

@@ -2,6 +2,10 @@
 #include "mainwindow.h"
 #include "searchfield.h"
 #include "settingsdialog.h"
+#include "keepabove.h"
+
+#include <QShortcut>
+#include <QShowEvent>
 
 #include <QActionGroup>
 #include <QApplication>
@@ -98,6 +102,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     auto *top = new QHBoxLayout;
     m_reg = new QLabel(this);
     auto *settings = new QToolButton(this);
+    m_settings = settings;
     settings->setIcon(QIcon::fromTheme(QStringLiteral("configure")));
     settings->setToolTip(i18n("Settings"));
     settings->setAutoRaise(true);
@@ -125,6 +130,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     connect(m_dnd, &QToolButton::toggled, this, &MainWindow::dndToggled);
     setDnd(false, false);
     auto *history = new QToolButton(this);
+    m_history = history;
     history->setIcon(QIcon::fromTheme(QStringLiteral("view-history")));
     history->setToolTip(i18n("Call history"));
     history->setAutoRaise(true);
@@ -368,6 +374,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     setCall(Engine::CallState::Idle, {});
     // no explicit minimum: the layout's minimum (keypad, extension list) applies to width and height
     resize(380, sizeHint().height());
+    setupShortcuts();
     // saved window size and position (Wayland ignores the position)
     if (const QByteArray g = appSettings().value(QStringLiteral("Window/Geometry")).toByteArray(); !g.isEmpty())
         restoreGeometry(g);
@@ -737,6 +744,53 @@ void MainWindow::callClicked()
     const QString t = m_number->text().trimmed();
     if (!t.isEmpty())
         Q_EMIT dialRequested(t);
+}
+
+void MainWindow::setMuted(bool muted)
+{
+    const QSignalBlocker b(m_mute);
+    m_mute->setChecked(muted);
+}
+
+void MainWindow::setAlwaysOnTop(bool on)
+{
+    m_alwaysOnTop = on;
+    KeepAbove::apply(this, on);
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    if (m_alwaysOnTop) // KWin needs the window mapped first
+        QTimer::singleShot(150, this, [this] { KeepAbove::apply(this, m_alwaysOnTop); });
+}
+
+void MainWindow::setupShortcuts()
+{
+    auto add = [this](const QKeySequence &key, auto fn, QWidget *tipWidget = nullptr) {
+        auto *sc = new QShortcut(key, this);
+        sc->setContext(Qt::WindowShortcut);
+        connect(sc, &QShortcut::activated, this, fn);
+        if (tipWidget) {
+            const QString tip = tipWidget->toolTip().isEmpty() ? tipWidget->property("text").toString().remove(QLatin1Char('&')) : tipWidget->toolTip();
+            tipWidget->setToolTip(QStringLiteral("%1 (%2)").arg(tip, key.toString(QKeySequence::NativeText)));
+        }
+    };
+    add(QKeySequence(Qt::CTRL | Qt::Key_Return), [this] { callClicked(); }, m_call);
+    add(QKeySequence(Qt::CTRL | Qt::Key_Enter), [this] { callClicked(); });
+    add(QKeySequence(Qt::CTRL | Qt::Key_M), [this] { if (m_mute->isEnabled()) m_mute->toggle(); }, m_mute);
+    add(QKeySequence(Qt::CTRL | Qt::Key_P), [this] { if (m_hold->isEnabled()) m_hold->toggle(); }, m_hold);
+    add(QKeySequence(Qt::CTRL | Qt::Key_T), [this] { if (m_transfer->isEnabled()) m_transfer->click(); }, m_transfer);
+    add(QKeySequence(Qt::CTRL | Qt::Key_F), [this] { m_number->setFocus(); m_number->selectAll(); }, m_number);
+    add(QKeySequence(Qt::CTRL | Qt::Key_E), [this] { if (m_extFilter->isVisible()) { m_extFilter->setFocus(); m_extFilter->selectAll(); } }, m_extFilter);
+    add(QKeySequence(Qt::CTRL | Qt::Key_L), [this] { if (m_extToggle->isVisible()) m_extToggle->toggle(); }, m_extToggle);
+    add(QKeySequence(Qt::CTRL | Qt::Key_H), [this] { Q_EMIT historyRequested(); }, m_history);
+    add(QKeySequence(Qt::CTRL | Qt::Key_D), [this] { m_dnd->toggle(); });
+    add(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_M), [this] { Q_EMIT voicemailRequested(); }, m_vm);
+    add(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T), [this] { Q_EMIT alwaysOnTopToggleRequested(); });
+    add(QKeySequence(Qt::CTRL | Qt::Key_Comma), [this] { Q_EMIT settingsRequested(); }, m_settings);
+    add(QKeySequence(Qt::CTRL | Qt::Key_W), [this] { hide(); });
+    add(QKeySequence(Qt::CTRL | Qt::Key_Q), [this] { Q_EMIT quitRequested(); });
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)

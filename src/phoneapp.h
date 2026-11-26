@@ -79,6 +79,9 @@ private:
     QPointer<Desktop::Notification> m_waitNote;
     CallLog *m_callLog;
     class MediaControl *m_media;
+    class MuteControl *m_muteCtl;
+    class GlobalShortcuts *m_global;
+    bool m_alwaysOnTop = false;
     QPointer<class CallLogDialog> m_historyDialog;
     bool m_callIncoming = false;
     QDateTime m_callStart;

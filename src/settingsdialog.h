@@ -25,6 +25,9 @@ struct Settings {
     bool dndFollowSystem = true;  // also when the desktop's do-not-disturb is on
     bool pauseMedia = true;       // pause media players during calls (MPRIS)
     bool mediaKeys = true;        // media keys / headset buttons answer and hang up
+    bool alwaysOnTop = false;     // dialer window stays above others
+    bool muteFollowsSystem = true; // mute button = system-wide microphone mute (Linux)
+    bool pushToTalk = false;      // microphone only open while the push-to-talk key is held
     bool echoCancel = false; // baresip webrtc_aec
     QString micDevice, speakerDevice, ringDevice, ringFile; // PipeWire node names, "" = default
     static Settings load();
@@ -55,6 +58,7 @@ private:
     QComboBox *m_ring, *m_mic, *m_speaker, *m_ringDev, *m_dnd;
     class QCheckBox *m_dndSystem = nullptr;
     class QCheckBox *m_pauseMedia = nullptr, *m_mediaKeys = nullptr;
+    class QCheckBox *m_onTop = nullptr, *m_muteSystem = nullptr, *m_ptt = nullptr;
     QLineEdit *m_ringFile;
     class Ringer *m_preview;
     bool m_pwChanged = false;

@@ -8,6 +8,12 @@
 #include "transferdialog.h"
 #include "calllogdialog.h"
 #include "mediacontrol.h"
+#include "globalshortcuts.h"
+#include "mutecontrol.h"
+
+#include <QClipboard>
+#include <QGuiApplication>
+#include <QRegularExpression>
 
 #include <QAction>
 #include <QSettings>
@@ -55,6 +61,8 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_ringer(new Ringer(this))
     , m_callLog(new CallLog(this))
     , m_media(new MediaControl(this))
+    , m_muteCtl(new MuteControl(m_engine, this))
+    , m_global(new GlobalShortcuts(this))
 {
     m_tray->setIconName(QStringLiteral("call-start"));
     m_phonebook->setLocalContacts(m_local);
@@ -107,7 +115,46 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_window, &MainWindow::dialRequested, m_engine, &Engine::dial);
     connect(m_window, &MainWindow::hangupRequested, m_engine, &Engine::hangup);
     connect(m_window, &MainWindow::acceptRequested, m_engine, &Engine::accept);
-    connect(m_window, &MainWindow::muteToggled, m_engine, &Engine::setMuted);
+    // mute: button, system microphone and push-to-talk together
+    connect(m_window, &MainWindow::muteToggled, m_muteCtl, &MuteControl::setUserMute);
+    connect(m_muteCtl, &MuteControl::mutedChanged, m_window, &MainWindow::setMuted);
+    connect(m_window, &MainWindow::quitRequested, this, &PhoneApp::quit);
+    connect(m_window, &MainWindow::alwaysOnTopToggleRequested, this, [this] {
+        m_alwaysOnTop = !m_alwaysOnTop;
+        appSettings().setValue(QStringLiteral("Audio/AlwaysOnTop"), m_alwaysOnTop);
+        m_window->setAlwaysOnTop(m_alwaysOnTop);
+    });
+    // global shortcuts (KDE)
+    connect(m_global, &GlobalShortcuts::toggleWindow, this, [this] {
+        if (m_window->isVisible() && m_window->isActiveWindow())
+            m_window->hide();
+        else
+            showWindow();
+    });
+    connect(m_global, &GlobalShortcuts::accept, this, [this] {
+        if (m_engine->callState() == Engine::CallState::Incoming)
+            m_engine->accept();
+        else
+            m_engine->acceptWaiting();
+    });
+    connect(m_global, &GlobalShortcuts::hangup, m_engine, &Engine::hangup);
+    connect(m_global, &GlobalShortcuts::toggleMute, this, [this] {
+        if (m_engine->callState() == Engine::CallState::Established)
+            m_muteCtl->setUserMute(!m_muteCtl->muted());
+    });
+    connect(m_global, &GlobalShortcuts::toggleDnd, this, [this] { setDnd(!m_dnd); });
+    connect(m_global, &GlobalShortcuts::pushToTalk, m_muteCtl, &MuteControl::setPushToTalk);
+    connect(m_global, &GlobalShortcuts::callClipboard, this, [this] {
+        QString t = QGuiApplication::clipboard()->text().trimmed();
+        if (t.startsWith(QLatin1String("tel:")) || t.startsWith(QLatin1String("sip:")))
+            t = t.section(QLatin1Char(':'), 1);
+        t.remove(QRegularExpression(QStringLiteral("[\\s()/.-]")));
+        if (t.isEmpty() || t.size() > 40 || m_engine->callState() != Engine::CallState::Idle)
+            return;
+        m_window->setNumber(t);
+        showWindow();
+        m_engine->dial(t);
+    });
     connect(m_window, &MainWindow::holdToggled, m_engine, &Engine::setHold);
     connect(m_window, &MainWindow::dtmf, m_engine, &Engine::sendDtmf);
     connect(m_window, &MainWindow::settingsRequested, this, &PhoneApp::openSettings);
@@ -271,7 +318,7 @@ PhoneApp::PhoneApp(QObject *parent)
             m_wasEstablished = true;
         if (s != Engine::CallState::Incoming) {
             closeRingNotification();
-            if (m_window->windowFlags() & Qt::WindowStaysOnTopHint) {
+            if (!m_alwaysOnTop && (m_window->windowFlags() & Qt::WindowStaysOnTopHint)) {
                 const bool vis = m_window->isVisible();
                 m_window->setWindowFlag(Qt::WindowStaysOnTopHint, false);
                 if (vis)
@@ -298,6 +345,7 @@ PhoneApp::PhoneApp(QObject *parent)
             m_window->setPeerPhoto({});
         }
         m_prevState = s;
+        m_muteCtl->setInCall(s == Engine::CallState::Established);
         m_window->setCall(s, peerText());
         updateTray();
         // media: pause players, media keys answer / hang up (a silently shown call under do-not-disturb leaves the music)
@@ -357,6 +405,13 @@ void PhoneApp::applySettings()
     m_engine->setAudioDevices(s.speakerDevice, s.micDevice, s.echoCancel);
     m_ringer->configure(s.ringFile, s.ringDevice, s.ringLoop);
     m_media->configure(s.pauseMedia, s.mediaKeys);
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
+    m_muteCtl->configure(s.muteFollowsSystem, s.pushToTalk, s.micDevice); // device key = PipeWire node name
+#else
+    m_muteCtl->configure(false, s.pushToTalk, QString());
+#endif
+    m_alwaysOnTop = s.alwaysOnTop;
+    m_window->setAlwaysOnTop(m_alwaysOnTop);
     m_dndReject = s.dndReject;
     m_dndFollowSystem = s.dndFollowSystem;
     updateDnd();

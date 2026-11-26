@@ -16,6 +16,9 @@ add_executable(ksipphone
     calllog.cpp
     calllogdialog.cpp
     mediacontrol.cpp
+    mutecontrol.cpp
+    globalshortcuts.cpp
+    keepabove.cpp
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})
@@ -45,6 +48,10 @@ if (APPLE)
     set_source_files_properties(contacts_mac.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
     target_link_libraries(ksipphone PRIVATE "-framework Contacts" "-framework Foundation")
     target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_MACCONTACTS)
+endif()
+if (KF6GlobalAccel_FOUND)
+    target_link_libraries(ksipphone PRIVATE KF6::GlobalAccel)
+    target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_GLOBALACCEL)
 endif()
 if (KSIPPHONE_WITH_KDE)
     target_link_libraries(ksipphone PRIVATE KF6::CoreAddons KF6::Notifications KF6::StatusNotifierItem)

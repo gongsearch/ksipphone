@@ -53,7 +53,8 @@ public:
     void dial(const QString &target);
     void accept();
     void hangup();
-    void setMuted(bool muted);
+    void setMuted(bool muted); // baresip's own mute of the call's audio
+    bool isMuted() const { return m_muted; }
     void setHold(bool hold);
     void sendDtmf(const QString &digit);
 
@@ -134,6 +135,7 @@ private:
     QString m_player, m_source;
     QStringList m_registeredCodecs;
     bool m_aec = false;
+    bool m_muted = false;
     // calls by baresip call id: the main call and an attended transfer's consultation call
     QString m_callId, m_consultId;
     bool m_consultPending = false;

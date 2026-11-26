@@ -44,6 +44,8 @@ if (KSIPPHONE_WITH_KDE)
     find_package(KF6Wallet ${KF_MIN_VERSION} QUIET)
     # Optional: KDE address book (Akonadi, KDE Connect phone contacts, vCards) as second contact source
     find_package(KF6People ${KF_MIN_VERSION} QUIET)
+    # Optional: system-wide shortcuts (accept, hang up, mute, push to talk)
+    find_package(KF6GlobalAccel ${KF_MIN_VERSION} QUIET)
     set_package_properties(KF6People PROPERTIES TYPE OPTIONAL PURPOSE "names and photos from the KDE address book")
 endif()
 set_package_properties(KF6Wallet PROPERTIES TYPE OPTIONAL PURPOSE "migrate passwords from KSipPhone 0.1")

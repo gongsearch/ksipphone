@@ -62,4 +62,6 @@
   <file alias="breeze-dark/22/edit-clear-history.svg">icons/breeze-dark/22/edit-clear-history.svg</file>
   <file alias="breeze-dark/22/edit-copy.svg">icons/breeze-dark/22/edit-copy.svg</file>
   <file alias="breeze-dark/22/edit-delete.svg">icons/breeze-dark/22/edit-delete.svg</file>
+  <file alias="breeze/22/configure-shortcuts.svg">icons/breeze/22/configure-shortcuts.svg</file>
+  <file alias="breeze-dark/22/configure-shortcuts.svg">icons/breeze-dark/22/configure-shortcuts.svg</file>
 </qresource></RCC>

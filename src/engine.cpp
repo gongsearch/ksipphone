@@ -484,7 +484,10 @@ void Engine::hangup()
 
 void Engine::setMuted(bool muted)
 {
-    Q_UNUSED(muted) // baresip toggles
+    // baresip's "mute" toggles: only send when the state really changes
+    if (muted == m_muted || m_callState == CallState::Idle)
+        return;
+    m_muted = muted;
     send(QStringLiteral("mute"));
 }
 
@@ -823,6 +826,7 @@ void Engine::onEvent(const QJsonObject &ev)
         QTimer::singleShot(300, this, [this] { queryCodec(); });
     } else if (t == QLatin1String("CALL_CLOSED")) {
         m_callId.clear();
+        m_muted = false; // baresip's mute belongs to the call
         if (!m_waitingId.isEmpty()) {
             // the main call ended while another one is waiting: it simply keeps ringing as a normal call
             m_callId = m_waitingId;

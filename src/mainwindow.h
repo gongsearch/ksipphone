@@ -31,6 +31,8 @@ public:
     void setConsult(Engine::CallState state, const QString &peerText, bool waitingCall = false);
     void setWaiting(const QString &peerText); // empty: no call waiting
     void setDnd(bool on, bool bySystem);
+    void setMuted(bool muted);        // without emitting muteToggled
+    void setAlwaysOnTop(bool on);
     void setPhonebookError(const QString &message);
     void setCodec(const QString &codec);
     void setPeerPhoto(const QPixmap &photo); // null pixmap hides it
@@ -49,6 +51,8 @@ Q_SIGNALS:
     void acceptWaitingRequested();
     void dndToggled(bool on);
     void historyRequested();
+    void alwaysOnTopToggleRequested();
+    void quitRequested();
     void rejectWaitingRequested();
     void settingsRequested();
     void voicemailRequested();
@@ -56,6 +60,7 @@ Q_SIGNALS:
 protected:
     void closeEvent(QCloseEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
     void moveEvent(QMoveEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
 
@@ -64,6 +69,7 @@ private:
     void callClicked();
     void updatePresenceIcons();
     void refreshExtList();
+    void setupShortcuts();
     void applyExtVisibility();
     void saveGeometryNow();
     void updateTransferButtons();
@@ -80,6 +86,8 @@ private:
     int m_extSort = 0;                           // 0 number, 1 first name, 2 last name, 3 status
     QToolButton *m_extToggle;
     QToolButton *m_dnd;
+    QToolButton *m_settings = nullptr, *m_history = nullptr;
+    bool m_alwaysOnTop = false;
     class QFrame *m_waitBox;
     QLabel *m_waitText;
     bool m_secondIsWaiting = false;
