@@ -24,6 +24,12 @@ It is written for KDE Plasma but has no hard Plasma or D-Bus dependency of its o
   messages, one click to call the mailbox.
 - **LDAP phonebook** (anonymous, read-only): search by name or number while typing,
   caller/callee name and `jpegPhoto` lookup for incoming and outgoing calls.
+- **Address book of the computer** as second source after LDAP: KDE (KPeople, incl. phone
+  contacts via KDE Connect), GNOME / Evolution, macOS Contacts. Results sorted alphabetically,
+  name format *First Last* or *Last, First*, icons for source and number type.
+- **Call transfer**: blind, or attended (consult the target first, then connect or go back).
+- **Presence of internal extensions**: a list next to the keypad shows free / busy / offline;
+  click to call, during a call click to transfer (see *Presence with Asterisk* below).
 - **HD indicator**: shows the negotiated codec (HD badge for G.722 / Opus) and a call timer.
 - **Audio**: choose microphone, speaker/headset and a separate ring device (PipeWire nodes);
   any sound file as ring tone, ringing once or continuously; optional WebRTC echo cancellation
@@ -35,7 +41,7 @@ It is written for KDE Plasma but has no hard Plasma or D-Bus dependency of its o
   Manager, macOS Keychain), never written to disk by KSipPhone.
 - **IPv6**: optionally prefer the server's IPv6 address.
 
-Not (yet) supported: video, chat/presence, call transfer, multiple accounts, conference.
+Not (yet) supported: video, chat, own presence status, multiple accounts, conference.
 
 ## Requirements
 
@@ -84,10 +90,24 @@ the SIP password goes to the system keychain (service *KSipPhone*).
 | Prefer IPv6 | registers via the server's IPv6 address if its name has one |
 | Codecs | preference order, e.g. `G722,PCMA,PCMU,opus` |
 | Voicemail | number to dial for the mailbox |
+| Extensions | internal extensions shown with presence, e.g. `100, 1000, 2000` |
 | DTMF | must match the server (Asterisk `dtmf_mode`) |
 | Audio devices | as listed by Qt (PipeWire nodes on Linux), or system default |
 | Ring tone | sound file, once or continuously, on its own device |
 | LDAP | `ldap://host` and base DN; anonymous read of `cn`, `telephoneNumber`, `mobile`, `homePhone`, `jpegPhoto` |
+
+### Presence with Asterisk
+
+KSipPhone subscribes the event package `presence` (PIDF) for each extension. Asterisk (PJSIP) needs:
+
+- a hint per extension in the endpoint's context, e.g. `exten => 100,hint,PJSIP/100`
+- the modules `res_pjsip_exten_state` (needs `res_pjsip_outbound_publish`),
+  `res_pjsip_pidf_body_generator` and `res_pjsip_pidf_eyebeam_body_supplement`
+  (without the latter Asterisk reports *in use* only as a note and the extension looks free)
+- `allow_subscribe=yes` on the endpoint (the default)
+
+Check with `core show hints` (watchers) and `pjsip list subscriptions inbound`. A `489 Bad Event`
+answer means the modules are missing. Asterisk reports *ringing* like *busy*.
 
 Baresip's configuration is generated on every start in `~/.local/share/ksipphone/baresip/`;
 the account (with password) only exists at runtime.

@@ -98,7 +98,7 @@ private:
     void setCallState(CallState s);
     void queryCodec(int attempt = 0);
     QString targetUri(const QString &target) const;
-    void syncContacts();
+    void restartWhenIdle();
     void pollPresence();
     void setConsultState(CallState s);
 
@@ -127,7 +127,8 @@ private:
     QString m_consultPeer;
     // presence
     QStringList m_watch;
-    QStringList m_contactsAdded; // URIs added to baresip
+    QString m_contactsServer; // server the contacts file was written for
+    bool m_restartPending = false;
     QHash<QString, Presence> m_presence;
     QTimer *m_presenceTimer = nullptr;
 };

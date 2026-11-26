@@ -113,7 +113,6 @@ Engine::Engine(QObject *parent)
             m_sock->abort();
         m_connected = false;
         m_uaCreated = false;
-        m_contactsAdded.clear();
         m_callId.clear();
         m_consultId.clear();
         m_consultPending = false;
@@ -225,10 +224,21 @@ bool Engine::writeConfig(QString *dir)
             ring.write(wav);
         }
     }
-    for (const auto &f : {QStringLiteral("/accounts"), QStringLiteral("/contacts")}) {
-        QFile e(base + f);
+    {
+        QFile e(base + QStringLiteral("/accounts")); // the account is created at runtime ("uanew")
         if (e.open(QIODevice::WriteOnly | QIODevice::Truncate))
             e.close();
+    }
+    {
+        // extensions with presence: the presence module subscribes these at startup
+        QFile c(base + QStringLiteral("/contacts"));
+        if (c.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            m_contactsServer = m_account.server;
+            if (!m_account.server.isEmpty()) {
+                for (const QString &ext : std::as_const(m_watch))
+                    c.write(QStringLiteral("\"%1\" <%2>;presence=p2p\n").arg(ext, targetUri(ext)).toUtf8());
+            }
+        }
     }
     *dir = base;
     return true;
@@ -246,7 +256,6 @@ void Engine::start()
     m_buf.clear();
     m_pending.clear();
     m_registeredCodecs.clear();
-    m_contactsAdded.clear();
     m_proc.start(baresipExecutable(), {QStringLiteral("-f"), QDir::toNativeSeparators(dir)});
     if (!m_proc.waitForStarted(5000)) {
         m_lastError = QStringLiteral("Cannot start baresip (%1): %2").arg(baresipExecutable(), m_proc.errorString());
@@ -364,6 +373,10 @@ void Engine::handleMessage(const QJsonObject &msg)
 void Engine::setAccount(const Account &account)
 {
     m_account = account;
+    if (!m_watch.isEmpty() && account.server != m_contactsServer && m_proc.state() != QProcess::NotRunning) {
+        restartWhenIdle(); // contacts (presence) point to the old server; the account is applied after the restart
+        return;
+    }
     if (!m_connected)
         return;
     if (m_uaCreated) {
@@ -426,7 +439,6 @@ void Engine::setAccount(const Account &account)
     });
     m_uaCreated = true;
     setRegState(RegState::Registering);
-    syncContacts(); // presence subscriptions start once registered
 }
 
 QString Engine::targetUri(const QString &target) const
@@ -541,26 +553,22 @@ void Engine::setWatchList(const QStringList &extensions)
     for (auto it = m_presence.begin(); it != m_presence.end();) {
         it = m_watch.contains(it.key()) ? std::next(it) : m_presence.erase(it);
     }
-    syncContacts();
+    // baresip's presence module subscribes the contacts it finds at startup: restart with the new list
+    restartWhenIdle();
     Q_EMIT presenceChanged(m_presence);
 }
 
-void Engine::syncContacts()
+void Engine::restartWhenIdle()
 {
-    if (!m_connected || !m_uaCreated)
+    if (m_proc.state() == QProcess::NotRunning)
         return;
-    QStringList wanted;
-    for (const QString &ext : std::as_const(m_watch))
-        wanted << targetUri(ext);
-    for (const QString &uri : std::as_const(m_contactsAdded)) {
-        if (!wanted.contains(uri))
-            send(QStringLiteral("rmcontact <%1>").arg(uri));
+    if (m_callState != CallState::Idle) {
+        m_restartPending = true; // after the call
+        return;
     }
-    for (int i = 0; i < wanted.size(); ++i) {
-        if (!m_contactsAdded.contains(wanted[i]))
-            send(QStringLiteral("addcontact \"%1\" <%2>;presence=p2p").arg(m_watch[i], wanted[i]));
-    }
-    m_contactsAdded = wanted;
+    m_restartPending = false;
+    stop();
+    QTimer::singleShot(500, this, &Engine::start);
 }
 
 void Engine::pollPresence()
@@ -634,6 +642,8 @@ void Engine::setCallState(CallState s)
         return;
     m_callState = s;
     Q_EMIT callStateChanged(s);
+    if (s == CallState::Idle && m_restartPending)
+        QTimer::singleShot(0, this, &Engine::restartWhenIdle);
 }
 
 void Engine::onEvent(const QJsonObject &ev)
