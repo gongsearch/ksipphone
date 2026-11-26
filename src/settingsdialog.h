@@ -3,6 +3,10 @@
 
 #include <QDialog>
 
+class QSettings;
+// the application's settings file (~/.config/ksipphonerc)
+QSettings &appSettings();
+
 class QLineEdit;
 class QComboBox;
 

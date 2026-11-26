@@ -220,6 +220,10 @@ void PhoneApp::start(bool minimized)
     if (!minimized)
         m_window->show();
     updateTray();
+    // developer aid (see openSettings): KSIPPHONE_GRAB_DIR also saves an image of the main window
+    if (const QString grabDir = qEnvironmentVariable("KSIPPHONE_GRAB_DIR"); !grabDir.isEmpty() && !minimized) {
+        QTimer::singleShot(3000, m_window, [this, grabDir] { m_window->grab().save(grabDir + QStringLiteral("/main.png")); });
+    }
 }
 
 QString PhoneApp::peerText() const

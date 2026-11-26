@@ -33,7 +33,7 @@
 #include <QVBoxLayout>
 
 // Same file and keys as KConfig used in 0.1 (~/.config/ksipphonerc on Linux).
-static QSettings &store()
+QSettings &appSettings()
 {
     static QSettings settings(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QStringLiteral("/ksipphonerc"),
                               QSettings::IniFormat);
@@ -51,7 +51,7 @@ static QString str(const QSettings &s, const QString &key, const QString &def = 
 
 Settings Settings::load()
 {
-    QSettings &c = store();
+    QSettings &c = appSettings();
     c.sync();
     Settings s;
     c.beginGroup(QStringLiteral("Account"));
@@ -85,7 +85,7 @@ Settings Settings::load()
 
 void Settings::save() const
 {
-    QSettings &c = store();
+    QSettings &c = appSettings();
     c.beginGroup(QStringLiteral("Account"));
     c.setValue(QStringLiteral("User"), user);
     c.setValue(QStringLiteral("Server"), server);

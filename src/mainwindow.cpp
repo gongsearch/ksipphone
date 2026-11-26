@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: MIT
 #include "mainwindow.h"
 #include "searchfield.h"
+#include "settingsdialog.h"
+
+#include <QActionGroup>
+#include <QApplication>
+#include <QCollator>
+#include <QMenu>
+#include <QSettings>
+#include <QStyledItemDelegate>
+
+#include <algorithm>
 
 #include <KLocalizedString>
 
@@ -24,6 +34,54 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+namespace
+{
+constexpr int ExtNumberRole = Qt::UserRole;
+constexpr int ExtNameRole = Qt::UserRole + 1;
+
+// extension list: status dot and name on the left, number on the right
+class ExtDelegate : public QStyledItemDelegate
+{
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        const QString number = index.data(ExtNumberRole).toString();
+        const QString name = index.data(ExtNameRole).toString();
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt, index);
+        const int numW = name.isEmpty() ? 0 : opt.fontMetrics.horizontalAdvance(number) + 12;
+        // the style draws background, dot and name in the left part ...
+        opt.text = name.isEmpty() ? number : name;
+        QStyleOptionViewItem left(opt);
+        left.rect.setRight(opt.rect.right() - numW);
+        const QWidget *w = opt.widget;
+        QStyle *style = w ? w->style() : QApplication::style();
+        style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, w); // full-width hover
+        left.backgroundBrush = Qt::NoBrush;
+        left.state &= ~QStyle::State_MouseOver;
+        style->drawControl(QStyle::CE_ItemViewItem, &left, painter, w);
+        // ... the number goes right-aligned in the rest
+        if (numW > 0) {
+            painter->save();
+            painter->setFont(opt.font);
+            painter->setPen(opt.palette.color(QPalette::PlaceholderText));
+            painter->drawText(opt.rect.adjusted(0, 0, -6, 0), Qt::AlignRight | Qt::AlignVCenter, number);
+            painter->restore();
+        }
+    }
+};
+
+// "Franka Mustermann" -> first "Franka", last "Mustermann"; a single word is both
+QPair<QString, QString> nameParts(const QString &name)
+{
+    const QStringList w = name.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    if (w.size() < 2)
+        return {name, name};
+    return {w.mid(0, w.size() - 1).join(QLatin1Char(' ')), w.last()};
+}
+}
 
 MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     : QWidget(parent)
@@ -124,15 +182,63 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
         grid->addWidget(b, i / 3, i % 3);
     }
-    // internal extensions with presence status, next to the keypad
-    m_ext = new QListWidget(this);
+    // internal extensions with presence status, next to the keypad: filter field + options, list
+    m_extPanel = new QWidget(this);
+    auto *extLay = new QVBoxLayout(m_extPanel);
+    extLay->setContentsMargins(0, 0, 0, 0);
+    extLay->setSpacing(6);
+    auto *extTop = new QHBoxLayout;
+    extTop->setSpacing(4);
+    m_extFilter = new QLineEdit(m_extPanel);
+    m_extFilter->setPlaceholderText(i18n("Filter extensions"));
+    m_extFilter->setClearButtonEnabled(true);
+    connect(m_extFilter, &QLineEdit::textChanged, this, &MainWindow::refreshExtList);
+    auto *extOptions = new QToolButton(m_extPanel);
+    extOptions->setIcon(QIcon::fromTheme(QStringLiteral("view-sort")));
+    extOptions->setToolTip(i18n("Sort and filter"));
+    extOptions->setAutoRaise(true);
+    extOptions->setPopupMode(QToolButton::InstantPopup);
+    auto *menu = new QMenu(extOptions);
+    auto *sortGroup = new QActionGroup(menu);
+    QSettings &cfg = appSettings();
+    m_extSort = cfg.value(QStringLiteral("Presence/Sort"), 0).toInt();
+    m_onlyFree = cfg.value(QStringLiteral("Presence/OnlyFree"), false).toBool();
+    const QStringList sorts = {i18n("Sort by number"), i18n("Sort by first name"), i18n("Sort by last name"), i18n("Sort by status")};
+    for (int i = 0; i < sorts.size(); ++i) {
+        QAction *a = menu->addAction(sorts[i]);
+        a->setCheckable(true);
+        a->setChecked(i == m_extSort);
+        sortGroup->addAction(a);
+        connect(a, &QAction::triggered, this, [this, i] {
+            m_extSort = i;
+            appSettings().setValue(QStringLiteral("Presence/Sort"), i);
+            refreshExtList();
+        });
+    }
+    menu->addSeparator();
+    QAction *onlyFree = menu->addAction(i18n("Only free extensions"));
+    onlyFree->setCheckable(true);
+    onlyFree->setChecked(m_onlyFree);
+    connect(onlyFree, &QAction::toggled, this, [this](bool on) {
+        m_onlyFree = on;
+        appSettings().setValue(QStringLiteral("Presence/OnlyFree"), on);
+        refreshExtList();
+    });
+    extOptions->setMenu(menu);
+    extTop->addWidget(m_extFilter, 1);
+    extTop->addWidget(extOptions);
+    extLay->addLayout(extTop);
+    m_ext = new QListWidget(m_extPanel);
     m_ext->setFocusPolicy(Qt::NoFocus);
     m_ext->setSelectionMode(QAbstractItemView::NoSelection);
-    m_ext->setFixedWidth(180);
+    m_ext->setMouseTracking(true);
+    m_ext->setItemDelegate(new ExtDelegate(m_ext));
     m_ext->setToolTip(i18n("Click to call; during a call click to transfer"));
-    m_ext->hide();
+    extLay->addWidget(m_ext, 1);
+    m_extPanel->setFixedWidth(250);
+    m_extPanel->hide();
     connect(m_ext, &QListWidget::itemClicked, this, [this](QListWidgetItem *it) {
-        const QString ext = it->data(Qt::UserRole).toString();
+        const QString ext = it->data(ExtNumberRole).toString();
         if (m_state == Engine::CallState::Idle)
             Q_EMIT dialRequested(ext);
         else if (m_state == Engine::CallState::Established && m_consult == Engine::CallState::Idle)
@@ -141,7 +247,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     auto *keyRow = new QHBoxLayout;
     keyRow->setSpacing(12);
     keyRow->addLayout(grid, 1);
-    keyRow->addWidget(m_ext);
+    keyRow->addWidget(m_extPanel);
     lay->addLayout(keyRow);
 
     auto *row = new QHBoxLayout;
@@ -250,19 +356,63 @@ void MainWindow::setNumber(const QString &number)
 
 void MainWindow::setExtensions(const QList<QPair<QString, QString>> &extensions)
 {
-    m_ext->clear();
-    for (const auto &[ext, name] : extensions) {
-        auto *it = new QListWidgetItem(name.isEmpty() || name == ext ? ext : QStringLiteral("%1  (%2)").arg(name, ext), m_ext);
-        it->setData(Qt::UserRole, ext);
-    }
-    m_ext->setVisible(!extensions.isEmpty());
-    updatePresenceIcons();
+    m_extensions = extensions;
+    m_extPanel->setVisible(!extensions.isEmpty());
+    refreshExtList();
     adjustSize();
 }
 
 void MainWindow::setPresence(const QHash<QString, Engine::Presence> &states)
 {
     m_presence = states;
+    if (m_extSort == 3 || m_onlyFree)
+        refreshExtList(); // order or visibility depends on the status
+    else
+        updatePresenceIcons();
+}
+
+void MainWindow::refreshExtList()
+{
+    const QString filter = m_extFilter->text().trimmed();
+    QList<QPair<QString, QString>> list;
+    for (const auto &e : std::as_const(m_extensions)) {
+        if (!filter.isEmpty() && !e.first.contains(filter, Qt::CaseInsensitive) && !e.second.contains(filter, Qt::CaseInsensitive))
+            continue;
+        if (m_onlyFree && m_presence.value(e.first, Engine::Presence::Unknown) != Engine::Presence::Online)
+            continue;
+        list.append(e);
+    }
+    QCollator collator;
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+    collator.setNumericMode(true);
+    auto rank = [this](const QString &ext) {
+        switch (m_presence.value(ext, Engine::Presence::Unknown)) {
+        case Engine::Presence::Online: return 0;
+        case Engine::Presence::Busy: return 1;
+        case Engine::Presence::Unknown: return 2;
+        case Engine::Presence::Offline: return 3;
+        }
+        return 3;
+    };
+    std::stable_sort(list.begin(), list.end(), [&](const QPair<QString, QString> &a, const QPair<QString, QString> &b) {
+        const QString na = a.second.isEmpty() ? a.first : a.second, nb = b.second.isEmpty() ? b.first : b.second;
+        int c = 0;
+        switch (m_extSort) {
+        case 1: c = collator.compare(nameParts(na).first, nameParts(nb).first); break;
+        case 2: c = collator.compare(nameParts(na).second, nameParts(nb).second); break;
+        case 3: c = rank(a.first) - rank(b.first); break;
+        default: break;
+        }
+        if (c == 0)
+            c = m_extSort == 0 || m_extSort == 3 ? collator.compare(a.first, b.first) : collator.compare(na, nb);
+        return c < 0;
+    });
+    m_ext->clear();
+    for (const auto &[ext, name] : std::as_const(list)) {
+        auto *it = new QListWidgetItem(m_ext);
+        it->setData(ExtNumberRole, ext);
+        it->setData(ExtNameRole, name == ext ? QString() : name);
+    }
     updatePresenceIcons();
 }
 
@@ -290,7 +440,7 @@ void MainWindow::updatePresenceIcons()
     const QColor grey = palette().color(QPalette::PlaceholderText);
     for (int i = 0; i < m_ext->count(); ++i) {
         QListWidgetItem *it = m_ext->item(i);
-        const Engine::Presence st = m_presence.value(it->data(Qt::UserRole).toString(), Engine::Presence::Unknown);
+        const Engine::Presence st = m_presence.value(it->data(ExtNumberRole).toString(), Engine::Presence::Unknown);
         switch (st) {
         case Engine::Presence::Online:
             it->setIcon(dot(QColor(0x2e, 0x9d, 0x4c), false));

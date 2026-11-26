@@ -10,6 +10,7 @@
 #include <QWidget>
 
 class QLabel;
+class QLineEdit;
 class QListWidget;
 class SearchField;
 class QPushButton;
@@ -54,6 +55,7 @@ private:
     void keypad(const QString &digit);
     void callClicked();
     void updatePresenceIcons();
+    void refreshExtList();
     void updateTransferButtons();
 
     QLabel *m_reg, *m_status, *m_pbError, *m_codec, *m_photo, *m_peerName, *m_duration;
@@ -62,6 +64,11 @@ private:
     qint64 m_callStartMs = 0;
     SearchField *m_number;
     QListWidget *m_ext;
+    QWidget *m_extPanel;
+    QLineEdit *m_extFilter;
+    QList<QPair<QString, QString>> m_extensions; // number, name
+    int m_extSort = 0;                           // 0 number, 1 first name, 2 last name, 3 status
+    bool m_onlyFree = false;
     QHash<QString, Engine::Presence> m_presence;
     Engine::CallState m_consult = Engine::CallState::Idle;
     QPushButton *m_call, *m_hangup;
