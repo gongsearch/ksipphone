@@ -4,7 +4,10 @@
 #include <QCoreApplication>
 #include <QGuiApplication>
 #include <QLoggingCategory>
-#include <QTemporaryFile>
+#include <QDir>
+#include <QFile>
+#include <QStandardPaths>
+#include <QTimer>
 #include <QWidget>
 
 #ifdef KSIPPHONE_HAVE_DBUS
@@ -23,9 +26,11 @@ static bool kwinKeepAbove(const QWidget *window, bool on)
     QDBusConnectionInterface *bus = QDBusConnection::sessionBus().interface();
     if (!bus || !bus->isServiceRegistered(QStringLiteral("org.kde.KWin")).value())
         return false;
-    QTemporaryFile script(QStringLiteral("ksipphone-keepabove-XXXXXX.js"));
-    script.setAutoRemove(true);
-    if (!script.open())
+    // KWin reads and runs the script asynchronously: keep the file and unload the script only later
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    QDir().mkpath(dir);
+    QFile script(dir + QStringLiteral("/keepabove.js"));
+    if (!script.open(QIODevice::WriteOnly | QIODevice::Truncate))
         return false;
     QString caption = window->windowTitle();
     caption.replace(QLatin1Char('\\'), QLatin1String("\\\\")).replace(QLatin1Char('"'), QLatin1String("\\\""));
@@ -38,7 +43,7 @@ static bool kwinKeepAbove(const QWidget *window, bool on)
                            .arg(QCoreApplication::applicationPid())
                            .arg(caption, on ? QStringLiteral("true") : QStringLiteral("false"));
     script.write(js.toUtf8());
-    script.flush();
+    script.close();
     const QString name = QStringLiteral("ksipphone-keepabove");
     QDBusInterface scripting(QStringLiteral("org.kde.KWin"), QStringLiteral("/Scripting"), QStringLiteral("org.kde.kwin.Scripting"));
     scripting.call(QStringLiteral("unloadScript"), name);
@@ -49,7 +54,10 @@ static bool kwinKeepAbove(const QWidget *window, bool on)
     }
     QDBusInterface run(QStringLiteral("org.kde.KWin"), QStringLiteral("/Scripting/Script%1").arg(id.value()), QStringLiteral("org.kde.kwin.Script"));
     run.call(QStringLiteral("run"));
-    scripting.call(QStringLiteral("unloadScript"), name);
+    QTimer::singleShot(3000, [name] {
+        QDBusInterface s(QStringLiteral("org.kde.KWin"), QStringLiteral("/Scripting"), QStringLiteral("org.kde.kwin.Scripting"));
+        s.call(QStringLiteral("unloadScript"), name);
+    });
     return true;
 }
 #endif

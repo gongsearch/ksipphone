@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-26 14:56+0100\n"
+"POT-Creation-Date: 2026-11-26 15:07+0100\n"
 "PO-Revision-Date: 2026-11-25 23:30+0100\n"
 "Last-Translator: gongsearch\n"
 "Language-Team: German\n"
@@ -844,8 +844,8 @@ msgstr "Einmal"
 msgid "Continuously until answered"
 msgstr "Durchgehend bis zur Annahme"
 
-#: src/settingsdialog.cpp:438 src/settingsdialog.cpp:509
-#: src/settingsdialog.cpp:515
+#: src/settingsdialog.cpp:438 src/settingsdialog.cpp:514
+#: src/settingsdialog.cpp:521
 #, kde-format
 msgid "Microphone:"
 msgstr "Mikrofon:"
@@ -986,55 +986,55 @@ msgstr "Telefonbuch"
 
 #: src/settingsdialog.cpp:501
 #, kde-format
-msgid "Keep the dialer window above other windows"
-msgstr "Wählfenster immer über anderen Fenstern halten"
+msgid "Keep above other windows"
+msgstr "Über anderen Fenstern halten"
 
 #: src/settingsdialog.cpp:503
 #, kde-format
 msgid "Window:"
 msgstr "Fenster:"
 
-#: src/settingsdialog.cpp:505
-#, kde-format
-msgid "Mute button follows the system microphone mute"
-msgstr "Stumm-Taste folgt der Mikrofon-Stummschaltung des Systems"
-
-#: src/settingsdialog.cpp:507
-#, kde-format
-msgid "Shows when the microphone is muted elsewhere (mic-mute key, desktop, headset) and mutes the microphone system-wide. Restored after the call."
-msgstr "Zeigt an, wenn das Mikrofon woanders stummgeschaltet wird (Mikrofon-Taste, Desktop, Headset), und schaltet das Mikrofon systemweit stumm. Wird nach dem Gespräch wiederhergestellt."
-
 #: src/settingsdialog.cpp:512
 #, kde-format
-msgid "Push to talk: microphone only open while the key is held"
-msgstr "Push-to-Talk: Mikrofon nur offen, solange die Taste gedrückt ist"
+msgid "Follow the system microphone mute"
+msgstr "Der Mikrofon-Stummschaltung des Systems folgen"
 
-#: src/settingsdialog.cpp:514
+#: src/settingsdialog.cpp:515
 #, kde-format
-msgid "Assign the key in System Settings > Keyboard > Shortcuts > KSipPhone > \"Push to talk (hold)\""
-msgstr "Die Taste unter Systemeinstellungen > Tastatur > Kurzbefehle > KSipPhone > „Push-to-Talk (gedrückt halten)“ festlegen"
+msgid "The mute button shows a microphone muted elsewhere (mic-mute key, desktop, headset) and mutes system-wide. Restored after the call."
+msgstr "Die Stumm-Taste zeigt ein woanders stummgeschaltetes Mikrofon (Mikrofon-Taste, Desktop, Headset) und schaltet systemweit stumm. Wird nach dem Gespräch wiederhergestellt."
 
-#: src/settingsdialog.cpp:516
+#: src/settingsdialog.cpp:519
 #, kde-format
-msgid "Global shortcuts (accept, hang up, mute, push to talk, show dialer, do not disturb, call the number in the clipboard) are set in System Settings > Keyboard > Shortcuts > KSipPhone."
-msgstr "Globale Kurzbefehle (annehmen, auflegen, stumm, Push-to-Talk, Wählfenster, nicht stören, Nummer aus der Zwischenablage anrufen) werden unter Systemeinstellungen > Tastatur > Kurzbefehle > KSipPhone festgelegt."
+msgid "Push to talk"
+msgstr "Push-to-Talk"
 
-#: src/settingsdialog.cpp:520
+#: src/settingsdialog.cpp:522
+#, kde-format
+msgid "During calls the microphone is only open while the push-to-talk key is held."
+msgstr "Während Gesprächen ist das Mikrofon nur offen, solange die Push-to-Talk-Taste gedrückt ist."
+
+#: src/settingsdialog.cpp:523
 #, kde-format
 msgid "Global:"
 msgstr "Global:"
 
-#: src/settingsdialog.cpp:522
+#: src/settingsdialog.cpp:523
+#, kde-format
+msgid "Keys for accept, hang up, mute, push to talk, show dialer, do not disturb and calling the number in the clipboard: System Settings > Keyboard > Shortcuts > KSipPhone."
+msgstr "Tasten für Annehmen, Auflegen, Stumm, Push-to-Talk, Wählfenster, Nicht stören und Anrufen der Nummer aus der Zwischenablage: Systemeinstellungen > Tastatur > Kurzbefehle > KSipPhone."
+
+#: src/settingsdialog.cpp:526
 #, kde-format
 msgid "<table><tr><td>Ctrl+Enter</td><td>Call / accept</td></tr><tr><td>Esc</td><td>Hang up / decline</td></tr><tr><td>Ctrl+M</td><td>Mute</td></tr><tr><td>Ctrl+P</td><td>Hold</td></tr><tr><td>Ctrl+T</td><td>Transfer / connect / swap</td></tr><tr><td>Ctrl+F</td><td>Search</td></tr><tr><td>Ctrl+E</td><td>Filter extensions</td></tr><tr><td>Ctrl+L</td><td>Show / hide extension list</td></tr><tr><td>Ctrl+H</td><td>Call history</td></tr><tr><td>Ctrl+D</td><td>Do not disturb</td></tr><tr><td>Ctrl+Shift+M</td><td>Call voicemail</td></tr><tr><td>Ctrl+Shift+T</td><td>Keep window on top</td></tr><tr><td>Ctrl+,</td><td>Settings</td></tr><tr><td>Ctrl+W</td><td>Hide window</td></tr><tr><td>Ctrl+Q</td><td>Quit</td></tr></table>"
 msgstr "<table><tr><td>Strg+Eingabe</td><td>Anrufen / annehmen</td></tr><tr><td>Esc</td><td>Auflegen / abweisen</td></tr><tr><td>Strg+M</td><td>Stumm</td></tr><tr><td>Strg+P</td><td>Halten</td></tr><tr><td>Strg+T</td><td>Weiterleiten / verbinden / wechseln</td></tr><tr><td>Strg+F</td><td>Suchen</td></tr><tr><td>Strg+E</td><td>Nebenstellen filtern</td></tr><tr><td>Strg+L</td><td>Nebenstellenliste ein-/ausblenden</td></tr><tr><td>Strg+H</td><td>Anrufliste</td></tr><tr><td>Strg+D</td><td>Nicht stören</td></tr><tr><td>Strg+Umschalt+M</td><td>Mailbox anrufen</td></tr><tr><td>Strg+Umschalt+T</td><td>Fenster im Vordergrund halten</td></tr><tr><td>Strg+,</td><td>Einstellungen</td></tr><tr><td>Strg+W</td><td>Fenster ausblenden</td></tr><tr><td>Strg+Q</td><td>Beenden</td></tr></table>"
 
-#: src/settingsdialog.cpp:541
+#: src/settingsdialog.cpp:545
 #, kde-format
 msgid "In the window:"
 msgstr "Im Fenster:"
 
-#: src/settingsdialog.cpp:542
+#: src/settingsdialog.cpp:546
 #, kde-format
 msgid "Controls"
 msgstr "Bedienung"

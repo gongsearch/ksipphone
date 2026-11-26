@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-26 14:56+0100\n"
+"POT-Creation-Date: 2026-11-26 15:07+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -854,8 +854,8 @@ msgstr ""
 msgid "Continuously until answered"
 msgstr ""
 
-#: src/settingsdialog.cpp:438 src/settingsdialog.cpp:509
-#: src/settingsdialog.cpp:515
+#: src/settingsdialog.cpp:438 src/settingsdialog.cpp:514
+#: src/settingsdialog.cpp:521
 #, kde-format
 msgid "Microphone:"
 msgstr ""
@@ -1003,7 +1003,7 @@ msgstr ""
 
 #: src/settingsdialog.cpp:501
 #, kde-format
-msgid "Keep the dialer window above other windows"
+msgid "Keep above other windows"
 msgstr ""
 
 #: src/settingsdialog.cpp:503
@@ -1011,44 +1011,43 @@ msgstr ""
 msgid "Window:"
 msgstr ""
 
-#: src/settingsdialog.cpp:505
-#, kde-format
-msgid "Mute button follows the system microphone mute"
-msgstr ""
-
-#: src/settingsdialog.cpp:507
-#, kde-format
-msgid ""
-"Shows when the microphone is muted elsewhere (mic-mute key, desktop, "
-"headset) and mutes the microphone system-wide. Restored after the call."
-msgstr ""
-
 #: src/settingsdialog.cpp:512
 #, kde-format
-msgid "Push to talk: microphone only open while the key is held"
+msgid "Follow the system microphone mute"
 msgstr ""
 
-#: src/settingsdialog.cpp:514
+#: src/settingsdialog.cpp:515
 #, kde-format
 msgid ""
-"Assign the key in System Settings > Keyboard > Shortcuts > KSipPhone > "
-"\"Push to talk (hold)\""
+"The mute button shows a microphone muted elsewhere (mic-mute key, desktop, "
+"headset) and mutes system-wide. Restored after the call."
 msgstr ""
 
-#: src/settingsdialog.cpp:516
+#: src/settingsdialog.cpp:519
+#, kde-format
+msgid "Push to talk"
+msgstr ""
+
+#: src/settingsdialog.cpp:522
 #, kde-format
 msgid ""
-"Global shortcuts (accept, hang up, mute, push to talk, show dialer, do not "
-"disturb, call the number in the clipboard) are set in System Settings > "
-"Keyboard > Shortcuts > KSipPhone."
+"During calls the microphone is only open while the push-to-talk key is held."
 msgstr ""
 
-#: src/settingsdialog.cpp:520
+#: src/settingsdialog.cpp:523
 #, kde-format
 msgid "Global:"
 msgstr ""
 
-#: src/settingsdialog.cpp:522
+#: src/settingsdialog.cpp:523
+#, kde-format
+msgid ""
+"Keys for accept, hang up, mute, push to talk, show dialer, do not disturb "
+"and calling the number in the clipboard: System Settings > Keyboard > "
+"Shortcuts > KSipPhone."
+msgstr ""
+
+#: src/settingsdialog.cpp:526
 #, kde-format
 msgid ""
 "<table><tr><td>Ctrl+Enter</td><td>Call / accept</td></tr><tr><td>Esc</"
@@ -1064,12 +1063,12 @@ msgid ""
 "tr><tr><td>Ctrl+Q</td><td>Quit</td></tr></table>"
 msgstr ""
 
-#: src/settingsdialog.cpp:541
+#: src/settingsdialog.cpp:545
 #, kde-format
 msgid "In the window:"
 msgstr ""
 
-#: src/settingsdialog.cpp:542
+#: src/settingsdialog.cpp:546
 #, kde-format
 msgid "Controls"
 msgstr ""

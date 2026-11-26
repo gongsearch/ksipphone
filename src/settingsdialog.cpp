@@ -498,26 +498,30 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     // controls: window, microphone, shortcuts
     auto *ctl = new QWidget(tabs);
     auto *cf = new QFormLayout(ctl);
-    m_onTop = new QCheckBox(i18n("Keep the dialer window above other windows"), ctl);
+    m_onTop = new QCheckBox(i18n("Keep above other windows"), ctl);
     m_onTop->setChecked(s.alwaysOnTop);
     cf->addRow(i18n("Window:"), m_onTop);
+    // short check box texts; the explanations wrap underneath
+    auto hint = [ctl](const QString &text) {
+        auto *l = new QLabel(text, ctl);
+        l->setWordWrap(true);
+        l->setForegroundRole(QPalette::PlaceholderText);
+        return l;
+    };
     if (MuteControl::systemMicAvailable()) {
-        m_muteSystem = new QCheckBox(i18n("Mute button follows the system microphone mute"), ctl);
+        m_muteSystem = new QCheckBox(i18n("Follow the system microphone mute"), ctl);
         m_muteSystem->setChecked(s.muteFollowsSystem);
-        m_muteSystem->setToolTip(i18n("Shows when the microphone is muted elsewhere (mic-mute key, desktop, headset) "
-                                      "and mutes the microphone system-wide. Restored after the call."));
         cf->addRow(i18n("Microphone:"), m_muteSystem);
+        cf->addRow(QString(), hint(i18n("The mute button shows a microphone muted elsewhere (mic-mute key, desktop, headset) "
+                                        "and mutes system-wide. Restored after the call.")));
     }
     if (GlobalShortcuts::isAvailable()) {
-        m_ptt = new QCheckBox(i18n("Push to talk: microphone only open while the key is held"), ctl);
+        m_ptt = new QCheckBox(i18n("Push to talk"), ctl);
         m_ptt->setChecked(s.pushToTalk);
-        m_ptt->setToolTip(i18n("Assign the key in System Settings > Keyboard > Shortcuts > KSipPhone > \"Push to talk (hold)\""));
         cf->addRow(m_muteSystem ? QString() : i18n("Microphone:"), m_ptt);
-        auto *global = new QLabel(i18n("Global shortcuts (accept, hang up, mute, push to talk, show dialer, do not disturb, "
-                                       "call the number in the clipboard) are set in System Settings > Keyboard > Shortcuts > KSipPhone."),
-                                  ctl);
-        global->setWordWrap(true);
-        cf->addRow(i18n("Global:"), global);
+        cf->addRow(QString(), hint(i18n("During calls the microphone is only open while the push-to-talk key is held.")));
+        cf->addRow(i18n("Global:"), hint(i18n("Keys for accept, hang up, mute, push to talk, show dialer, do not disturb and "
+                                              "calling the number in the clipboard: System Settings > Keyboard > Shortcuts > KSipPhone.")));
     }
     auto *keys = new QLabel(i18n("<table>"
                                  "<tr><td>Ctrl+Enter</td><td>Call / accept</td></tr>"
