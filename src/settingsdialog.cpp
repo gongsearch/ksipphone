@@ -20,6 +20,7 @@
 #include <QTabWidget>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QRegularExpression>
 #include <QApplication>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -60,6 +61,7 @@ Settings Settings::load()
     s.displayName = str(c, QStringLiteral("DisplayName"));
     s.codecs = str(c, QStringLiteral("Codecs"), QStringLiteral("G722,PCMA,PCMU"));
     s.voicemail = str(c, QStringLiteral("Voicemail"));
+    s.watched = c.value(QStringLiteral("WatchedExtensions")).toStringList();
     s.dtmfMode = str(c, QStringLiteral("DtmfMode"), QStringLiteral("rtpevent"));
     s.preferIpv6 = c.value(QStringLiteral("PreferIPv6"), false).toBool();
     c.endGroup();
@@ -90,6 +92,7 @@ void Settings::save() const
     c.setValue(QStringLiteral("DisplayName"), displayName);
     c.setValue(QStringLiteral("Codecs"), codecs);
     c.setValue(QStringLiteral("Voicemail"), voicemail);
+    c.setValue(QStringLiteral("WatchedExtensions"), watched);
     c.setValue(QStringLiteral("DtmfMode"), dtmfMode);
     c.setValue(QStringLiteral("PreferIPv6"), preferIpv6);
     c.endGroup();
@@ -350,6 +353,11 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_voicemail = new QLineEdit(s.voicemail, acc);
     m_voicemail->setPlaceholderText(i18n("number of the mailbox, e.g. 9000"));
     f->addRow(i18n("Voicemail:"), m_voicemail);
+    m_watched = new QLineEdit(s.watched.join(QStringLiteral(", ")), acc);
+    m_watched->setPlaceholderText(i18n("e.g. 100, 1000, 2000"));
+    m_watched->setToolTip(i18n("Internal extensions shown in a list with their status (free, busy, offline).\n"
+                               "The server must offer presence for them (Asterisk: a hint per extension)."));
+    f->addRow(i18n("Extensions:"), m_watched);
     m_dtmf = new QComboBox(acc);
     m_dtmf->addItem(i18n("RFC 4733 / RTP events (recommended)"), QStringLiteral("rtpevent"));
     m_dtmf->addItem(i18n("SIP INFO"), QStringLiteral("info"));
@@ -469,6 +477,11 @@ Settings SettingsDialog::settings() const
     }
     s.codecs = codecs.join(QLatin1Char(','));
     s.voicemail = m_voicemail->text().trimmed();
+    s.watched.clear();
+    for (const QString &e : m_watched->text().split(QRegularExpression(QStringLiteral("[\\s,;]+")), Qt::SkipEmptyParts)) {
+        if (!s.watched.contains(e))
+            s.watched << e;
+    }
     s.dtmfMode = m_dtmf->currentData().toString();
     s.ldapUri = m_ldapUri->text().trimmed();
     s.ldapBase = m_ldapBase->text().trimmed();

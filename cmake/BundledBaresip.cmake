@@ -3,7 +3,7 @@
 include(ExternalProject)
 
 set(KSIPPHONE_BARESIP_TAG "v4.6.0" CACHE STRING "re/baresip release to bundle")
-set(KSIPPHONE_BARESIP_MODULES "g711;g722;opus;l16;pipewire;auconv;auresamp;srtp;menu;mwi;ctrl_tcp;webrtc_aec"
+set(KSIPPHONE_BARESIP_MODULES "g711;g722;opus;l16;pipewire;auconv;auresamp;srtp;menu;mwi;contact;presence;ctrl_tcp;webrtc_aec"
     CACHE STRING "baresip modules to build in (missing optional libraries are skipped by baresip)")
 set(_bundle "${CMAKE_BINARY_DIR}/bundled-baresip")
 string(REPLACE ";" "|" _mods "${KSIPPHONE_BARESIP_MODULES}")

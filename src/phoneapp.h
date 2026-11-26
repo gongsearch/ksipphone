@@ -41,6 +41,8 @@ private:
     void callVoicemail();
     void quit();
     void showWindow(bool onTop = false);
+    void transferCall(const QString &target);
+    void updateExtensions();
 
     Engine *m_engine;
     Phonebook *m_phonebook;
@@ -57,4 +59,11 @@ private:
     int m_missed = 0;
     int m_voicemails = 0;
     QPointer<Desktop::Notification> m_vmNotification;
+    // watched extensions: number -> name from the phonebook
+    QStringList m_watched;
+    QHash<QString, QString> m_extNames;
+    QHash<int, QString> m_extLookups; // lookup id -> extension
+    int m_nextExtLookup = 1000000;
+    QString m_consultName;
+    int m_consultLookup = -1;
 };

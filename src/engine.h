@@ -36,6 +36,8 @@ public:
     Q_ENUM(RegState)
     enum class CallState { Idle, Incoming, Outgoing, Ringing, Established };
     Q_ENUM(CallState)
+    enum class Presence { Unknown, Online, Busy, Offline };
+    Q_ENUM(Presence)
 
     explicit Engine(QObject *parent = nullptr);
     ~Engine() override;
@@ -54,6 +56,16 @@ public:
     void setHold(bool hold);
     void sendDtmf(const QString &digit);
 
+    // call transfer: blind (REFER), or attended: consult the target first, then connect or go back
+    void transfer(const QString &target);
+    void startConsult(const QString &target);
+    void completeConsult();
+    void abortConsult();
+    CallState consultState() const { return m_consultState; }
+
+    // presence of these extensions (SUBSCRIBE via baresip's presence module)
+    void setWatchList(const QStringList &extensions);
+
     RegState regState() const { return m_regState; }
     CallState callState() const { return m_callState; }
     QString peer() const { return m_peer; }
@@ -69,6 +81,9 @@ Q_SIGNALS:
     void codecChanged(const QString &codec); // e.g. "G722", "PCMA"; empty when idle
     void voicemailChanged(int newMessages, int oldMessages, bool waiting);
     void engineError(const QString &message);
+    void consultStateChanged(Engine::CallState state, const QString &peerUri); // Idle = no consultation call
+    void transferFailed(const QString &reason);
+    void presenceChanged(const QHash<QString, Engine::Presence> &states); // extension -> state
     void ready();
 
 private:
@@ -83,6 +98,9 @@ private:
     void setCallState(CallState s);
     void queryCodec(int attempt = 0);
     QString targetUri(const QString &target) const;
+    void syncContacts();
+    void pollPresence();
+    void setConsultState(CallState s);
 
     QProcess m_proc;
     QTcpSocket *m_sock = nullptr;
@@ -102,4 +120,14 @@ private:
     QString m_player, m_source;
     QStringList m_registeredCodecs;
     bool m_aec = false;
+    // calls by baresip call id: the main call and an attended transfer's consultation call
+    QString m_callId, m_consultId;
+    bool m_consultPending = false;
+    CallState m_consultState = CallState::Idle;
+    QString m_consultPeer;
+    // presence
+    QStringList m_watch;
+    QStringList m_contactsAdded; // URIs added to baresip
+    QHash<QString, Presence> m_presence;
+    QTimer *m_presenceTimer = nullptr;
 };

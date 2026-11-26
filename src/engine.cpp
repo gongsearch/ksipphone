@@ -82,6 +82,10 @@ Engine::Engine(QObject *parent)
     : QObject(parent)
 {
     m_proc.setProcessChannelMode(QProcess::MergedChannels);
+    m_presenceTimer = new QTimer(this);
+    m_presenceTimer->setInterval(3000);
+    connect(m_presenceTimer, &QTimer::timeout, this, &Engine::pollPresence);
+    m_presenceTimer->start();
 #ifdef Q_OS_LINUX
     // never leave an orphaned baresip behind if KSipPhone dies
     m_proc.setChildProcessModifier([] { ::prctl(PR_SET_PDEATHSIG, SIGTERM); });
@@ -109,6 +113,11 @@ Engine::Engine(QObject *parent)
             m_sock->abort();
         m_connected = false;
         m_uaCreated = false;
+        m_contactsAdded.clear();
+        m_callId.clear();
+        m_consultId.clear();
+        m_consultPending = false;
+        setConsultState(CallState::Idle);
         m_pending.clear();
         setCallState(CallState::Idle);
         setRegState(RegState::Offline, QStringLiteral("engine stopped"));
@@ -187,7 +196,7 @@ bool Engine::writeConfig(QString *dir)
         conf += QByteArray("module\t\t\t") + m + ext + "\n";
     if (m_aec) // baresip's own echo canceller; off when e.g. PipeWire already cancels echo
         conf += "module\t\t\twebrtc_aec" + ext + "\n";
-    for (const char *m : {"menu", "mwi", "ctrl_tcp"})
+    for (const char *m : {"menu", "mwi", "contact", "presence", "ctrl_tcp"})
         conf += QByteArray("module_app\t\t") + m + ext + "\n";
     conf += "ctrl_tcp_listen\t\t127.0.0.1:" + QByteArray::number(m_port) + "\n"
             "ringback_disabled\tno\n";
@@ -237,6 +246,7 @@ void Engine::start()
     m_buf.clear();
     m_pending.clear();
     m_registeredCodecs.clear();
+    m_contactsAdded.clear();
     m_proc.start(baresipExecutable(), {QStringLiteral("-f"), QDir::toNativeSeparators(dir)});
     if (!m_proc.waitForStarted(5000)) {
         m_lastError = QStringLiteral("Cannot start baresip (%1): %2").arg(baresipExecutable(), m_proc.errorString());
@@ -416,6 +426,7 @@ void Engine::setAccount(const Account &account)
     });
     m_uaCreated = true;
     setRegState(RegState::Registering);
+    syncContacts(); // presence subscriptions start once registered
 }
 
 QString Engine::targetUri(const QString &target) const
@@ -469,6 +480,116 @@ void Engine::setHold(bool hold)
 void Engine::sendDtmf(const QString &digit)
 {
     send(QStringLiteral("sndcode ") + digit);
+}
+
+void Engine::transfer(const QString &target)
+{
+    if (target.trimmed().isEmpty() || m_callState != CallState::Established)
+        return;
+    send(QStringLiteral("transfer ") + targetUri(target), [this](bool ok, const QString &out) {
+        if (!ok)
+            Q_EMIT transferFailed(out.trimmed());
+    });
+}
+
+void Engine::startConsult(const QString &target)
+{
+    if (target.trimmed().isEmpty() || m_callState != CallState::Established || m_consultState != CallState::Idle)
+        return;
+    m_consultPending = true;
+    m_consultPeer = targetUri(target);
+    // baresip puts the current call on hold and dials the target
+    send(QStringLiteral("atransferstart ") + m_consultPeer, [this](bool ok, const QString &out) {
+        if (!ok) {
+            m_consultPending = false;
+            Q_EMIT transferFailed(out.trimmed());
+        }
+    });
+}
+
+void Engine::completeConsult()
+{
+    if (m_consultState == CallState::Idle)
+        return;
+    send(QStringLiteral("atransferexec"), [this](bool ok, const QString &out) {
+        if (!ok)
+            Q_EMIT transferFailed(out.trimmed());
+    });
+}
+
+void Engine::abortConsult()
+{
+    if (m_consultState == CallState::Idle && !m_consultPending)
+        return;
+    m_consultPending = false;
+    send(QStringLiteral("atransferabort"));
+}
+
+void Engine::setConsultState(CallState s)
+{
+    if (s == m_consultState)
+        return;
+    m_consultState = s;
+    Q_EMIT consultStateChanged(s, m_consultPeer);
+}
+
+void Engine::setWatchList(const QStringList &extensions)
+{
+    if (extensions == m_watch)
+        return;
+    m_watch = extensions;
+    for (auto it = m_presence.begin(); it != m_presence.end();) {
+        it = m_watch.contains(it.key()) ? std::next(it) : m_presence.erase(it);
+    }
+    syncContacts();
+    Q_EMIT presenceChanged(m_presence);
+}
+
+void Engine::syncContacts()
+{
+    if (!m_connected || !m_uaCreated)
+        return;
+    QStringList wanted;
+    for (const QString &ext : std::as_const(m_watch))
+        wanted << targetUri(ext);
+    for (const QString &uri : std::as_const(m_contactsAdded)) {
+        if (!wanted.contains(uri))
+            send(QStringLiteral("rmcontact <%1>").arg(uri));
+    }
+    for (int i = 0; i < wanted.size(); ++i) {
+        if (!m_contactsAdded.contains(wanted[i]))
+            send(QStringLiteral("addcontact \"%1\" <%2>;presence=p2p").arg(m_watch[i], wanted[i]));
+    }
+    m_contactsAdded = wanted;
+}
+
+void Engine::pollPresence()
+{
+    if (!m_connected || m_watch.isEmpty() || m_regState != RegState::Registered)
+        return;
+    send(QStringLiteral("contacts"), [this](bool ok, const QString &out) {
+        if (!ok)
+            return;
+        // lines like "  <esc>[32mOnline<esc>[;m 100 <sip:100@server>"
+        static const QRegularExpression ansi(QStringLiteral("\x1b\\[[0-9;]*m"));
+        static const QRegularExpression line(QStringLiteral("^[>\\s]*(\\w+)\\s+.*<sip:([^@;>]+)@"));
+        QHash<QString, Presence> states;
+        for (QString l : out.split(QLatin1Char('\n'))) {
+            l.remove(ansi);
+            const auto m = line.match(l);
+            if (!m.hasMatch() || !m_watch.contains(m.captured(2)))
+                continue;
+            const QString st = m.captured(1).toLower();
+            states.insert(m.captured(2), st == QLatin1String("online") || st == QLatin1String("open") ? Presence::Online
+                                             : st == QLatin1String("busy")                             ? Presence::Busy
+                                             : st == QLatin1String("offline") || st == QLatin1String("closed") ? Presence::Offline
+                                                                                                                : Presence::Unknown);
+        }
+        if (states != m_presence) {
+            m_presence = states;
+            Q_EMIT presenceChanged(m_presence);
+        }
+    });
 }
 
 void Engine::queryCodec(int attempt)
@@ -551,7 +672,56 @@ void Engine::onEvent(const QJsonObject &ev)
         setRegState(RegState::Failed, text);
     } else if (t == QLatin1String("UNREGISTERING")) {
         setRegState(RegState::Offline);
-    } else if (t == QLatin1String("CALL_INCOMING")) {
+    }
+    // calls: the main call, or the consultation call of an attended transfer
+    const QString id = ev.value(QStringLiteral("id")).toString();
+    const bool callEvent = t.startsWith(QLatin1String("CALL_"));
+    if (callEvent && !id.isEmpty()) {
+        if (t == QLatin1String("CALL_OUTGOING") && m_consultPending && id != m_callId) {
+            m_consultPending = false;
+            m_consultId = id;
+            setConsultState(CallState::Outgoing);
+            return;
+        }
+        if (!m_consultId.isEmpty() && id == m_consultId) {
+            if (t == QLatin1String("CALL_RINGING") || t == QLatin1String("CALL_PROGRESS")) {
+                if (m_consultState == CallState::Outgoing)
+                    setConsultState(CallState::Ringing);
+            } else if (t == QLatin1String("CALL_ESTABLISHED")) {
+                setConsultState(CallState::Established);
+            } else if (t == QLatin1String("CALL_CLOSED")) {
+                m_consultId.clear();
+                setConsultState(CallState::Idle);
+                // consultation ended without transfer: back to the held main call
+                if (!m_callId.isEmpty() && m_callState == CallState::Established) {
+                    send(QStringLiteral("callfind ") + m_callId);
+                    send(QStringLiteral("resume"));
+                }
+            }
+            return;
+        }
+        if (t == QLatin1String("CALL_CLOSED") && id == m_callId && !m_consultId.isEmpty()) {
+            // the held party hung up during the consultation: the consultation becomes the main call
+            m_callId = m_consultId;
+            m_peer = m_consultPeer;
+            m_consultId.clear();
+            const CallState cs = m_consultState;
+            setConsultState(CallState::Idle);
+            setCallState(cs);
+            return;
+        }
+        if (!m_callId.isEmpty() && id != m_callId) {
+            qCDebug(ENGINE) << "ignoring event of another call" << t << id;
+            return; // e.g. a second incoming call while busy
+        }
+        if (t == QLatin1String("CALL_INCOMING") || t == QLatin1String("CALL_OUTGOING"))
+            m_callId = id;
+    }
+    if (t.contains(QLatin1String("TRANSFER")) && t.contains(QLatin1String("FAIL"))) {
+        Q_EMIT transferFailed(text);
+        return;
+    }
+    if (t == QLatin1String("CALL_INCOMING")) {
         m_peer = ev.value(QStringLiteral("peeruri")).toString();
         m_peerName = ev.value(QStringLiteral("peerdisplayname")).toString();
         setCallState(CallState::Incoming);
@@ -565,6 +735,7 @@ void Engine::onEvent(const QJsonObject &ev)
         setCallState(CallState::Established);
         QTimer::singleShot(300, this, [this] { queryCodec(); });
     } else if (t == QLatin1String("CALL_CLOSED")) {
+        m_callId.clear();
         m_closeReason = text;
         setCallState(CallState::Idle);
         Q_EMIT codecChanged(QString());

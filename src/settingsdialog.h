@@ -12,6 +12,7 @@ struct Settings {
     bool useLocalContacts = true; // desktop address book (KPeople)
     int nameFormat = 0;           // Phonebook::NameFormat: 0 first last, 1 last, first
     QString voicemail; // number to dial for the mailbox
+    QStringList watched; // extensions shown with presence status
     QString dtmfMode;  // rtpevent | info | auto
     bool preferIpv6 = false;
     bool ringLoop = false;
@@ -32,6 +33,7 @@ public:
 
 private:
     QLineEdit *m_voicemail;
+    QLineEdit *m_watched;
     QLineEdit *m_user, *m_server, *m_display, *m_password, *m_ldapUri, *m_ldapBase;
     class QListWidget *m_codecs;
     QComboBox *m_transport;

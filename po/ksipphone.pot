@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-26 11:16+0100\n"
+"POT-Creation-Date: 2026-11-26 11:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -118,8 +118,8 @@ msgstr ""
 msgid "tel: or sip: URI to call"
 msgstr ""
 
-#: src/main.cpp:87 src/main.cpp:101 src/mainwindow.cpp:30 src/phoneapp.cpp:123
-#: src/phoneapp.cpp:217 src/phoneapp.cpp:375
+#: src/main.cpp:87 src/main.cpp:101 src/mainwindow.cpp:31 src/phoneapp.cpp:132
+#: src/phoneapp.cpp:241 src/phoneapp.cpp:438
 #, kde-format
 msgid "KSipPhone"
 msgstr ""
@@ -129,397 +129,496 @@ msgstr ""
 msgid "A small SIP phone for KDE Plasma"
 msgstr ""
 
-#: src/mainwindow.cpp:40 src/settingsdialog.cpp:260
+#: src/mainwindow.cpp:41 src/settingsdialog.cpp:263
 #, kde-format
 msgid "Settings"
 msgstr ""
 
-#: src/mainwindow.cpp:47 src/mainwindow.cpp:310 src/phoneapp.cpp:55
+#: src/mainwindow.cpp:48 src/mainwindow.cpp:373 src/phoneapp.cpp:56
 #, kde-format
 msgid "Call voicemail"
 msgstr ""
 
-#: src/mainwindow.cpp:55
+#: src/mainwindow.cpp:132
 #, kde-format
-msgid "Number, SIP address or name"
+msgid "Click to call; during a call click to transfer"
 msgstr ""
 
-#: src/mainwindow.cpp:157
+#: src/mainwindow.cpp:150
 #, kde-format
 msgid "Mute"
 msgstr ""
 
-#: src/mainwindow.cpp:161
+#: src/mainwindow.cpp:154
 #, kde-format
 msgid "Mute microphone"
 msgstr ""
 
-#: src/mainwindow.cpp:165 src/mainwindow.cpp:169
+#: src/mainwindow.cpp:158 src/mainwindow.cpp:162
 #, kde-format
 msgid "Hold"
 msgstr ""
 
-#: src/mainwindow.cpp:172 src/mainwindow.cpp:220
+#: src/mainwindow.cpp:166 src/mainwindow.cpp:342
+#, kde-format
+msgid "Transfer"
+msgstr ""
+
+#: src/mainwindow.cpp:170 src/mainwindow.cpp:343
+#, kde-format
+msgid "Transfer the call"
+msgstr ""
+
+#: src/mainwindow.cpp:177 src/mainwindow.cpp:231
 #, kde-format
 msgid "Call"
 msgstr ""
 
-#: src/mainwindow.cpp:173 src/mainwindow.cpp:222 src/phoneapp.cpp:56
+#: src/mainwindow.cpp:178 src/mainwindow.cpp:233 src/mainwindow.cpp:346
+#: src/phoneapp.cpp:57
 #, kde-format
 msgid "Hang up"
 msgstr ""
 
-#: src/mainwindow.cpp:184 src/phoneapp.cpp:117 src/phoneapp.cpp:370
+#: src/mainwindow.cpp:195 src/phoneapp.cpp:126 src/phoneapp.cpp:433
 #, kde-format
 msgid "Not registered"
 msgstr ""
 
-#: src/mainwindow.cpp:202 src/phoneapp.cpp:275
+#: src/mainwindow.cpp:213 src/phoneapp.cpp:338
 #, kde-format
 msgid "Incoming call"
 msgstr ""
 
-#: src/mainwindow.cpp:203
+#: src/mainwindow.cpp:214
 #, kde-format
 msgid "Calling …"
 msgstr ""
 
-#: src/mainwindow.cpp:204
+#: src/mainwindow.cpp:215
 #, kde-format
 msgid "Ringing …"
 msgstr ""
 
-#: src/mainwindow.cpp:205
+#: src/mainwindow.cpp:216 src/mainwindow.cpp:321
 #, kde-format
 msgid "Connected"
 msgstr ""
 
-#: src/mainwindow.cpp:220 src/phoneapp.cpp:279
+#: src/mainwindow.cpp:231 src/phoneapp.cpp:342
 #, kde-format
 msgid "Accept"
 msgstr ""
 
-#: src/mainwindow.cpp:222 src/phoneapp.cpp:280
+#: src/mainwindow.cpp:233 src/phoneapp.cpp:343
 #, kde-format
 msgid "Decline"
 msgstr ""
 
-#: src/mainwindow.cpp:254
+#: src/mainwindow.cpp:297
 #, kde-format
-msgid "mobile"
+msgid "free"
 msgstr ""
 
-#: src/mainwindow.cpp:255
+#: src/mainwindow.cpp:301
 #, kde-format
-msgid "home"
+msgid "busy or ringing"
 msgstr ""
 
-#: src/mainwindow.cpp:256
+#: src/mainwindow.cpp:305
 #, kde-format
-msgid "work"
+msgid "offline"
 msgstr ""
 
-#: src/mainwindow.cpp:269
+#: src/mainwindow.cpp:309
 #, kde-format
-msgid "LDAP phonebook"
+msgid "status unknown"
 msgstr ""
 
-#: src/mainwindow.cpp:269
+#: src/mainwindow.cpp:325
 #, kde-format
-msgid "address book of this computer"
+msgid "On hold – calling %1 …"
 msgstr ""
 
-#: src/mainwindow.cpp:289
+#: src/mainwindow.cpp:328
+#, kde-format
+msgid "On hold – %1 is ringing"
+msgstr ""
+
+#: src/mainwindow.cpp:331
+#, kde-format
+msgid "On hold – talking to %1"
+msgstr ""
+
+#: src/mainwindow.cpp:342
+#, kde-format
+msgid "Connect"
+msgstr ""
+
+#: src/mainwindow.cpp:343
+#, kde-format
+msgid "Connect the waiting caller with the consulted party"
+msgstr ""
+
+#: src/mainwindow.cpp:346
+#, kde-format
+msgid "Back"
+msgstr ""
+
+#: src/mainwindow.cpp:347
+#, kde-format
+msgid "End the consultation and return to the waiting caller"
+msgstr ""
+
+#: src/mainwindow.cpp:352
 #, kde-format
 msgid "Phonebook: %1"
 msgstr ""
 
-#: src/mainwindow.cpp:309
+#: src/mainwindow.cpp:372
 #, kde-format
 msgid "1 new voice message - click to listen"
 msgid_plural "%1 new voice messages - click to listen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/mainwindow.cpp:335
+#: src/mainwindow.cpp:398
 #, kde-format
 msgid "Codec: %1"
 msgstr ""
 
-#: src/phoneapp.cpp:50 src/phoneapp.cpp:287 src/phoneapp.cpp:311
+#: src/phoneapp.cpp:51 src/phoneapp.cpp:350 src/phoneapp.cpp:374
 #, kde-format
 msgid "Show dialer"
 msgstr ""
 
-#: src/phoneapp.cpp:58
+#: src/phoneapp.cpp:59
 #, kde-format
 msgid "Settings…"
 msgstr ""
 
-#: src/phoneapp.cpp:60
+#: src/phoneapp.cpp:61
 #, kde-format
 msgid "Quit"
 msgstr ""
 
-#: src/phoneapp.cpp:91
+#: src/phoneapp.cpp:86
+#, kde-format
+msgid "Transfer failed"
+msgstr ""
+
+#: src/phoneapp.cpp:86
+#, kde-format
+msgid "The call could not be transferred."
+msgstr ""
+
+#: src/phoneapp.cpp:100
 #, kde-format
 msgid "New voice message"
 msgstr ""
 
-#: src/phoneapp.cpp:92
+#: src/phoneapp.cpp:101
 #, kde-format
 msgid "You have 1 new voice message."
 msgid_plural "You have %1 new voice messages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/phoneapp.cpp:95
+#: src/phoneapp.cpp:104
 #, kde-format
 msgid "Listen"
 msgstr ""
 
-#: src/phoneapp.cpp:114
+#: src/phoneapp.cpp:123
 #, kde-format
 msgid "Registered as %1"
 msgstr ""
 
-#: src/phoneapp.cpp:115
+#: src/phoneapp.cpp:124
 #, kde-format
 msgid "Registering %1 …"
 msgstr ""
 
-#: src/phoneapp.cpp:116
+#: src/phoneapp.cpp:125
 #, kde-format
 msgid "Registration failed: %1"
 msgstr ""
 
-#: src/phoneapp.cpp:205
+#: src/phoneapp.cpp:229
 #, kde-format
 msgid "unknown"
 msgstr ""
 
-#: src/phoneapp.cpp:217
+#: src/phoneapp.cpp:241
 #, kde-format
 msgid "The password could not be stored: %1"
 msgstr ""
 
-#: src/phoneapp.cpp:241
+#: src/phoneapp.cpp:278
 #, kde-format
 msgid "No SIP account configured"
 msgstr ""
 
-#: src/phoneapp.cpp:301
+#: src/phoneapp.cpp:364
 #, kde-format
 msgid "Missed call"
 msgstr ""
 
-#: src/phoneapp.cpp:302
+#: src/phoneapp.cpp:365
 #, kde-format
 msgid "%1 at %2"
 msgstr ""
 
-#: src/phoneapp.cpp:308
+#: src/phoneapp.cpp:371
 #, kde-format
 msgid "Call back"
 msgstr ""
 
-#: src/phoneapp.cpp:367
+#: src/phoneapp.cpp:430
 #, kde-format
 msgid "Incoming call from %1"
 msgstr ""
 
-#: src/phoneapp.cpp:369
+#: src/phoneapp.cpp:432
 #, kde-format
 msgid "In call with %1"
 msgstr ""
 
-#: src/phoneapp.cpp:370
+#: src/phoneapp.cpp:433
 #, kde-format
 msgid "Registered"
 msgstr ""
 
-#: src/phoneapp.cpp:372
+#: src/phoneapp.cpp:435
 #, kde-format
 msgid "1 new voice message"
 msgid_plural "%1 new voice messages"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/settingsdialog.cpp:270
+#: src/searchfield.cpp:50
+#, kde-format
+msgid "Number, SIP address or name"
+msgstr ""
+
+#: src/searchfield.cpp:119
+#, kde-format
+msgid "mobile"
+msgstr ""
+
+#: src/searchfield.cpp:120
+#, kde-format
+msgid "home"
+msgstr ""
+
+#: src/searchfield.cpp:121
+#, kde-format
+msgid "work"
+msgstr ""
+
+#: src/searchfield.cpp:134
+#, kde-format
+msgid "LDAP phonebook"
+msgstr ""
+
+#: src/searchfield.cpp:134
+#, kde-format
+msgid "address book of this computer"
+msgstr ""
+
+#: src/settingsdialog.cpp:273
 #, kde-format
 msgid "host or host:port"
 msgstr ""
 
-#: src/settingsdialog.cpp:274
+#: src/settingsdialog.cpp:277
 #, kde-format
 msgid "Prefer IPv6 if the server has an IPv6 address"
 msgstr ""
 
-#: src/settingsdialog.cpp:279
+#: src/settingsdialog.cpp:282
 #, kde-format
 msgid "not set"
 msgstr ""
 
-#: src/settingsdialog.cpp:279
+#: src/settingsdialog.cpp:282
 #, kde-format
 msgid "stored in KWallet - type to change"
 msgstr ""
 
-#: src/settingsdialog.cpp:287
+#: src/settingsdialog.cpp:290
 #, kde-format
 msgid ""
 "Tick the codecs to offer. The order is the preference: drag the entries or "
 "use the arrows."
 msgstr ""
 
-#: src/settingsdialog.cpp:299
+#: src/settingsdialog.cpp:302
 #, kde-format
 msgid "Not available in this baresip build"
 msgstr ""
 
-#: src/settingsdialog.cpp:311
+#: src/settingsdialog.cpp:314
 #, kde-format
 msgid "%1 (not available)"
 msgstr ""
 
-#: src/settingsdialog.cpp:322
+#: src/settingsdialog.cpp:325
 #, kde-format
 msgid "Prefer"
 msgstr ""
 
-#: src/settingsdialog.cpp:325
+#: src/settingsdialog.cpp:328
 #, kde-format
 msgid "Less preferred"
 msgstr ""
 
-#: src/settingsdialog.cpp:343
+#: src/settingsdialog.cpp:346
 #, kde-format
 msgid "User:"
 msgstr ""
 
-#: src/settingsdialog.cpp:344
+#: src/settingsdialog.cpp:347
 #, kde-format
 msgid "Server:"
 msgstr ""
 
-#: src/settingsdialog.cpp:345
+#: src/settingsdialog.cpp:348
 #, kde-format
 msgid "Transport:"
 msgstr ""
 
-#: src/settingsdialog.cpp:347
+#: src/settingsdialog.cpp:350
 #, kde-format
 msgid "Display name:"
 msgstr ""
 
-#: src/settingsdialog.cpp:348
+#: src/settingsdialog.cpp:351
 #, kde-format
 msgid "Password:"
 msgstr ""
 
-#: src/settingsdialog.cpp:349
+#: src/settingsdialog.cpp:352
 #, kde-format
 msgid "Codecs:"
 msgstr ""
 
-#: src/settingsdialog.cpp:351
+#: src/settingsdialog.cpp:354
 #, kde-format
 msgid "number of the mailbox, e.g. 9000"
 msgstr ""
 
-#: src/settingsdialog.cpp:352
+#: src/settingsdialog.cpp:355
 #, kde-format
 msgid "Voicemail:"
 msgstr ""
 
-#: src/settingsdialog.cpp:354
+#: src/settingsdialog.cpp:357
+#, kde-format
+msgid "e.g. 100, 1000, 2000"
+msgstr ""
+
+#: src/settingsdialog.cpp:358
+#, kde-format
+msgid ""
+"Internal extensions shown in a list with their status (free, busy, "
+"offline).\n"
+"The server must offer presence for them (Asterisk: a hint per extension)."
+msgstr ""
+
+#: src/settingsdialog.cpp:360
+#, kde-format
+msgid "Extensions:"
+msgstr ""
+
+#: src/settingsdialog.cpp:362
 #, kde-format
 msgid "RFC 4733 / RTP events (recommended)"
 msgstr ""
 
-#: src/settingsdialog.cpp:355
+#: src/settingsdialog.cpp:363
 #, kde-format
 msgid "SIP INFO"
 msgstr ""
 
-#: src/settingsdialog.cpp:356
+#: src/settingsdialog.cpp:364
 #, kde-format
 msgid "Automatic"
 msgstr ""
 
-#: src/settingsdialog.cpp:358
+#: src/settingsdialog.cpp:366
 #, kde-format
 msgid ""
 "Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, "
 "dtmf_mode=info needs SIP INFO."
 msgstr ""
 
-#: src/settingsdialog.cpp:359
+#: src/settingsdialog.cpp:367
 #, kde-format
 msgid "DTMF:"
 msgstr ""
 
-#: src/settingsdialog.cpp:360
+#: src/settingsdialog.cpp:368
 #, kde-format
 msgid "Account"
 msgstr ""
 
-#: src/settingsdialog.cpp:365
+#: src/settingsdialog.cpp:373
 #, kde-format
 msgid "System default"
 msgstr ""
 
-#: src/settingsdialog.cpp:370
+#: src/settingsdialog.cpp:378
 #, kde-format
 msgid "%1 (not connected)"
 msgstr ""
 
-#: src/settingsdialog.cpp:385
+#: src/settingsdialog.cpp:393
 #, kde-format
 msgid "Choose ring tone"
 msgstr ""
 
-#: src/settingsdialog.cpp:388
+#: src/settingsdialog.cpp:396
 #, kde-format
 msgid "Ring tone"
 msgstr ""
 
-#: src/settingsdialog.cpp:388
+#: src/settingsdialog.cpp:396
 #, kde-format
 msgid "Sounds (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"
 msgstr ""
 
-#: src/settingsdialog.cpp:393
+#: src/settingsdialog.cpp:401
 #, kde-format
 msgid "Test"
 msgstr ""
 
-#: src/settingsdialog.cpp:402
+#: src/settingsdialog.cpp:410
 #, kde-format
 msgid "Once"
 msgstr ""
 
-#: src/settingsdialog.cpp:403
+#: src/settingsdialog.cpp:411
 #, kde-format
 msgid "Continuously until answered"
 msgstr ""
 
-#: src/settingsdialog.cpp:405
+#: src/settingsdialog.cpp:413
 #, kde-format
 msgid "Microphone:"
 msgstr ""
 
-#: src/settingsdialog.cpp:406
+#: src/settingsdialog.cpp:414
 #, kde-format
 msgid "Speaker / headset:"
 msgstr ""
 
-#: src/settingsdialog.cpp:407
+#: src/settingsdialog.cpp:415
 #, kde-format
 msgid "Echo cancellation in KSipPhone (WebRTC)"
 msgstr ""
 
-#: src/settingsdialog.cpp:409
+#: src/settingsdialog.cpp:417
 #, kde-format
 msgid ""
 "Leave off if the microphone already comes through PipeWire's echo "
@@ -527,49 +626,49 @@ msgid ""
 "otherwise the echo is cancelled twice."
 msgstr ""
 
-#: src/settingsdialog.cpp:412
+#: src/settingsdialog.cpp:420
 #, kde-format
 msgid "Ring on:"
 msgstr ""
 
-#: src/settingsdialog.cpp:413
+#: src/settingsdialog.cpp:421
 #, kde-format
 msgid "Ring tone:"
 msgstr ""
 
-#: src/settingsdialog.cpp:414
+#: src/settingsdialog.cpp:422
 #, kde-format
 msgid "Ring:"
 msgstr ""
 
-#: src/settingsdialog.cpp:415
+#: src/settingsdialog.cpp:423
 #, kde-format
 msgid "Audio"
 msgstr ""
 
-#: src/settingsdialog.cpp:423
+#: src/settingsdialog.cpp:431
 #, kde-format
 msgid "URI:"
 msgstr ""
 
-#: src/settingsdialog.cpp:424
+#: src/settingsdialog.cpp:432
 #, kde-format
 msgid "Base DN:"
 msgstr ""
 
-#: src/settingsdialog.cpp:425
+#: src/settingsdialog.cpp:433
 #, kde-format
 msgid ""
 "Optional: an LDAP directory (read anonymously) for searching contacts and "
 "showing caller names and photos."
 msgstr ""
 
-#: src/settingsdialog.cpp:430
+#: src/settingsdialog.cpp:438
 #, kde-format
 msgid "Also use the address book of this computer"
 msgstr ""
 
-#: src/settingsdialog.cpp:432
+#: src/settingsdialog.cpp:440
 #, kde-format
 msgid ""
 "Asked after LDAP: for names and photos of callers and for the search in the "
@@ -577,27 +676,54 @@ msgid ""
 "Sources: %1"
 msgstr ""
 
-#: src/settingsdialog.cpp:437
+#: src/settingsdialog.cpp:445
 #, kde-format
 msgid "First name Last name"
 msgstr ""
 
-#: src/settingsdialog.cpp:438
+#: src/settingsdialog.cpp:446
 #, kde-format
 msgid "Last name, First name"
 msgstr ""
 
-#: src/settingsdialog.cpp:440
+#: src/settingsdialog.cpp:448
 #, kde-format
 msgid "How names are shown and sorted in the search results"
 msgstr ""
 
-#: src/settingsdialog.cpp:441
+#: src/settingsdialog.cpp:449
 #, kde-format
 msgid "Names:"
 msgstr ""
 
-#: src/settingsdialog.cpp:442
+#: src/settingsdialog.cpp:450
 #, kde-format
 msgid "Phonebook"
+msgstr ""
+
+#: src/transferdialog.cpp:16
+#, kde-format
+msgid "Transfer call"
+msgstr ""
+
+#: src/transferdialog.cpp:18
+#, kde-format
+msgid "Transfer the call to:"
+msgstr ""
+
+#: src/transferdialog.cpp:22
+#, kde-format
+msgid ""
+"<b>Consult first</b>: you talk to the target while the caller waits, then "
+"connect them.<br><b>Connect now</b>: the call is handed over immediately."
+msgstr ""
+
+#: src/transferdialog.cpp:30
+#, kde-format
+msgid "Consult first"
+msgstr ""
+
+#: src/transferdialog.cpp:32
+#, kde-format
+msgid "Connect now"
 msgstr ""

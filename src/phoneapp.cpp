@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include "localcontacts.h"
 #include "ringer.h"
+#include "transferdialog.h"
 #include "secrets.h"
 #include "settingsdialog.h"
 
@@ -38,7 +39,7 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_engine(new Engine(this))
     , m_phonebook(new Phonebook(this))
     , m_local(new LocalContacts(this))
-    , m_window(new MainWindow)
+    , m_window(new MainWindow(m_phonebook))
     , m_tray(new Desktop::Tray(m_window, this))
     , m_ringer(new Ringer(this))
 {
@@ -75,8 +76,16 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_window, &MainWindow::dtmf, m_engine, &Engine::sendDtmf);
     connect(m_window, &MainWindow::settingsRequested, this, &PhoneApp::openSettings);
     connect(m_window, &MainWindow::voicemailRequested, this, &PhoneApp::callVoicemail);
-    connect(m_window, &MainWindow::searchRequested, m_phonebook, &Phonebook::search);
-    connect(m_phonebook, &Phonebook::searchFinished, m_window, &MainWindow::setSearchResults);
+    connect(m_window, &MainWindow::transferRequested, this, &PhoneApp::transferCall);
+    connect(m_window, &MainWindow::consultCompleteRequested, m_engine, &Engine::completeConsult);
+    connect(m_window, &MainWindow::consultAbortRequested, m_engine, &Engine::abortConsult);
+    connect(m_engine, &Engine::consultStateChanged, this, [this](Engine::CallState s, const QString &uri) {
+        m_window->setConsult(s, m_consultName.isEmpty() ? userPart(uri) : m_consultName);
+    });
+    connect(m_engine, &Engine::transferFailed, this, [](const QString &reason) {
+        Desktop::Notification::error(i18n("Transfer failed"), reason.isEmpty() ? i18n("The call could not be transferred.") : reason);
+    });
+    connect(m_engine, &Engine::presenceChanged, m_window, &MainWindow::setPresence);
     connect(m_phonebook, &Phonebook::errorOccurred, m_window, &MainWindow::setPhonebookError);
     connect(m_engine, &Engine::codecChanged, m_window, &MainWindow::setCodec);
     connect(m_engine, &Engine::voicemailChanged, this, [this](int nNew, int, bool) {
@@ -132,6 +141,21 @@ PhoneApp::PhoneApp(QObject *parent)
         notifyIncoming();
     });
     connect(m_phonebook, &Phonebook::lookupFinished, this, [this](int id, const QString &name, const QByteArray &photo) {
+        if (const auto it = m_extLookups.constFind(id); it != m_extLookups.constEnd()) {
+            if (!name.isEmpty())
+                m_extNames.insert(*it, name);
+            m_extLookups.erase(it);
+            if (m_extLookups.isEmpty())
+                updateExtensions();
+            return;
+        }
+        if (id == m_consultLookup) {
+            if (!name.isEmpty()) {
+                m_consultName = name;
+                m_window->setConsult(m_engine->consultState(), name);
+            }
+            return;
+        }
         if (id != m_lookupId)
             return;
         if (!photo.isEmpty() && m_peerPhoto.loadFromData(photo)) {
@@ -237,8 +261,47 @@ void PhoneApp::applySettings()
         a.password = readPassword(QStringLiteral("sip:%1@%2").arg(s.user, s.server));
     m_engine->setAccount(a);
     m_window->setVoicemail(m_voicemails, !s.voicemail.isEmpty());
+    // extensions with presence; names from the phonebook (LDAP / address book)
+    m_engine->setWatchList(s.watched);
+    if (s.watched != m_watched) {
+        m_watched = s.watched;
+        m_extNames.clear();
+        m_extLookups.clear();
+        for (const QString &ext : std::as_const(m_watched)) {
+            const int id = ++m_nextExtLookup;
+            m_extLookups.insert(id, ext);
+            m_phonebook->lookupNumber(ext, id);
+        }
+        updateExtensions();
+    }
     if (!a.isValid())
         m_window->setRegistration(i18n("No SIP account configured"), false);
+}
+
+void PhoneApp::updateExtensions()
+{
+    QList<QPair<QString, QString>> list;
+    for (const QString &ext : std::as_const(m_watched))
+        list.append({ext, m_extNames.value(ext)});
+    m_window->setExtensions(list);
+}
+
+void PhoneApp::transferCall(const QString &target)
+{
+    if (m_engine->callState() != Engine::CallState::Established)
+        return;
+    TransferDialog dlg(m_phonebook, target, m_window->isVisible() ? m_window : nullptr);
+    if (dlg.exec() != QDialog::Accepted || m_engine->callState() != Engine::CallState::Established)
+        return;
+    const QString t = dlg.target();
+    if (dlg.mode() == TransferDialog::Mode::Blind) {
+        m_engine->transfer(t);
+        return;
+    }
+    m_consultName.clear();
+    m_consultLookup = ++m_nextExtLookup;
+    m_phonebook->lookupNumber(t, m_consultLookup);
+    m_engine->startConsult(t);
 }
 
 void PhoneApp::openSettings()

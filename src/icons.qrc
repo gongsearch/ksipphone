@@ -40,4 +40,6 @@
   <file alias="breeze-dark/22/computer.svg">icons/breeze-dark/22/computer.svg</file>
   <file alias="breeze/22/server-database.svg">icons/breeze/22/server-database.svg</file>
   <file alias="breeze-dark/22/server-database.svg">icons/breeze-dark/22/server-database.svg</file>
+  <file alias="breeze/22/mail-forward.svg">icons/breeze/22/mail-forward.svg</file>
+  <file alias="breeze-dark/22/mail-forward.svg">icons/breeze-dark/22/mail-forward.svg</file>
 </qresource></RCC>

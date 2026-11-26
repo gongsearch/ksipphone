@@ -70,7 +70,7 @@ jobs:
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/baresip.git
           logrun baresip-configure cmake -S baresip -B baresip/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH="$D" -DCMAKE_INSTALL_PREFIX="$D" -DSTATIC=ON \
-            "-DMODULES=g711;g722;opus;l16;wasapi;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
+            "-DMODULES=g711;g722;opus;l16;wasapi;auconv;auresamp;srtp;menu;mwi;contact;presence;ctrl_tcp"
           logrun baresip-build cmake --build baresip/build
           logrun baresip-install cmake --install baresip/build
           ls -la "$D/bin"
@@ -79,7 +79,7 @@ jobs:
         run: |
           logrun ksipphone-configure cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DKSIPPHONE_WITH_KDE=OFF \
             -DBARESIP_MODULE_PATH=modules -DBARESIP_SHARE_PATH=share/baresip \
-            "-DKSIPPHONE_STATIC_BARESIP_MODULES=g711;g722;opus;l16;wasapi;auconv;auresamp;srtp;menu;mwi;ctrl_tcp"
+            "-DKSIPPHONE_STATIC_BARESIP_MODULES=g711;g722;opus;l16;wasapi;auconv;auresamp;srtp;menu;mwi;contact;presence;ctrl_tcp"
           logrun ksipphone-build cmake --build build
 
       - name: Bundle

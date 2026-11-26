@@ -5,27 +5,29 @@
 #include "engine.h"
 #include "phonebook.h"
 
+#include <QHash>
+#include <QPair>
 #include <QWidget>
 
 class QLabel;
-class QLineEdit;
+class QListWidget;
+class SearchField;
 class QPushButton;
 class QToolButton;
-class QCompleter;
-class QStandardItemModel;
 class QTimer;
 
 class MainWindow : public QWidget
 {
     Q_OBJECT
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(Phonebook *phonebook, QWidget *parent = nullptr);
 
     void setRegistration(const QString &text, bool ok);
     void setCall(Engine::CallState state, const QString &peerText);
     void setNumber(const QString &number);
-    void setSearchResults(int requestId, const QList<PhonebookEntry> &entries);
-    void clearSearchResults();
+    void setExtensions(const QList<QPair<QString, QString>> &extensions); // number, name
+    void setPresence(const QHash<QString, Engine::Presence> &states);
+    void setConsult(Engine::CallState state, const QString &peerText);
     void setPhonebookError(const QString &message);
     void setCodec(const QString &codec);
     void setPeerPhoto(const QPixmap &photo); // null pixmap hides it
@@ -38,7 +40,9 @@ Q_SIGNALS:
     void muteToggled(bool on);
     void holdToggled(bool on);
     void dtmf(const QString &digit);
-    void searchRequested(const QString &text, int requestId);
+    void transferRequested(const QString &target); // empty: ask for the target
+    void consultCompleteRequested();
+    void consultAbortRequested();
     void settingsRequested();
     void voicemailRequested();
 
@@ -49,18 +53,18 @@ protected:
 private:
     void keypad(const QString &digit);
     void callClicked();
+    void updatePresenceIcons();
+    void updateTransferButtons();
 
     QLabel *m_reg, *m_status, *m_pbError, *m_codec, *m_photo, *m_peerName, *m_duration;
     QWidget *m_peerBox;
     QTimer *m_callTimer;
     qint64 m_callStartMs = 0;
-    QLineEdit *m_number;
+    SearchField *m_number;
+    QListWidget *m_ext;
+    QHash<QString, Engine::Presence> m_presence;
+    Engine::CallState m_consult = Engine::CallState::Idle;
     QPushButton *m_call, *m_hangup;
-    QToolButton *m_mute, *m_hold, *m_vm;
-    QCompleter *m_completer;
-    QStandardItemModel *m_model;
-    QTimer *m_searchTimer;
+    QToolButton *m_mute, *m_hold, *m_vm, *m_transfer;
     Engine::CallState m_state = Engine::CallState::Idle;
-    int m_searchId = 0;
-    bool m_settingNumber = false;
 };

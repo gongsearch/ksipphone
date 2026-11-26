@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "mainwindow.h"
+#include "searchfield.h"
 
 #include <KLocalizedString>
 
@@ -16,6 +17,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPixmap>
 #include <QPushButton>
 #include <QStandardItemModel>
@@ -23,30 +25,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-static constexpr int NumberRole = Qt::UserRole + 1;
-
-namespace
-{
-// search results: icons (source, number type) at the right end of the row, after name and number
-class ResultDelegate : public QStyledItemDelegate
-{
-public:
-    using QStyledItemDelegate::QStyledItemDelegate;
-
-protected:
-    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override
-    {
-        QStyledItemDelegate::initStyleOption(option, index);
-        option->decorationPosition = QStyleOptionViewItem::Right;
-        option->decorationAlignment = Qt::AlignRight | Qt::AlignVCenter;
-        // like QCompleter's own delegate: the current row looks focused
-        if (const auto *view = qobject_cast<const QAbstractItemView *>(option->widget); view && view->currentIndex() == index)
-            option->state |= QStyle::State_HasFocus;
-    }
-};
-}
-
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     : QWidget(parent)
 {
     setWindowTitle(i18n("KSipPhone"));
@@ -73,38 +52,11 @@ MainWindow::MainWindow(QWidget *parent)
     top->addWidget(settings);
     lay->addLayout(top);
 
-    m_number = new QLineEdit(this);
-    m_number->setPlaceholderText(i18n("Number, SIP address or name"));
-    m_number->setClearButtonEnabled(true);
+    m_number = new SearchField(phonebook, this);
     QFont f = m_number->font();
     f.setPointSizeF(f.pointSizeF() * 1.15);
     m_number->setFont(f);
     lay->addWidget(m_number);
-
-    m_model = new QStandardItemModel(this);
-    m_completer = new QCompleter(m_model, this);
-    m_completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
-    m_completer->setCaseSensitivity(Qt::CaseInsensitive);
-    m_number->setCompleter(m_completer);
-    m_completer->popup()->setItemDelegate(new ResultDelegate(m_completer->popup()));
-    connect(m_completer, QOverload<const QModelIndex &>::of(&QCompleter::activated), this, [this](const QModelIndex &idx) {
-        const QString n = idx.data(NumberRole).toString();
-        QTimer::singleShot(0, this, [this, n] { setNumber(n); });
-    });
-
-    m_searchTimer = new QTimer(this);
-    m_searchTimer->setSingleShot(true);
-    m_searchTimer->setInterval(250);
-    connect(m_searchTimer, &QTimer::timeout, this, [this] { Q_EMIT searchRequested(m_number->text(), ++m_searchId); });
-    connect(m_number, &QLineEdit::textEdited, this, [this] {
-        if (!m_settingNumber)
-            m_searchTimer->start();
-    });
-    // field emptied (typing, clear button, programmatically): drop old results and close the drop-down
-    connect(m_number, &QLineEdit::textChanged, this, [this](const QString &text) {
-        if (text.trimmed().isEmpty())
-            clearSearchResults();
-    });
     connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
 
     m_pbError = new QLabel(this);
@@ -172,7 +124,25 @@ MainWindow::MainWindow(QWidget *parent)
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
         grid->addWidget(b, i / 3, i % 3);
     }
-    lay->addLayout(grid);
+    // internal extensions with presence status, next to the keypad
+    m_ext = new QListWidget(this);
+    m_ext->setFocusPolicy(Qt::NoFocus);
+    m_ext->setSelectionMode(QAbstractItemView::NoSelection);
+    m_ext->setFixedWidth(180);
+    m_ext->setToolTip(i18n("Click to call; during a call click to transfer"));
+    m_ext->hide();
+    connect(m_ext, &QListWidget::itemClicked, this, [this](QListWidgetItem *it) {
+        const QString ext = it->data(Qt::UserRole).toString();
+        if (m_state == Engine::CallState::Idle)
+            Q_EMIT dialRequested(ext);
+        else if (m_state == Engine::CallState::Established && m_consult == Engine::CallState::Idle)
+            Q_EMIT transferRequested(ext);
+    });
+    auto *keyRow = new QHBoxLayout;
+    keyRow->setSpacing(12);
+    keyRow->addLayout(grid, 1);
+    keyRow->addWidget(m_ext);
+    lay->addLayout(keyRow);
 
     auto *row = new QHBoxLayout;
     row->setSpacing(8);
@@ -192,14 +162,32 @@ MainWindow::MainWindow(QWidget *parent)
     m_hold->setToolTip(i18n("Hold"));
     m_hold->setCheckable(true);
     connect(m_hold, &QToolButton::toggled, this, &MainWindow::holdToggled);
+    m_transfer = new QToolButton(this);
+    m_transfer->setText(i18n("Transfer"));
+    m_transfer->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_transfer->setMinimumHeight(38);
+    m_transfer->setIcon(QIcon::fromTheme(QStringLiteral("mail-forward")));
+    m_transfer->setToolTip(i18n("Transfer the call"));
+    connect(m_transfer, &QToolButton::clicked, this, [this] {
+        if (m_consult != Engine::CallState::Idle)
+            Q_EMIT consultCompleteRequested();
+        else
+            Q_EMIT transferRequested(QString());
+    });
     m_call = new QPushButton(QIcon::fromTheme(QStringLiteral("call-start")), i18n("Call"), this);
     m_hangup = new QPushButton(QIcon::fromTheme(QStringLiteral("call-stop")), i18n("Hang up"), this);
     m_call->setMinimumHeight(38);
     m_hangup->setMinimumHeight(38);
     connect(m_call, &QPushButton::clicked, this, &MainWindow::callClicked);
-    connect(m_hangup, &QPushButton::clicked, this, &MainWindow::hangupRequested);
+    connect(m_hangup, &QPushButton::clicked, this, [this] {
+        if (m_consult != Engine::CallState::Idle)
+            Q_EMIT consultAbortRequested();
+        else
+            Q_EMIT hangupRequested();
+    });
     row->addWidget(m_mute);
     row->addWidget(m_hold);
+    row->addWidget(m_transfer);
     row->addWidget(m_call, 1);
     row->addWidget(m_hangup, 1);
     lay->addLayout(row);
@@ -245,6 +233,9 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
     m_hangup->setText(state == Engine::CallState::Incoming ? i18n("Decline") : i18n("Hang up"));
     m_mute->setEnabled(inCall);
     m_hold->setEnabled(inCall);
+    if (idle)
+        m_consult = Engine::CallState::Idle;
+    updateTransferButtons();
     if (idle) {
         const QSignalBlocker b1(m_mute), b2(m_hold);
         m_mute->setChecked(false);
@@ -254,57 +245,106 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
 
 void MainWindow::setNumber(const QString &number)
 {
-    m_settingNumber = true;
-    m_number->setText(number);
-    m_settingNumber = false;
+    m_number->setNumber(number);
 }
 
-void MainWindow::setSearchResults(int requestId, const QList<PhonebookEntry> &entries)
+void MainWindow::setExtensions(const QList<QPair<QString, QString>> &extensions)
 {
-    if (requestId != m_searchId)
-        return; // outdated
-    m_model->clear();
-    // icons: where the entry comes from, and the kind of number
-    const int sz = m_completer->popup()->style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, m_completer->popup());
+    m_ext->clear();
+    for (const auto &[ext, name] : extensions) {
+        auto *it = new QListWidgetItem(name.isEmpty() || name == ext ? ext : QStringLiteral("%1  (%2)").arg(name, ext), m_ext);
+        it->setData(Qt::UserRole, ext);
+    }
+    m_ext->setVisible(!extensions.isEmpty());
+    updatePresenceIcons();
+    adjustSize();
+}
+
+void MainWindow::setPresence(const QHash<QString, Engine::Presence> &states)
+{
+    m_presence = states;
+    updatePresenceIcons();
+}
+
+void MainWindow::updatePresenceIcons()
+{
+    const int sz = style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, this);
     const qreal dpr = devicePixelRatioF();
-    m_completer->popup()->setIconSize(QSize(2 * sz + 4, sz));
-    for (const auto &e : entries) {
-        const bool ldap = e.source == QLatin1String("ldap");
-        const QString kindIcon = e.kind == QLatin1String("mobile") ? QStringLiteral("smartphone")
-            : e.kind == QLatin1String("home")                     ? QStringLiteral("go-home")
-            : e.kind == QLatin1String("work")                     ? QStringLiteral("computer")
-                                                                   : QString();
-        const QString kindText = e.kind == QLatin1String("mobile") ? i18n("mobile")
-            : e.kind == QLatin1String("home")                     ? i18n("home")
-            : e.kind == QLatin1String("work")                     ? i18n("work")
-                                                                   : QString();
-        QPixmap pm(QSize(2 * sz + 4, sz) * dpr);
+    auto dot = [&](const QColor &fill, bool hollow) {
+        QPixmap pm(QSize(sz, sz) * dpr);
         pm.setDevicePixelRatio(dpr);
         pm.fill(Qt::transparent);
-        {
-            QPainter p(&pm);
-            QIcon::fromTheme(ldap ? QStringLiteral("server-database") : QStringLiteral("x-office-address-book")).paint(&p, QRect(0, 0, sz, sz));
-            if (!kindIcon.isEmpty())
-                QIcon::fromTheme(kindIcon).paint(&p, QRect(sz + 4, 0, sz, sz));
+        QPainter p(&pm);
+        p.setRenderHint(QPainter::Antialiasing);
+        const QRectF r(sz * 0.22, sz * 0.22, sz * 0.56, sz * 0.56);
+        if (hollow) {
+            p.setPen(QPen(fill, 1.5));
+            p.setBrush(Qt::NoBrush);
+        } else {
+            p.setPen(Qt::NoPen);
+            p.setBrush(fill);
         }
-        auto *it = new QStandardItem(QIcon(pm), QStringLiteral("%1 – %2").arg(e.display.isEmpty() ? e.name : e.display, e.number));
-        it->setData(e.number, NumberRole);
-        const QString from = ldap ? i18n("LDAP phonebook") : i18n("address book of this computer");
-        it->setToolTip(kindText.isEmpty() ? from : QStringLiteral("%1 · %2").arg(from, kindText));
-        m_model->appendRow(it);
+        p.drawEllipse(r);
+        return QIcon(pm);
+    };
+    const QColor grey = palette().color(QPalette::PlaceholderText);
+    for (int i = 0; i < m_ext->count(); ++i) {
+        QListWidgetItem *it = m_ext->item(i);
+        const Engine::Presence st = m_presence.value(it->data(Qt::UserRole).toString(), Engine::Presence::Unknown);
+        switch (st) {
+        case Engine::Presence::Online:
+            it->setIcon(dot(QColor(0x2e, 0x9d, 0x4c), false));
+            it->setToolTip(i18n("free"));
+            break;
+        case Engine::Presence::Busy:
+            it->setIcon(dot(QColor(0xc0, 0x39, 0x2b), false));
+            it->setToolTip(i18n("busy or ringing"));
+            break;
+        case Engine::Presence::Offline:
+            it->setIcon(dot(grey, true));
+            it->setToolTip(i18n("offline"));
+            break;
+        case Engine::Presence::Unknown:
+            it->setIcon(dot(grey, true));
+            it->setToolTip(i18n("status unknown"));
+            break;
+        }
     }
-    if (entries.isEmpty())
-        m_completer->popup()->hide();
-    else if (m_number->hasFocus())
-        m_completer->complete();
 }
 
-void MainWindow::clearSearchResults()
+void MainWindow::setConsult(Engine::CallState state, const QString &peerText)
 {
-    m_searchTimer->stop();
-    ++m_searchId; // results still on their way are outdated
-    m_completer->popup()->hide();
-    m_model->clear();
+    m_consult = state;
+    switch (state) {
+    case Engine::CallState::Idle:
+        if (m_state == Engine::CallState::Established)
+            m_status->setText(i18n("Connected"));
+        break;
+    case Engine::CallState::Outgoing:
+    case Engine::CallState::Incoming:
+        m_status->setText(i18n("On hold – calling %1 …", peerText));
+        break;
+    case Engine::CallState::Ringing:
+        m_status->setText(i18n("On hold – %1 is ringing", peerText));
+        break;
+    case Engine::CallState::Established:
+        m_status->setText(i18n("On hold – talking to %1", peerText));
+        break;
+    }
+    updateTransferButtons();
+}
+
+void MainWindow::updateTransferButtons()
+{
+    const bool consulting = m_consult != Engine::CallState::Idle;
+    const bool inCall = m_state == Engine::CallState::Established;
+    m_transfer->setEnabled(inCall && (!consulting || m_consult == Engine::CallState::Ringing || m_consult == Engine::CallState::Established));
+    m_transfer->setText(consulting ? i18n("Connect") : i18n("Transfer"));
+    m_transfer->setToolTip(consulting ? i18n("Connect the waiting caller with the consulted party") : i18n("Transfer the call"));
+    m_hold->setEnabled(inCall && !consulting);
+    if (m_state != Engine::CallState::Incoming)
+        m_hangup->setText(consulting ? i18n("Back") : i18n("Hang up"));
+    m_hangup->setToolTip(consulting ? i18n("End the consultation and return to the waiting caller") : QString());
 }
 
 void MainWindow::setPhonebookError(const QString &message)
@@ -377,7 +417,7 @@ void MainWindow::callClicked()
     }
     if (m_state != Engine::CallState::Idle)
         return;
-    if (m_completer->popup()->isVisible())
+    if (m_number->popupVisible())
         return; // Return selects the completion first
     const QString t = m_number->text().trimmed();
     if (!t.isEmpty())
