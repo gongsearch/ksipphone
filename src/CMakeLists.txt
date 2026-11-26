@@ -8,6 +8,7 @@ add_executable(ksipphone
     ringer.cpp
     secrets.cpp
     desktop.cpp
+    codecs.cpp
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})

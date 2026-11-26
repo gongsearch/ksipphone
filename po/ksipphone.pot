@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-26 08:25+0100\n"
+"POT-Creation-Date: 2026-11-26 08:35+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,76 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: src/codecs.cpp:23
+#, kde-format
+msgid "G.722 (HD)"
+msgstr ""
+
+#: src/codecs.cpp:23
+#, kde-format
+msgid "G.722 – HD voice (16 kHz)"
+msgstr ""
+
+#: src/codecs.cpp:24
+#, kde-format
+msgid "Opus (HD)"
+msgstr ""
+
+#: src/codecs.cpp:24
+#, kde-format
+msgid "Opus – HD voice, low bandwidth"
+msgstr ""
+
+#: src/codecs.cpp:25
+#, kde-format
+msgid "AMR-WB (HD)"
+msgstr ""
+
+#: src/codecs.cpp:25
+#, kde-format
+msgid "AMR-WB (G.722.2) – HD voice of mobile networks"
+msgstr ""
+
+#: src/codecs.cpp:26
+#, kde-format
+msgid "G.711 A-law (PCMA)"
+msgstr ""
+
+#: src/codecs.cpp:26
+#, kde-format
+msgid "G.711 A-law (PCMA) – standard in Europe"
+msgstr ""
+
+#: src/codecs.cpp:27
+#, kde-format
+msgid "G.711 µ-law (PCMU)"
+msgstr ""
+
+#: src/codecs.cpp:27
+#, kde-format
+msgid "G.711 µ-law (PCMU) – standard in North America"
+msgstr ""
+
+#: src/codecs.cpp:28
+#, kde-format
+msgid "AMR"
+msgstr ""
+
+#: src/codecs.cpp:28
+#, kde-format
+msgid "AMR – narrowband codec of mobile networks"
+msgstr ""
+
+#: src/codecs.cpp:29
+#, kde-format
+msgid "L16 (LAN only)"
+msgstr ""
+
+#: src/codecs.cpp:29
+#, kde-format
+msgid "L16 – uncompressed 16 kHz, for the local network only"
+msgstr ""
 
 #: src/main.cpp:48
 #, kde-format
@@ -44,7 +114,7 @@ msgstr ""
 msgid "A small SIP phone for KDE Plasma"
 msgstr ""
 
-#: src/mainwindow.cpp:38 src/settingsdialog.cpp:101
+#: src/mainwindow.cpp:38 src/settingsdialog.cpp:102
 #, kde-format
 msgid "Settings"
 msgstr ""
@@ -250,196 +320,186 @@ msgid_plural "%1 new voice messages"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/settingsdialog.cpp:104
+#: src/settingsdialog.cpp:105
 #, kde-format
 msgid "SIP account"
 msgstr ""
 
-#: src/settingsdialog.cpp:108
+#: src/settingsdialog.cpp:109
 #, kde-format
 msgid "host or host:port"
 msgstr ""
 
-#: src/settingsdialog.cpp:112
+#: src/settingsdialog.cpp:113
 #, kde-format
 msgid "Prefer IPv6 if the server has an IPv6 address"
 msgstr ""
 
-#: src/settingsdialog.cpp:117
+#: src/settingsdialog.cpp:118
 #, kde-format
 msgid "not set"
 msgstr ""
 
-#: src/settingsdialog.cpp:117
+#: src/settingsdialog.cpp:118
 #, kde-format
 msgid "stored in KWallet - type to change"
 msgstr ""
 
-#: src/settingsdialog.cpp:122
-#, kde-format
-msgid "G.722 – HD voice (16 kHz)"
-msgstr ""
-
-#: src/settingsdialog.cpp:123
-#, kde-format
-msgid "Opus – HD voice, low bandwidth"
-msgstr ""
-
-#: src/settingsdialog.cpp:124
-#, kde-format
-msgid "G.711 A-law (PCMA) – standard in Europe"
-msgstr ""
-
 #: src/settingsdialog.cpp:125
-#, kde-format
-msgid "G.711 µ-law (PCMU) – standard in North America"
-msgstr ""
-
-#: src/settingsdialog.cpp:130
 #, kde-format
 msgid ""
 "Tick the codecs to offer. The order is the preference: drag the entries or "
 "use the arrows."
 msgstr ""
 
-#: src/settingsdialog.cpp:153
+#: src/settingsdialog.cpp:137
+#, kde-format
+msgid "Not available in this baresip build"
+msgstr ""
+
+#: src/settingsdialog.cpp:149
+#, kde-format
+msgid "%1 (not available)"
+msgstr ""
+
+#: src/settingsdialog.cpp:160
 #, kde-format
 msgid "Prefer"
 msgstr ""
 
-#: src/settingsdialog.cpp:156
+#: src/settingsdialog.cpp:163
 #, kde-format
 msgid "Less preferred"
 msgstr ""
 
-#: src/settingsdialog.cpp:174
+#: src/settingsdialog.cpp:181
 #, kde-format
 msgid "User:"
 msgstr ""
 
-#: src/settingsdialog.cpp:175
+#: src/settingsdialog.cpp:182
 #, kde-format
 msgid "Server:"
 msgstr ""
 
-#: src/settingsdialog.cpp:176
+#: src/settingsdialog.cpp:183
 #, kde-format
 msgid "Transport:"
 msgstr ""
 
-#: src/settingsdialog.cpp:178
+#: src/settingsdialog.cpp:185
 #, kde-format
 msgid "Display name:"
 msgstr ""
 
-#: src/settingsdialog.cpp:179
+#: src/settingsdialog.cpp:186
 #, kde-format
 msgid "Password:"
 msgstr ""
 
-#: src/settingsdialog.cpp:180
+#: src/settingsdialog.cpp:187
 #, kde-format
 msgid "Codecs:"
 msgstr ""
 
-#: src/settingsdialog.cpp:182
+#: src/settingsdialog.cpp:189
 #, kde-format
 msgid "number of the mailbox, e.g. 9000"
 msgstr ""
 
-#: src/settingsdialog.cpp:183
+#: src/settingsdialog.cpp:190
 #, kde-format
 msgid "Voicemail:"
 msgstr ""
 
-#: src/settingsdialog.cpp:185
+#: src/settingsdialog.cpp:192
 #, kde-format
 msgid "RFC 4733 / RTP events (recommended)"
 msgstr ""
 
-#: src/settingsdialog.cpp:186
+#: src/settingsdialog.cpp:193
 #, kde-format
 msgid "SIP INFO"
 msgstr ""
 
-#: src/settingsdialog.cpp:187
+#: src/settingsdialog.cpp:194
 #, kde-format
 msgid "Automatic"
 msgstr ""
 
-#: src/settingsdialog.cpp:189
+#: src/settingsdialog.cpp:196
 #, kde-format
 msgid ""
 "Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, "
 "dtmf_mode=info needs SIP INFO."
 msgstr ""
 
-#: src/settingsdialog.cpp:190
+#: src/settingsdialog.cpp:197
 #, kde-format
 msgid "DTMF:"
 msgstr ""
 
-#: src/settingsdialog.cpp:193
+#: src/settingsdialog.cpp:200
 #, kde-format
 msgid "Audio"
 msgstr ""
 
-#: src/settingsdialog.cpp:196
+#: src/settingsdialog.cpp:203
 #, kde-format
 msgid "System default"
 msgstr ""
 
-#: src/settingsdialog.cpp:201
+#: src/settingsdialog.cpp:208
 #, kde-format
 msgid "%1 (not connected)"
 msgstr ""
 
-#: src/settingsdialog.cpp:216
+#: src/settingsdialog.cpp:223
 #, kde-format
 msgid "Choose ring tone"
 msgstr ""
 
-#: src/settingsdialog.cpp:219
+#: src/settingsdialog.cpp:226
 #, kde-format
 msgid "Ring tone"
 msgstr ""
 
-#: src/settingsdialog.cpp:219
+#: src/settingsdialog.cpp:226
 #, kde-format
 msgid "Sounds (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"
 msgstr ""
 
-#: src/settingsdialog.cpp:224
+#: src/settingsdialog.cpp:231
 #, kde-format
 msgid "Test"
 msgstr ""
 
-#: src/settingsdialog.cpp:233
+#: src/settingsdialog.cpp:240
 #, kde-format
 msgid "Once"
 msgstr ""
 
-#: src/settingsdialog.cpp:234
+#: src/settingsdialog.cpp:241
 #, kde-format
 msgid "Continuously until answered"
 msgstr ""
 
-#: src/settingsdialog.cpp:236
+#: src/settingsdialog.cpp:243
 #, kde-format
 msgid "Microphone:"
 msgstr ""
 
-#: src/settingsdialog.cpp:237
+#: src/settingsdialog.cpp:244
 #, kde-format
 msgid "Speaker / headset:"
 msgstr ""
 
-#: src/settingsdialog.cpp:238
+#: src/settingsdialog.cpp:245
 #, kde-format
 msgid "Echo cancellation in KSipPhone (WebRTC)"
 msgstr ""
 
-#: src/settingsdialog.cpp:240
+#: src/settingsdialog.cpp:247
 #, kde-format
 msgid ""
 "Leave off if the microphone already comes through PipeWire's echo "
@@ -447,32 +507,32 @@ msgid ""
 "otherwise the echo is cancelled twice."
 msgstr ""
 
-#: src/settingsdialog.cpp:243
+#: src/settingsdialog.cpp:250
 #, kde-format
 msgid "Ring on:"
 msgstr ""
 
-#: src/settingsdialog.cpp:244
+#: src/settingsdialog.cpp:251
 #, kde-format
 msgid "Ring tone:"
 msgstr ""
 
-#: src/settingsdialog.cpp:245
+#: src/settingsdialog.cpp:252
 #, kde-format
 msgid "Ring:"
 msgstr ""
 
-#: src/settingsdialog.cpp:248
+#: src/settingsdialog.cpp:255
 #, kde-format
 msgid "LDAP phonebook (optional, anonymous read)"
 msgstr ""
 
-#: src/settingsdialog.cpp:254
+#: src/settingsdialog.cpp:261
 #, kde-format
 msgid "URI:"
 msgstr ""
 
-#: src/settingsdialog.cpp:255
+#: src/settingsdialog.cpp:262
 #, kde-format
 msgid "Base DN:"
 msgstr ""

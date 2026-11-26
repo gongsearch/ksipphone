@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 #include "settingsdialog.h"
 #include "ringer.h"
+#include "codecs.h"
 
 #include <KLocalizedString>
 
@@ -117,13 +118,7 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_password->setPlaceholderText(password.isEmpty() ? i18n("not set") : i18n("stored in KWallet - type to change"));
     connect(m_password, &QLineEdit::textEdited, this, [this] { m_pwChanged = true; });
     // Codecs: tick to offer, order = preference (drag & drop or the arrow buttons)
-    struct CodecInfo { const char *id; QString label; };
-    const QList<CodecInfo> known = {
-        {"G722", i18n("G.722 – HD voice (16 kHz)")},
-        {"opus", i18n("Opus – HD voice, low bandwidth")},
-        {"PCMA", i18n("G.711 A-law (PCMA) – standard in Europe")},
-        {"PCMU", i18n("G.711 µ-law (PCMU) – standard in North America")},
-    };
+    const QList<CodecInfo> known = Codecs::catalogue();
     m_codecs = new QListWidget(acc);
     m_codecs->setDragDropMode(QAbstractItemView::InternalMove);
     m_codecs->setDefaultDropAction(Qt::MoveAction);
@@ -131,23 +126,35 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     QStringList enabled = s.codecs.split(QLatin1Char(','), Qt::SkipEmptyParts);
     for (QString &c : enabled)
         c = c.trimmed();
-    auto addItem = [this](const QString &id, const QString &label, bool on) {
+    auto addItem = [this](const QString &id, const QString &label, bool on, bool available, const QString &hint) {
         auto *it = new QListWidgetItem(label, m_codecs);
         it->setData(Qt::UserRole, id);
-        it->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsDragEnabled);
+        it->setToolTip(hint);
+        Qt::ItemFlags fl = Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsDragEnabled;
+        if (available)
+            fl |= Qt::ItemIsEnabled;
+        else
+            it->setToolTip(hint + QLatin1Char('\n') + i18n("Not available in this baresip build"));
+        it->setFlags(fl);
         it->setCheckState(on ? Qt::Checked : Qt::Unchecked);
     };
-    // enabled ones first, in their configured order (unknown ids are kept), then the rest
+    // enabled ones first in their configured order (unknown ids are kept), then the remaining catalogue
     for (const QString &id : std::as_const(enabled)) {
-        auto k = std::find_if(known.begin(), known.end(), [&](const CodecInfo &c) { return id.compare(QLatin1String(c.id), Qt::CaseInsensitive) == 0; });
-        addItem(k != known.end() ? QLatin1String(k->id) : id, k != known.end() ? k->label : id, true);
+        const CodecInfo *k = Codecs::find(id);
+        addItem(k ? k->id : id, k ? k->label : id, true, !k || Codecs::available(*k), k ? k->hint : QString());
     }
     for (const CodecInfo &k : known) {
-        const bool listed = std::any_of(enabled.begin(), enabled.end(), [&](const QString &e) { return e.compare(QLatin1String(k.id), Qt::CaseInsensitive) == 0; });
+        const bool listed = std::any_of(enabled.begin(), enabled.end(), [&](const QString &e) { return e.compare(k.id, Qt::CaseInsensitive) == 0; });
         if (!listed)
-            addItem(QLatin1String(k.id), k.label, false);
+            addItem(k.id, Codecs::available(k) ? k.label : i18n("%1 (not available)", k.label), false, Codecs::available(k), k.hint);
     }
-    m_codecs->setFixedHeight(m_codecs->sizeHintForRow(0) * m_codecs->count() + 2 * m_codecs->frameWidth() + 4);
+    // show every entry without scrolling
+    m_codecs->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_codecs->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    int h = 2 * m_codecs->frameWidth();
+    for (int i = 0; i < m_codecs->count(); ++i)
+        h += m_codecs->sizeHintForRow(i);
+    m_codecs->setFixedHeight(h + 2);
     auto *up = new QToolButton(acc);
     up->setIcon(QIcon::fromTheme(QStringLiteral("go-up")));
     up->setToolTip(i18n("Prefer"));

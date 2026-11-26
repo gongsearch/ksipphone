@@ -100,5 +100,6 @@ private:
     QString m_peer, m_peerName, m_lastError, m_closeReason;
     int m_retries = 0;
     QString m_player, m_source;
+    QStringList m_registeredCodecs;
     bool m_aec = false;
 };

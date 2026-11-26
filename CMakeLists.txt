@@ -43,6 +43,7 @@ set(BARESIP_MODULE_PATH "/usr/lib/baresip/modules" CACHE PATH "Where baresip's m
 set(BARESIP_SHARE_PATH "/usr/share/baresip" CACHE PATH "Where baresip's sound files are installed")
 set(BARESIP_EXECUTABLE "baresip" CACHE STRING "baresip executable (name in PATH or absolute path)")
 option(KSIPPHONE_BUNDLE_BARESIP "Build a private static baresip and install it with KSipPhone" OFF)
+set(KSIPPHONE_STATIC_BARESIP_MODULES "" CACHE STRING "Modules compiled into a shipped static baresip (';' separated); empty = look for module files")
 
 find_library(LDAP_LIBRARY NAMES ldap REQUIRED)
 find_library(LBER_LIBRARY NAMES lber REQUIRED)
@@ -54,7 +55,8 @@ if (KSIPPHONE_BUNDLE_BARESIP)
 endif()
 target_compile_definitions(ksipphone PRIVATE
     KSIPPHONE_BARESIP_MODULE_PATH="${BARESIP_MODULE_PATH}" KSIPPHONE_BARESIP_SHARE_PATH="${BARESIP_SHARE_PATH}"
-    KSIPPHONE_BARESIP_EXECUTABLE="${BARESIP_EXECUTABLE}")
+    KSIPPHONE_BARESIP_EXECUTABLE="${BARESIP_EXECUTABLE}"
+    KSIPPHONE_STATIC_BARESIP_MODULES="${KSIPPHONE_STATIC_BARESIP_MODULES}")
 include(Packaging)
 ki18n_install(po)
 
