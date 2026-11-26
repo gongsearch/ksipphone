@@ -7,11 +7,83 @@
 
 #include <QImage>
 #include <QPixmap>
+#include <QRegularExpression>
 #include <QTimer>
 #include <QUrl>
 
 namespace
 {
+QString decodeQuotedPrintable(const QString &in)
+{
+    QByteArray out;
+    const QByteArray b = in.toLatin1();
+    for (int i = 0; i < b.size(); ++i) {
+        if (b[i] == '=' && i + 2 < b.size()) {
+            bool ok = false;
+            const int v = b.mid(i + 1, 2).toInt(&ok, 16);
+            if (ok) {
+                out += char(v);
+                i += 2;
+                continue;
+            }
+        }
+        out += b[i];
+    }
+    return QString::fromUtf8(out);
+}
+
+QString unescape(QString s)
+{
+    s.replace(QLatin1String("\\,"), QLatin1String(",")).replace(QLatin1String("\\;"), QLatin1String(";"));
+    return s.trimmed();
+}
+
+// N (family/given) and the typed TEL lines of a vCard 2.1/3.0/4.0
+void parseVCard(const QByteArray &vcard, LocalPerson *p)
+{
+    QString text = QString::fromUtf8(vcard);
+    text.replace(QLatin1String("\r\n"), QLatin1String("\n"));
+    text.replace(QLatin1String("\n "), QString()).replace(QLatin1String("\n\t"), QString()); // folding
+    // quoted-printable soft line breaks ("=" at the end), only on QP lines (base64 photos end in "=" too)
+    QStringList lines;
+    const QStringList raw = text.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+    for (int i = 0; i < raw.size(); ++i) {
+        QString line = raw[i];
+        if (line.left(line.indexOf(QLatin1Char(':'))).contains(QLatin1String("QUOTED-PRINTABLE"), Qt::CaseInsensitive)) {
+            while (line.endsWith(QLatin1Char('=')) && i + 1 < raw.size())
+                line = line.chopped(1) + raw[++i];
+        }
+        lines << line;
+    }
+    QStringList numbers, kinds;
+    for (const QString &line : std::as_const(lines)) {
+        const int colon = line.indexOf(QLatin1Char(':'));
+        if (colon < 0)
+            continue;
+        const QString key = line.left(colon);
+        const QString name = key.section(QLatin1Char(';'), 0, 0).section(QLatin1Char('.'), -1).toUpper();
+        const QString params = key.section(QLatin1Char(';'), 1).toUpper();
+        QString value = line.mid(colon + 1);
+        if (params.contains(QLatin1String("QUOTED-PRINTABLE")))
+            value = decodeQuotedPrintable(value);
+        if (name == QLatin1String("N")) {
+            const QStringList parts = value.split(QRegularExpression(QStringLiteral("(?<!\\\\);")));
+            p->family = unescape(parts.value(0));
+            p->given = unescape(parts.value(1));
+        } else if (name == QLatin1String("TEL") && !value.trimmed().isEmpty()) {
+            numbers << value.trimmed();
+            kinds << (params.contains(QLatin1String("CELL"))   ? QStringLiteral("mobile")
+                          : params.contains(QLatin1String("HOME")) ? QStringLiteral("home")
+                          : params.contains(QLatin1String("WORK")) ? QStringLiteral("work")
+                                                                   : QString());
+        }
+    }
+    if (!numbers.isEmpty()) {
+        p->numbers = numbers;
+        p->kinds = kinds;
+    }
+}
+
 class KPeopleSource : public ContactSource
 {
 public:
@@ -43,6 +115,7 @@ private:
             if (p.numbers.isEmpty())
                 continue;
             p.name = ix.data(KPeople::PersonsModel::FormattedNameRole).toString();
+            parseVCard(m_model->contactCustomProperty(ix, KPeople::AbstractContact::VCardProperty).toByteArray(), &p);
             // only real photos (PhotoRole falls back to a generic avatar)
             const QVariant pic = m_model->contactCustomProperty(ix, KPeople::AbstractContact::PictureProperty);
             QImage img;

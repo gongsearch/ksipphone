@@ -4,6 +4,7 @@
 #include <KLocalizedString>
 
 #include <QBuffer>
+#include <QRegularExpression>
 #include <QSet>
 #include <QImage>
 #include <QLoggingCategory>
@@ -103,7 +104,13 @@ void LocalContacts::rebuild()
     m_byNumber.clear();
     for (const ContactSource *src : std::as_const(m_sources)) {
         for (const LocalPerson &lp : src->people()) {
-            Person p{lp.name, lp.numbers, {}, lp.photo};
+            Person p;
+            p.name = lp.name;
+            p.given = lp.given;
+            p.family = lp.family;
+            p.numbers = lp.numbers;
+            p.kinds = lp.kinds;
+            p.photo = lp.photo;
             for (const QString &n : std::as_const(p.numbers))
                 p.normalized << Phonebook::normalize(n);
             const int idx = m_people.size();
@@ -121,7 +128,7 @@ QList<PhonebookEntry> LocalContacts::search(const QString &text, int limit) cons
 {
     QList<PhonebookEntry> out;
     const QString q = text.trimmed();
-    if (!m_enabled || q.size() < 2)
+    if (!m_enabled || q.isEmpty())
         return out;
     QString digits;
     for (const QChar c : q)
@@ -131,11 +138,25 @@ QList<PhonebookEntry> LocalContacts::search(const QString &text, int limit) cons
     const QString tail = digits.startsWith(QLatin1Char('0')) ? digits.mid(1) : digits;
     QSet<QString> seen;
     for (const Person &p : m_people) {
-        const bool nameMatch = p.name.contains(q, Qt::CaseInsensitive);
+        // one character: a word of the name starts with it; more: anywhere in the name
+        bool nameMatch = false;
+        if (q.size() == 1) {
+            for (const QString &word : p.name.split(QRegularExpression(QStringLiteral("[\\s,.-]+")), Qt::SkipEmptyParts))
+                nameMatch = nameMatch || word.startsWith(q, Qt::CaseInsensitive);
+        } else {
+            nameMatch = p.name.contains(q, Qt::CaseInsensitive);
+        }
         for (int i = 0; i < p.numbers.size(); ++i) {
             if ((nameMatch || (byNumber && p.normalized[i].contains(tail))) && !seen.contains(p.normalized[i])) {
                 seen.insert(p.normalized[i]);
-                out.append({p.name, p.numbers[i], QStringLiteral("local"), {}});
+                PhonebookEntry e;
+                e.name = p.name;
+                e.number = p.numbers[i];
+                e.kind = p.kinds.value(i);
+                e.given = p.given;
+                e.family = p.family;
+                e.source = QStringLiteral("local");
+                out.append(e);
                 if (out.size() >= limit)
                     return out;
             }

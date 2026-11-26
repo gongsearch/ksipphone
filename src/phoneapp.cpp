@@ -222,6 +222,7 @@ void PhoneApp::applySettings()
     const Settings s = Settings::load();
     m_phonebook->configure(s.ldapUri, s.ldapBase);
     m_local->setEnabled(s.useLocalContacts && LocalContacts::isAvailable());
+    m_phonebook->setNameFormat(static_cast<Phonebook::NameFormat>(s.nameFormat));
     m_engine->setAudioDevices(s.speakerDevice, s.micDevice, s.echoCancel);
     m_ringer->configure(s.ringFile, s.ringDevice, s.ringLoop);
     Account a;

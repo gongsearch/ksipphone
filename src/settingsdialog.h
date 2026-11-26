@@ -10,6 +10,7 @@ struct Settings {
     QString user, server, transport, displayName, codecs;
     QString ldapUri, ldapBase;
     bool useLocalContacts = true; // desktop address book (KPeople)
+    int nameFormat = 0;           // Phonebook::NameFormat: 0 first last, 1 last, first
     QString voicemail; // number to dial for the mailbox
     QString dtmfMode;  // rtpevent | info | auto
     bool preferIpv6 = false;
@@ -38,6 +39,7 @@ private:
     class QCheckBox *m_aec;
     class QCheckBox *m_local = nullptr;
     QComboBox *m_dtmf;
+    QComboBox *m_nameFormat;
     QComboBox *m_ring, *m_mic, *m_speaker, *m_ringDev;
     QLineEdit *m_ringFile;
     class Ringer *m_preview;

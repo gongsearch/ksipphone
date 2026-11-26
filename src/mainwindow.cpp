@@ -6,6 +6,8 @@
 #include <QAbstractItemView>
 #include <QCloseEvent>
 #include <QCompleter>
+#include <QStyle>
+#include <QPainter>
 #include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -77,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
     // field emptied (typing, clear button, programmatically): drop old results and close the drop-down
     connect(m_number, &QLineEdit::textChanged, this, [this](const QString &text) {
-        if (text.trimmed().size() < 2)
+        if (text.trimmed().isEmpty())
             clearSearchResults();
     });
     connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
@@ -239,13 +241,33 @@ void MainWindow::setSearchResults(int requestId, const QList<PhonebookEntry> &en
     if (requestId != m_searchId)
         return; // outdated
     m_model->clear();
+    // icons: where the entry comes from, and the kind of number
+    const int sz = m_completer->popup()->style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, m_completer->popup());
+    const qreal dpr = devicePixelRatioF();
+    m_completer->popup()->setIconSize(QSize(2 * sz + 4, sz));
     for (const auto &e : entries) {
-        const QString kind = e.kind == QLatin1String("local") ? i18n("address book")
-            : e.kind == QLatin1String("mobile")                ? i18n("mobile")
-            : e.kind == QLatin1String("homePhone")              ? i18n("home")
-                                                                : i18n("work");
-        auto *it = new QStandardItem(QStringLiteral("%1 – %2 (%3)").arg(e.name, e.number, kind));
+        const bool ldap = e.source == QLatin1String("ldap");
+        const QString kindIcon = e.kind == QLatin1String("mobile") ? QStringLiteral("smartphone")
+            : e.kind == QLatin1String("home")                     ? QStringLiteral("go-home")
+            : e.kind == QLatin1String("work")                     ? QStringLiteral("phone")
+                                                                   : QString();
+        const QString kindText = e.kind == QLatin1String("mobile") ? i18n("mobile")
+            : e.kind == QLatin1String("home")                     ? i18n("home")
+            : e.kind == QLatin1String("work")                     ? i18n("work")
+                                                                   : QString();
+        QPixmap pm(QSize(2 * sz + 4, sz) * dpr);
+        pm.setDevicePixelRatio(dpr);
+        pm.fill(Qt::transparent);
+        {
+            QPainter p(&pm);
+            QIcon::fromTheme(ldap ? QStringLiteral("server-database") : QStringLiteral("x-office-address-book")).paint(&p, QRect(0, 0, sz, sz));
+            if (!kindIcon.isEmpty())
+                QIcon::fromTheme(kindIcon).paint(&p, QRect(sz + 4, 0, sz, sz));
+        }
+        auto *it = new QStandardItem(QIcon(pm), QStringLiteral("%1 – %2").arg(e.display.isEmpty() ? e.name : e.display, e.number));
         it->setData(e.number, NumberRole);
+        const QString from = ldap ? i18n("LDAP phonebook") : i18n("address book of this computer");
+        it->setToolTip(kindText.isEmpty() ? from : QStringLiteral("%1 · %2").arg(from, kindText));
         m_model->appendRow(it);
     }
     if (entries.isEmpty())

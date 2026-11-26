@@ -12,8 +12,10 @@ class QImage;
 
 struct LocalPerson {
     QString name;
-    QStringList numbers; // as stored
-    QByteArray photo;    // PNG, empty if the contact has no real photo
+    QString given, family; // if known
+    QStringList numbers;   // as stored
+    QStringList kinds;     // per number: "mobile", "home", "work" or ""
+    QByteArray photo;      // PNG, empty if the contact has no real photo
 };
 
 class ContactSource : public QObject

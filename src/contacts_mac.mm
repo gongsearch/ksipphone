@@ -62,7 +62,8 @@ private:
         @autoreleasepool {
             NSArray *keys = @[
                 [CNContactFormatter descriptorForRequiredKeysForStyle:CNContactFormatterStyleFullName],
-                CNContactPhoneNumbersKey, CNContactOrganizationNameKey, CNContactThumbnailImageDataKey
+                CNContactPhoneNumbersKey, CNContactOrganizationNameKey, CNContactThumbnailImageDataKey,
+                CNContactGivenNameKey, CNContactFamilyNameKey
             ];
             CNContactFetchRequest *req = [[CNContactFetchRequest alloc] initWithKeysToFetch:keys];
             NSError *error = nil;
@@ -72,8 +73,17 @@ private:
                                                           if (c.phoneNumbers.count == 0)
                                                               return;
                                                           LocalPerson p;
-                                                          for (CNLabeledValue<CNPhoneNumber *> *n in c.phoneNumbers)
+                                                          for (CNLabeledValue<CNPhoneNumber *> *n in c.phoneNumbers) {
                                                               p.numbers << QString::fromNSString(n.value.stringValue);
+                                                              NSString *l = n.label;
+                                                              p.kinds << ([l isEqualToString:CNLabelPhoneNumberMobile] || [l isEqualToString:CNLabelPhoneNumberiPhone]
+                                                                              ? QStringLiteral("mobile")
+                                                                              : [l isEqualToString:CNLabelHome] ? QStringLiteral("home")
+                                                                              : [l isEqualToString:CNLabelWork] ? QStringLiteral("work")
+                                                                                                                : QString());
+                                                          }
+                                                          p.given = QString::fromNSString(c.givenName);
+                                                          p.family = QString::fromNSString(c.familyName);
                                                           NSString *name = [CNContactFormatter stringFromContact:c
                                                                                                            style:CNContactFormatterStyleFullName];
                                                           p.name = QString::fromNSString(name.length ? name : c.organizationName);

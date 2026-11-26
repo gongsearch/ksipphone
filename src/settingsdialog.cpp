@@ -75,6 +75,7 @@ Settings Settings::load()
     s.ldapUri = str(c, QStringLiteral("Uri"));
     s.ldapBase = str(c, QStringLiteral("BaseDn"));
     s.useLocalContacts = c.value(QStringLiteral("UseLocalContacts"), true).toBool();
+    s.nameFormat = c.value(QStringLiteral("NameFormat"), 0).toInt();
     c.endGroup();
     return s;
 }
@@ -104,6 +105,7 @@ void Settings::save() const
     c.setValue(QStringLiteral("Uri"), ldapUri);
     c.setValue(QStringLiteral("BaseDn"), ldapBase);
     c.setValue(QStringLiteral("UseLocalContacts"), useLocalContacts);
+    c.setValue(QStringLiteral("NameFormat"), nameFormat);
     c.endGroup();
     c.sync();
 }
@@ -431,6 +433,12 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
                                  sources.join(QStringLiteral(", "))));
         g->addRow(QString(), m_local);
     }
+    m_nameFormat = new QComboBox(pb);
+    m_nameFormat->addItem(i18n("First name Last name"), 0);
+    m_nameFormat->addItem(i18n("Last name, First name"), 1);
+    m_nameFormat->setCurrentIndex(qMax(0, m_nameFormat->findData(s.nameFormat)));
+    m_nameFormat->setToolTip(i18n("How names are shown and sorted in the search results"));
+    g->addRow(i18n("Names:"), m_nameFormat);
     tabs->addTab(pb, QIcon::fromTheme(QStringLiteral("x-office-address-book")), i18n("Phonebook"));
 
     auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
@@ -465,6 +473,7 @@ Settings SettingsDialog::settings() const
     s.ldapUri = m_ldapUri->text().trimmed();
     s.ldapBase = m_ldapBase->text().trimmed();
     s.useLocalContacts = m_local ? m_local->isChecked() : true;
+    s.nameFormat = m_nameFormat->currentData().toInt();
     return s;
 }
 

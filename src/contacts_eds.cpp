@@ -7,6 +7,7 @@
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QFutureWatcher>
+#include <QHash>
 #include <QImage>
 #include <QLoggingCategory>
 #include <QPointer>
@@ -15,6 +16,8 @@
 #include <QtConcurrent>
 
 #include <dlfcn.h>
+
+#include <utility>
 
 Q_LOGGING_CATEGORY(EDSCONTACTS, "ksipphone.contacts.eds")
 
@@ -63,7 +66,8 @@ struct Eds {
     void (*slist_free_full)(GSList_ *list, void (*freeFunc)(void *)) = nullptr;
     void (*free)(void *mem) = nullptr;
     void (*error_free)(GError_ *err) = nullptr;
-    int fTel = 0, fFullName = 0, fFileAs = 0, fOrg = 0, fPhoto = 0;
+    int fTel = 0, fFullName = 0, fFileAs = 0, fOrg = 0, fPhoto = 0, fGiven = 0, fFamily = 0;
+    QList<std::pair<int, QString>> fKinds; // single-number fields -> kind
 
     bool load()
     {
@@ -104,6 +108,13 @@ struct Eds {
         fFileAs = field_id("file_as");
         fOrg = field_id("org");
         fPhoto = field_id("photo");
+        fGiven = field_id("given_name");
+        fFamily = field_id("family_name");
+        for (const auto &[f, kind] : {std::pair{"mobile_phone", "mobile"}, std::pair{"home_phone", "home"}, std::pair{"home_phone_2", "home"},
+                                      std::pair{"business_phone", "work"}, std::pair{"business_phone_2", "work"}, std::pair{"company_phone", "work"}}) {
+            if (const int id = field_id(f); id > 0)
+                fKinds.append({id, QString::fromLatin1(kind)});
+        }
         return fTel > 0 && fFullName > 0 && fPhoto > 0;
     }
 };
@@ -167,6 +178,27 @@ QList<LocalPerson> loadAll()
                 if (f > 0 && p.name.isEmpty())
                     p.name = QString::fromUtf8(static_cast<const char *>(e->contact_get_const(c->data, f))).trimmed();
             }
+            auto str = [&](int f) {
+                return f > 0 ? QString::fromUtf8(static_cast<const char *>(e->contact_get_const(c->data, f))).trimmed() : QString();
+            };
+            p.given = str(e->fGiven);
+            p.family = str(e->fFamily);
+            // number types: the typed single fields, matched by digits
+            auto digits = [](const QString &s) {
+                QString d;
+                for (const QChar ch : s)
+                    if (ch.isDigit())
+                        d += ch;
+                return d;
+            };
+            QHash<QString, QString> kindOf;
+            for (const auto &[f, kind] : std::as_const(e->fKinds)) {
+                const QString n = digits(str(f));
+                if (!n.isEmpty() && !kindOf.contains(n))
+                    kindOf.insert(n, kind);
+            }
+            for (const QString &n : std::as_const(p.numbers))
+                p.kinds << kindOf.value(digits(n));
             if (auto *ph = static_cast<EContactPhoto_ *>(e->contact_get(c->data, e->fPhoto))) {
                 QImage img;
                 if (ph->type == 0 && ph->data.inlined.data)

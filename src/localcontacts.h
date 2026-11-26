@@ -29,7 +29,8 @@ private:
     void rebuild();
 
     struct Person {
-        QString name;
+        QString name, given, family;
+        QStringList kinds;
         QStringList numbers;    // as stored
         QStringList normalized; // Phonebook::normalize()
         QByteArray photo;
