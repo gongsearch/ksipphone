@@ -20,6 +20,10 @@
 #include <QTabWidget>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QApplication>
+#include <QProxyStyle>
+#include <QStyleFactory>
+#include <QStyleOptionViewItem>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -100,6 +104,39 @@ void Settings::save() const
     c.sync();
 }
 
+namespace
+{
+// item views put the text right next to the check box; add the usual check box/label gap
+class CheckListStyle : public QProxyStyle
+{
+public:
+    using QProxyStyle::QProxyStyle;
+    QRect subElementRect(SubElement element, const QStyleOption *option, const QWidget *widget) const override
+    {
+        QRect r = QProxyStyle::subElementRect(element, option, widget);
+        if (element == SE_ItemViewItemText) {
+            const auto *vo = qstyleoption_cast<const QStyleOptionViewItem *>(option);
+            if (vo && (vo->features & QStyleOptionViewItem::HasCheckIndicator))
+                r.setLeft(r.left() + gap(option, widget));
+        }
+        return r;
+    }
+    QSize sizeFromContents(ContentsType type, const QStyleOption *option, const QSize &size, const QWidget *widget) const override
+    {
+        QSize sz = QProxyStyle::sizeFromContents(type, option, size, widget);
+        if (type == CT_ItemViewItem)
+            sz.rwidth() += gap(option, widget);
+        return sz;
+    }
+
+private:
+    int gap(const QStyleOption *option, const QWidget *widget) const
+    {
+        return qMax(6, pixelMetric(PM_CheckBoxLabelSpacing, option, widget));
+    }
+};
+}
+
 SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidget *parent)
     : QDialog(parent)
 {
@@ -127,6 +164,10 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     // Codecs: tick to offer, order = preference (drag & drop or the arrow buttons)
     const QList<CodecInfo> known = Codecs::catalogue();
     m_codecs = new QListWidget(acc);
+    // based on a fresh instance of the current application style (QProxyStyle would otherwise fall back to the desktop default)
+    auto *listStyle = new CheckListStyle(QStyleFactory::create(QApplication::style()->name()));
+    listStyle->setParent(m_codecs);
+    m_codecs->setStyle(listStyle);
     m_codecs->setDragDropMode(QAbstractItemView::InternalMove);
     m_codecs->setDefaultDropAction(Qt::MoveAction);
     m_codecs->setToolTip(i18n("Tick the codecs to offer. The order is the preference: drag the entries or use the arrows."));
