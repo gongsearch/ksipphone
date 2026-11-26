@@ -121,7 +121,8 @@ jobs:
           echo "$out" | grep -q "Usage: baresip" || { echo "::error title=baresip.exe does not start from the bundle::$(echo "$out" | tail -3)"; exit 1; }
           # all DLLs that the bundled executables import must be inside the bundle
           for exe in bundle/ksipphone.exe bundle/baresip.exe; do
-            objdump -p "$exe" | awk '/DLL Name:/ {print $3}' | while read -r dll; do
+            # api-ms-win-* / ext-ms-* are Windows API sets resolved by the loader (no files)
+            objdump -p "$exe" | awk '/DLL Name:/ {print $3}' | grep -viE '^(api|ext)-ms-' | while read -r dll; do
               [ -f "bundle/$dll" ] || [ -f "/c/Windows/System32/$dll" ] || [ -f "/c/Windows/System32/${dll,,}" ] \
                 || { echo "::error title=missing DLL::$exe needs $dll"; exit 1; }
             done
