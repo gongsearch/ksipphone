@@ -242,7 +242,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     m_ext->setItemDelegate(new ExtDelegate(m_ext));
     m_ext->setToolTip(i18n("Click to call; during a call click to transfer"));
     extLay->addWidget(m_ext, 1);
-    m_extPanel->setFixedWidth(250);
+    m_extPanel->setMinimumWidth(250); // takes the extra width when the window is widened
     m_extPanel->hide();
     connect(m_ext, &QListWidget::itemClicked, this, [this](QListWidgetItem *it) {
         const QString ext = it->data(ExtNumberRole).toString();
@@ -253,8 +253,8 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     });
     auto *keyRow = new QHBoxLayout;
     keyRow->setSpacing(12);
-    keyRow->addLayout(grid, 1);
-    keyRow->addWidget(m_extPanel);
+    keyRow->addLayout(grid, 0);
+    keyRow->addWidget(m_extPanel, 1);
     lay->addLayout(keyRow);
 
     auto *row = new QHBoxLayout;
