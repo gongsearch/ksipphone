@@ -130,9 +130,11 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     m_number->setFont(f);
     // body grid: row 0 search field | extension filter, row 1 call info + keypad + buttons | extension list
     auto *body = new QGridLayout;
+    m_body = body;
     body->setHorizontalSpacing(12);
     body->setVerticalSpacing(12);
     auto *left = new QVBoxLayout;
+    m_left = left;
     left->setSpacing(12);
     body->addWidget(m_number, 0, 0);
     body->addLayout(left, 1, 0);
@@ -203,6 +205,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         b->setFocusPolicy(Qt::NoFocus);
         b->setMinimumHeight(44);
         b->setMinimumWidth(80);
+        m_keys.append(b);
         b->setFont(kf);
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
         grid->addWidget(b, i / 3, (i % 3) * 2, 1, 2);
@@ -275,7 +278,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
             Q_EMIT transferRequested(ext);
     });
     left->addLayout(grid);
-    left->addStretch(1); // the keypad stays together when the window gets taller
+    left->addStretch(1); // the keypad stays together when the window gets taller (with the extension list)
     body->addWidget(m_extPanel, 0, 1);
     body->addWidget(m_ext, 1, 1);
 
@@ -335,7 +338,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     // saved window size and position (Wayland ignores the position)
     if (const QByteArray g = appSettings().value(QStringLiteral("Window/Geometry")).toByteArray(); !g.isEmpty())
         restoreGeometry(g);
-    m_wideWidth = width(); // the list (if configured) appears later and keeps this width
+    m_wideSize = size(); // the list (if configured) appears later and keeps this size
     m_saveTimer = new QTimer(this);
     m_saveTimer->setSingleShot(true);
     m_saveTimer->setInterval(800);
@@ -368,16 +371,23 @@ void MainWindow::applyExtVisibility()
     const bool configured = !m_extensions.isEmpty();
     const bool show = configured && m_extToggle->isChecked();
     m_extToggle->setVisible(configured);
-    if (show == m_ext->isVisible())
-        return;
-    if (!show && m_ext->isVisible())
-        m_wideWidth = width(); // remember for showing it again
+    const bool changed = show != m_ext->isVisible();
+    if (changed && !show && m_ext->isVisible())
+        m_wideSize = size(); // remember for showing it again
     m_extPanel->setVisible(show);
     m_ext->setVisible(show);
-    // shrink to the keypad when hiding, back to the earlier width when showing
+    // with the list: compact keypad, the list takes extra space; without: keypad and buttons fill the window
+    m_body->setColumnStretch(0, show ? 0 : 1);
+    m_body->setColumnStretch(1, show ? 1 : 0);
+    m_left->setStretch(m_left->count() - 1, show ? 1 : 0);
+    for (QPushButton *k : std::as_const(m_keys))
+        k->setSizePolicy(k->sizePolicy().horizontalPolicy(), show ? QSizePolicy::Fixed : QSizePolicy::Expanding);
+    if (!changed)
+        return;
+    // hiding: shrink to the keypad; showing: back to the earlier size
     QTimer::singleShot(0, this, [this, show] {
-        const int minW = minimumSizeHint().width();
-        resize(show ? qMax(minW, m_wideWidth) : minW, height());
+        const QSize minS = minimumSizeHint();
+        resize(show ? m_wideSize.expandedTo(minS) : minS);
     });
 }
 

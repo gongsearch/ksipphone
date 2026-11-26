@@ -74,7 +74,10 @@ private:
     int m_extSort = 0;                           // 0 number, 1 first name, 2 last name, 3 status
     QToolButton *m_extToggle;
     QTimer *m_saveTimer = nullptr;
-    int m_wideWidth = 0;
+    QSize m_wideSize;
+    class QGridLayout *m_body = nullptr;
+    class QVBoxLayout *m_left = nullptr;
+    QList<QPushButton *> m_keys;
     int m_heightBeforeCall = -1;
     int m_extShow = 0; // 0 all, 1 online (free or busy), 2 only free
     QHash<QString, Engine::Presence> m_presence;
