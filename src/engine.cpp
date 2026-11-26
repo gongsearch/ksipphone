@@ -391,6 +391,10 @@ void Engine::setAccount(const Account &account)
     if (!account.displayName.isEmpty())
         aor.prepend(QStringLiteral("\"%1\" ").arg(QString(account.displayName).remove(QLatin1Char('"'))));
     QString line = aor;
+    // re-register every 90 s (refreshed at ~90 %): keeps stateful firewalls / NAT open for requests from the
+    // server (incoming calls, NOTIFY). Typical UDP idle timeout is 120 s (Linux conntrack), often less on routers.
+    if (account.keepAlive)
+        line += QStringLiteral(";regint=90");
     if (!account.password.isEmpty())
         line += QStringLiteral(";auth_pass=\"%1\"").arg(account.password);
     if (account.preferIpv6) {

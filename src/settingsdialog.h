@@ -15,6 +15,7 @@ struct Settings {
     QStringList watched; // extensions shown with presence status
     QString dtmfMode;  // rtpevent | info | auto
     bool preferIpv6 = false;
+    bool keepAlive = true;
     bool ringLoop = false;
     bool echoCancel = false; // baresip webrtc_aec
     QString micDevice, speakerDevice, ringDevice, ringFile; // PipeWire node names, "" = default
@@ -39,6 +40,7 @@ private:
     QComboBox *m_transport;
     class QCheckBox *m_ipv6;
     class QCheckBox *m_aec;
+    class QCheckBox *m_keepAlive;
     class QCheckBox *m_local = nullptr;
     QComboBox *m_dtmf;
     QComboBox *m_nameFormat;

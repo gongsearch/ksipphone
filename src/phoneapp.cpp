@@ -254,6 +254,7 @@ void PhoneApp::applySettings()
     a.server = s.server;
     a.transport = s.transport;
     a.preferIpv6 = s.preferIpv6;
+    a.keepAlive = s.keepAlive;
     a.dtmfMode = s.dtmfMode;
     a.displayName = s.displayName;
     a.codecs = s.codecs.split(QLatin1Char(','), Qt::SkipEmptyParts);

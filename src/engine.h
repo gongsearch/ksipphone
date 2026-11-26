@@ -23,6 +23,7 @@ struct Account {
     QString displayName;
     QString password;
     bool preferIpv6 = false;
+    bool keepAlive = true; // re-register often enough that firewalls/NAT keep the way in open
     QString dtmfMode = QStringLiteral("rtpevent"); // rtpevent (RFC 4733) | info (SIP INFO) | auto
     QStringList codecs = {QStringLiteral("G722"), QStringLiteral("PCMA"), QStringLiteral("PCMU")};
     bool isValid() const { return !user.isEmpty() && !server.isEmpty(); }

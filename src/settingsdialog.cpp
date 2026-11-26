@@ -64,6 +64,7 @@ Settings Settings::load()
     s.watched = c.value(QStringLiteral("WatchedExtensions")).toStringList();
     s.dtmfMode = str(c, QStringLiteral("DtmfMode"), QStringLiteral("rtpevent"));
     s.preferIpv6 = c.value(QStringLiteral("PreferIPv6"), false).toBool();
+    s.keepAlive = c.value(QStringLiteral("KeepAlive"), true).toBool();
     c.endGroup();
     c.beginGroup(QStringLiteral("Audio"));
     s.ringLoop = c.value(QStringLiteral("RingContinuously"), false).toBool();
@@ -95,6 +96,7 @@ void Settings::save() const
     c.setValue(QStringLiteral("WatchedExtensions"), watched);
     c.setValue(QStringLiteral("DtmfMode"), dtmfMode);
     c.setValue(QStringLiteral("PreferIPv6"), preferIpv6);
+    c.setValue(QStringLiteral("KeepAlive"), keepAlive);
     c.endGroup();
     c.beginGroup(QStringLiteral("Audio"));
     c.setValue(QStringLiteral("RingContinuously"), ringLoop);
@@ -347,6 +349,12 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     f->addRow(i18n("Server:"), m_server);
     f->addRow(i18n("Transport:"), m_transport);
     f->addRow(QString(), m_ipv6);
+    m_keepAlive = new QCheckBox(i18n("Keep the connection open for firewalls/NAT"), acc);
+    m_keepAlive->setChecked(s.keepAlive);
+    m_keepAlive->setToolTip(i18n("Renews the registration every 90 seconds. Firewalls and NAT routers forget idle UDP "
+                                 "connections after about two minutes; without this, incoming calls and status updates "
+                                 "can be dropped."));
+    f->addRow(QString(), m_keepAlive);
     f->addRow(i18n("Display name:"), m_display);
     f->addRow(i18n("Password:"), m_password);
     f->addRow(i18n("Codecs:"), codecRow);
@@ -463,6 +471,7 @@ Settings SettingsDialog::settings() const
     s.server = m_server->text().trimmed();
     s.transport = m_transport->currentText();
     s.preferIpv6 = m_ipv6->isChecked();
+    s.keepAlive = m_keepAlive->isChecked();
     s.ringLoop = m_ring->currentIndex() == 1;
     s.echoCancel = m_aec->isChecked();
     s.micDevice = m_mic->currentData().toString();
