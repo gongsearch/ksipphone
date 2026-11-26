@@ -58,7 +58,10 @@ SearchField::SearchField(Phonebook *phonebook, QWidget *parent)
     m_completer->popup()->setItemDelegate(new ResultDelegate(m_completer->popup()));
     connect(m_completer, QOverload<const QModelIndex &>::of(&QCompleter::activated), this, [this](const QModelIndex &idx) {
         const QString n = idx.data(NumberRole).toString();
-        QTimer::singleShot(0, this, [this, n] { setNumber(n); });
+        QTimer::singleShot(0, this, [this, n] {
+            setNumber(n);
+            Q_EMIT numberChosen(n);
+        });
     });
 
     m_timer = new QTimer(this);

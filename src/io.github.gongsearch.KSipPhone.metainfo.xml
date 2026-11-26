@@ -64,6 +64,15 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.0.1" date="2026-11-26">
+      <description>
+        <ul>
+          <li>Picking a search result calls right away</li>
+          <li>The window keeps its height during calls; caller photo size on scaled displays</li>
+          <li>The search field is cleared after a call</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-26">
       <description>
         <p>Feature-complete for a simple SIP phone.</p>

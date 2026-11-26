@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 – 2026-11-26
+
+- Picking a search result calls right away (during a call: transfer), like a click in the extension list
+- The window keeps its height when a call starts (room for the call info is reserved)
+- Caller photo in the right size on scaled displays (was shown 1.5x / 2x)
+- The search field is cleared after a call
+
 ## 1.0.0 – 2026-11-26
 
 Feature-complete for a simple SIP phone.

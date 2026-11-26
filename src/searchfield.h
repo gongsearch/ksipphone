@@ -21,6 +21,9 @@ public:
     void clearResults();
     bool popupVisible() const;
 
+Q_SIGNALS:
+    void numberChosen(const QString &number); // a search result was picked (click or Enter)
+
 private:
     void showResults(int requestId, const QList<PhonebookEntry> &entries);
 

@@ -144,6 +144,13 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     lay->addLayout(top);
 
     m_number = new SearchField(phonebook, this);
+    // picking a search result calls right away (like a click in the extension list); during a call it transfers
+    connect(m_number, &SearchField::numberChosen, this, [this](const QString &n) {
+        if (m_state == Engine::CallState::Idle)
+            Q_EMIT dialRequested(n);
+        else if (m_state == Engine::CallState::Established && m_consult == Engine::CallState::Idle)
+            Q_EMIT transferRequested(n);
+    });
     QFont f = m_number->font();
     f.setPointSizeF(f.pointSizeF() * 1.15);
     m_number->setFont(f);
