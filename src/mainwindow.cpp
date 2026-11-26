@@ -124,7 +124,13 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     m_dnd->setCheckable(true);
     connect(m_dnd, &QToolButton::toggled, this, &MainWindow::dndToggled);
     setDnd(false, false);
+    auto *history = new QToolButton(this);
+    history->setIcon(QIcon::fromTheme(QStringLiteral("view-history")));
+    history->setToolTip(i18n("Call history"));
+    history->setAutoRaise(true);
+    connect(history, &QToolButton::clicked, this, &MainWindow::historyRequested);
     top->addWidget(m_reg, 1);
+    top->addWidget(history);
     top->addWidget(m_dnd);
     top->addWidget(m_extToggle);
     top->addWidget(m_vm);

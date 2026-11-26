@@ -65,6 +65,8 @@ public:
     CallState consultState() const { return m_consultState; }
     // second call: a consultation (attended transfer) or an accepted waiting call
     enum class SecondCall { Consult, Waiting };
+    enum class WaitingEnd { Gone, Accepted, BecameMainCall };
+    Q_ENUM(WaitingEnd)
     SecondCall secondCall() const { return m_secondKind; }
 
     // call waiting: a second incoming call during a call
@@ -93,7 +95,7 @@ Q_SIGNALS:
     void consultStateChanged(Engine::CallState state, const QString &peerUri); // Idle = no consultation call
     void transferFailed(const QString &reason);
     void waitingCall(const QString &peerUri, const QString &peerName); // second incoming call
-    void waitingEnded();                                              // accepted, rejected or gone
+    void waitingEnded(Engine::WaitingEnd how);
     void callsSwapped();                                              // main and second call changed roles
     void presenceChanged(const QHash<QString, Engine::Presence> &states); // extension -> state
     void ready();

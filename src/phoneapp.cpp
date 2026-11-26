@@ -6,6 +6,7 @@
 #include "localcontacts.h"
 #include "ringer.h"
 #include "transferdialog.h"
+#include "calllogdialog.h"
 
 #include <QAction>
 #include <QSettings>
@@ -51,6 +52,7 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_window(new MainWindow(m_phonebook))
     , m_tray(new Desktop::Tray(m_window, this))
     , m_ringer(new Ringer(this))
+    , m_callLog(new CallLog(this))
 {
     m_tray->setIconName(QStringLiteral("call-start"));
     m_phonebook->setLocalContacts(m_local);
@@ -63,12 +65,14 @@ PhoneApp::PhoneApp(QObject *parent)
         m_window->activateWindow();
     });
     menu->addAction(QIcon::fromTheme(QStringLiteral("mail-message")), i18n("Call voicemail"), this, &PhoneApp::callVoicemail);
+    menu->addAction(QIcon::fromTheme(QStringLiteral("view-history")), i18n("Call history"), this, &PhoneApp::showHistory);
     menu->addAction(QIcon::fromTheme(QStringLiteral("call-stop")), i18n("Hang up"), m_engine, &Engine::hangup);
     menu->addSeparator();
     m_dndAction = menu->addAction(QIcon::fromTheme(QStringLiteral("notifications-disabled")), i18n("Do not disturb"));
     m_dndAction->setCheckable(true);
     connect(m_dndAction, &QAction::toggled, this, &PhoneApp::setDnd);
     connect(m_window, &MainWindow::dndToggled, this, &PhoneApp::setDnd);
+    connect(m_window, &MainWindow::historyRequested, this, &PhoneApp::showHistory);
     m_dnd = appSettings().value(QStringLiteral("General/DoNotDisturb"), false).toBool();
 #ifdef KSIPPHONE_HAVE_DBUS
     // the desktop's do-not-disturb (Plasma, GNOME via org.freedesktop.Notifications "Inhibited")
@@ -131,7 +135,11 @@ PhoneApp::PhoneApp(QObject *parent)
         m_window->setWaiting(text);
         notifyWaiting(text);
     });
-    connect(m_engine, &Engine::waitingEnded, this, [this] {
+    connect(m_engine, &Engine::waitingEnded, this, [this](Engine::WaitingEnd how) {
+        if (how == Engine::WaitingEnd::Gone)
+            logCall(CallLog::Direction::Missed, m_consultNumber, m_consultName, 0);
+        else if (how == Engine::WaitingEnd::Accepted)
+            logCall(CallLog::Direction::Incoming, m_consultNumber, m_consultName, 0);
         m_window->setWaiting(QString());
         if (m_waitNote)
             m_waitNote->close();
@@ -240,6 +248,13 @@ PhoneApp::PhoneApp(QObject *parent)
             m_ring->setText(peerText()); // updates the visible notification (no second sound)
     });
     connect(m_engine, &Engine::callStateChanged, this, [this](Engine::CallState s) {
+        if (m_prevState == Engine::CallState::Idle && (s == Engine::CallState::Incoming || s == Engine::CallState::Outgoing)) {
+            m_callIncoming = s == Engine::CallState::Incoming;
+            m_callStart = QDateTime::currentDateTimeUtc();
+            m_establishedMs = 0;
+        }
+        if (s == Engine::CallState::Established && m_establishedMs == 0)
+            m_establishedMs = QDateTime::currentMSecsSinceEpoch();
         if (s == Engine::CallState::Outgoing) {
             m_peerNumber = userPart(m_engine->peer());
             m_peerName.clear();
@@ -267,6 +282,14 @@ PhoneApp::PhoneApp(QObject *parent)
                 ++m_missed;
                 notifyMissed();
             }
+            const int secs = m_establishedMs ? int((QDateTime::currentMSecsSinceEpoch() - m_establishedMs) / 1000) : 0;
+            if (!m_callIncoming)
+                logCall(CallLog::Direction::Outgoing, m_peerNumber, m_peerName, secs);
+            else if (m_wasEstablished)
+                logCall(CallLog::Direction::Incoming, m_peerNumber, m_peerName, secs);
+            else
+                logCall(elsewhere ? CallLog::Direction::Incoming : CallLog::Direction::Missed, m_peerNumber, m_peerName, 0, elsewhere);
+            m_establishedMs = 0;
             m_wasEstablished = false;
             m_window->setPeerPhoto({});
         }
@@ -406,6 +429,34 @@ void PhoneApp::systemNotificationProperties(const QString &interface, const QVar
         return;
     m_systemDnd = changed.value(QStringLiteral("Inhibited")).toBool();
     updateDnd();
+}
+
+void PhoneApp::logCall(CallLog::Direction dir, const QString &number, const QString &name, int seconds, bool elsewhere)
+{
+    CallLog::Entry e;
+    e.time = dir == CallLog::Direction::Outgoing || m_callStart.isNull() ? QDateTime::currentDateTimeUtc() : m_callStart;
+    if (dir == CallLog::Direction::Outgoing && m_callStart.isValid())
+        e.time = m_callStart;
+    e.direction = dir;
+    e.number = number;
+    e.name = name == number ? QString() : name;
+    e.seconds = seconds;
+    e.elsewhere = elsewhere;
+    m_callLog->add(e);
+}
+
+void PhoneApp::showHistory()
+{
+    if (!m_historyDialog) {
+        m_historyDialog = new CallLogDialog(m_callLog, nullptr);
+        m_historyDialog->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_historyDialog, &CallLogDialog::callRequested, this, &PhoneApp::callBack);
+    }
+    m_missed = 0; // seen
+    updateTray();
+    m_historyDialog->show();
+    m_historyDialog->raise();
+    m_historyDialog->activateWindow();
 }
 
 void PhoneApp::notifyWaiting(const QString &text)

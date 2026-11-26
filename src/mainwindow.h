@@ -48,6 +48,7 @@ Q_SIGNALS:
     void consultAbortRequested();
     void acceptWaitingRequested();
     void dndToggled(bool on);
+    void historyRequested();
     void rejectWaitingRequested();
     void settingsRequested();
     void voicemailRequested();

@@ -2,6 +2,7 @@
 // Ties engine, phonebook, dialer window, tray icon and notifications together.
 #pragma once
 
+#include "calllog.h"
 #include "engine.h"
 #include "phonebook.h"
 
@@ -49,6 +50,8 @@ private:
     bool dndActive() const { return m_dnd || (m_dndFollowSystem && m_systemDnd); }
     void updateDnd();
     void notifyWaiting(const QString &text);
+    void showHistory();
+    void logCall(CallLog::Direction dir, const QString &number, const QString &name, int seconds, bool elsewhere = false);
     void updateExtensions();
 
     Engine *m_engine;
@@ -74,6 +77,11 @@ private:
     QString m_consultName, m_consultNumber;
     QPixmap m_consultPhoto;
     QPointer<Desktop::Notification> m_waitNote;
+    CallLog *m_callLog;
+    QPointer<class CallLogDialog> m_historyDialog;
+    bool m_callIncoming = false;
+    QDateTime m_callStart;
+    qint64 m_establishedMs = 0;
     bool m_dnd = false, m_systemDnd = false, m_dndReject = false, m_dndFollowSystem = true;
     class QAction *m_dndAction = nullptr;
     int m_consultLookup = -1;

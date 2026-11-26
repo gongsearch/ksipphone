@@ -13,6 +13,8 @@ add_executable(ksipphone
     contactsource.h
     searchfield.cpp
     transferdialog.cpp
+    calllog.cpp
+    calllogdialog.cpp
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})

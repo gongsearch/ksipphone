@@ -564,7 +564,7 @@ void Engine::acceptWaiting()
     m_consultPeer = m_waitingPeer;
     m_secondKind = SecondCall::Waiting;
     m_waitingId.clear();
-    Q_EMIT waitingEnded();
+    Q_EMIT waitingEnded(WaitingEnd::Accepted);
     setConsultState(CallState::Incoming); // Established follows with its CALL_ESTABLISHED
 }
 
@@ -779,7 +779,7 @@ void Engine::onEvent(const QJsonObject &ev)
         if (!m_waitingId.isEmpty() && id == m_waitingId) {
             if (t == QLatin1String("CALL_CLOSED")) {
                 m_waitingId.clear();
-                Q_EMIT waitingEnded();
+                Q_EMIT waitingEnded(WaitingEnd::Gone);
             }
             return;
         }
@@ -828,7 +828,7 @@ void Engine::onEvent(const QJsonObject &ev)
             m_callId = m_waitingId;
             m_peer = m_waitingPeer;
             m_waitingId.clear();
-            Q_EMIT waitingEnded();
+            Q_EMIT waitingEnded(WaitingEnd::BecameMainCall);
             m_closeReason = text;
             Q_EMIT codecChanged(QString());
             Q_EMIT callEnded(text);
