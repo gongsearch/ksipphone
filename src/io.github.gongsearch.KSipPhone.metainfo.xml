@@ -64,6 +64,15 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="0.2.3" date="2026-11-26">
+      <description>
+        <ul>
+          <li>Settings in tabs</li>
+          <li>Contacts from the address book of the computer (KDE, GNOME/Evolution, macOS) after LDAP</li>
+          <li>Windows/macOS: icons visible in dark mode</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.2" date="2026-11-26">
       <description>
         <ul>

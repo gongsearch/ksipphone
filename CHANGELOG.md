@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3 – 2026-11-26
+
+- Settings in tabs: Account, Audio, Phonebook
+- Address book of the computer as a second contact source after LDAP (names, photos, search):
+  KDE (KPeople, incl. phone contacts via KDE Connect), GNOME / Evolution (only when Evolution Data
+  Server is running; no package dependency), macOS Contacts (asks for permission once)
+- Windows / macOS: light icons in dark mode, follows switching between light and dark
+
 ## 0.2.2 – 2026-11-26
 
 - Settings: codecs as a list with checkboxes; drag & drop or the arrow buttons set the preference
