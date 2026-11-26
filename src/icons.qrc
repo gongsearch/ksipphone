@@ -16,4 +16,20 @@
   <file alias="breeze/22/go-down.svg">icons/breeze/22/go-down.svg</file>
   <file alias="breeze/22/audio-volume-high.svg">icons/breeze/22/audio-volume-high.svg</file>
   <file alias="breeze/22/x-office-address-book.svg">icons/breeze/22/x-office-address-book.svg</file>
+  <file alias="breeze-dark/index.theme">icons/breeze-dark/index.theme</file>
+  <file alias="breeze-dark/22/application-exit.svg">icons/breeze-dark/22/application-exit.svg</file>
+  <file alias="breeze-dark/22/audio-volume-high.svg">icons/breeze-dark/22/audio-volume-high.svg</file>
+  <file alias="breeze-dark/22/call-missed.svg">icons/breeze-dark/22/call-missed.svg</file>
+  <file alias="breeze-dark/22/call-start.svg">icons/breeze-dark/22/call-start.svg</file>
+  <file alias="breeze-dark/22/call-stop.svg">icons/breeze-dark/22/call-stop.svg</file>
+  <file alias="breeze-dark/22/configure.svg">icons/breeze-dark/22/configure.svg</file>
+  <file alias="breeze-dark/22/document-open.svg">icons/breeze-dark/22/document-open.svg</file>
+  <file alias="breeze-dark/22/go-down.svg">icons/breeze-dark/22/go-down.svg</file>
+  <file alias="breeze-dark/22/go-up.svg">icons/breeze-dark/22/go-up.svg</file>
+  <file alias="breeze-dark/22/mail-message.svg">icons/breeze-dark/22/mail-message.svg</file>
+  <file alias="breeze-dark/22/mail-unread-new.svg">icons/breeze-dark/22/mail-unread-new.svg</file>
+  <file alias="breeze-dark/22/media-playback-pause.svg">icons/breeze-dark/22/media-playback-pause.svg</file>
+  <file alias="breeze-dark/22/media-playback-start.svg">icons/breeze-dark/22/media-playback-start.svg</file>
+  <file alias="breeze-dark/22/microphone-sensitivity-muted.svg">icons/breeze-dark/22/microphone-sensitivity-muted.svg</file>
+  <file alias="breeze-dark/22/x-office-address-book.svg">icons/breeze-dark/22/x-office-address-book.svg</file>
 </qresource></RCC>

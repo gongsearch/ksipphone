@@ -7,6 +7,8 @@
 #endif
 
 #include <QApplication>
+#include <QPalette>
+#include <QStyleHints>
 #include <QCommandLineParser>
 #include <QFileOpenEvent>
 #include <QUrl>
@@ -37,6 +39,18 @@ static bool forwardToRunningInstance(const QStringList &args)
     sock.disconnectFromServer();
     return true;
 }
+
+#ifndef KSIPPHONE_WITH_KDE
+static bool isDarkScheme()
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    const Qt::ColorScheme scheme = QGuiApplication::styleHints()->colorScheme();
+    if (scheme != Qt::ColorScheme::Unknown)
+        return scheme == Qt::ColorScheme::Dark;
+#endif
+    return qGray(QGuiApplication::palette().color(QPalette::Window).rgb()) < 128;
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -72,13 +86,22 @@ int main(int argc, char **argv)
     // Bundled Breeze subset. On Windows/macOS it is the primary theme: Qt's own platform icon theme there
     // only knows standard names and returns empty icons for others (e.g. "configure"), so the fallback
     // would never be used. On Linux (Qt-only builds) the system theme stays primary.
+    // Breeze for light, Breeze Dark for dark colour schemes (the SVGs are not recoloured outside KDE).
     QIcon::setThemeSearchPaths(QIcon::themeSearchPaths() << QStringLiteral(":/icons"));
-    QIcon::setFallbackThemeName(QStringLiteral("breeze"));
 #if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    QIcon::setThemeName(QStringLiteral("breeze"));
+    const bool bundledPrimary = true;
 #else
-    if (QIcon::themeName().isEmpty() || QIcon::fromTheme(QStringLiteral("call-start")).isNull())
-        QIcon::setThemeName(QStringLiteral("breeze"));
+    const bool bundledPrimary = QIcon::themeName().isEmpty() || QIcon::fromTheme(QStringLiteral("call-start")).isNull();
+#endif
+    auto applyIconTheme = [bundledPrimary] {
+        const QString name = isDarkScheme() ? QStringLiteral("breeze-dark") : QStringLiteral("breeze");
+        QIcon::setFallbackThemeName(name);
+        if (bundledPrimary)
+            QIcon::setThemeName(name);
+    };
+    applyIconTheme();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, &app, applyIconTheme);
 #endif
 #endif
     QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("io.github.gongsearch.KSipPhone"), QIcon::fromTheme(QStringLiteral("call-start"))));
