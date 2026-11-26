@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- All keypad keys have the same width (they no longer depend on the button texts below)
+
 ## 1.0.2 – 2026-11-26
 
 - Enter in the number field calls the typed number, even while search results are shown (a selected result is still called as before)

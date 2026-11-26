@@ -73,6 +73,7 @@ private:
     int callInfoHeight() const;
     void learnCallInfoHeight();
     void applyExtVisibility();
+    void equalizeKeypad(); // all six grid columns equally wide: keys never depend on the buttons below
     void saveGeometryNow();
     void updateTransferButtons();
 
@@ -98,6 +99,7 @@ private:
     QTimer *m_saveTimer = nullptr;
     QSize m_wideSize;
     class QGridLayout *m_body = nullptr;
+    class QGridLayout *m_keyGrid = nullptr;
     class QVBoxLayout *m_left = nullptr;
     QList<QPushButton *> m_keys;
     int m_heightBeforeCall = -1;

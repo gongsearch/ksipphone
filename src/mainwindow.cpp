@@ -240,6 +240,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     });
 
     auto *grid = new QGridLayout;
+    m_keyGrid = grid;
     grid->setSpacing(8);
     QFont kf = font();
     kf.setPointSizeF(kf.pointSizeF() * 1.25);
@@ -380,6 +381,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     grid->addWidget(m_transfer, 5, 4, 1, 2);
     grid->addWidget(m_call, 6, 0, 1, 3);
     grid->addWidget(m_hangup, 6, 3, 1, 3);
+    equalizeKeypad();
 
     setRegistration(i18n("Not registered"), false);
     setCall(Engine::CallState::Idle, {});
@@ -415,6 +417,27 @@ void MainWindow::moveEvent(QMoveEvent *event)
     QWidget::moveEvent(event);
     if (isVisible() && m_saveTimer)
         m_saveTimer->start();
+}
+
+void MainWindow::equalizeKeypad()
+{
+    // every widget in the 6-column grid (keys span 2, mute/hold/transfer 2, call/hang up 3) needs
+    // span * column + (span - 1) * spacing; the widest need sets one minimum for all columns
+    const int sp = m_keyGrid->horizontalSpacing();
+    int col = 0;
+    for (int i = 0; i < m_keyGrid->count(); ++i) {
+        QWidget *w = m_keyGrid->itemAt(i)->widget();
+        if (!w)
+            continue;
+        int row, column, rowSpan, colSpan;
+        m_keyGrid->getItemPosition(i, &row, &column, &rowSpan, &colSpan);
+        const int need = std::max(w->sizeHint().width(), w->minimumWidth());
+        col = std::max(col, (need - (colSpan - 1) * sp + colSpan - 1) / colSpan);
+    }
+    for (int c = 0; c < 6; ++c) {
+        m_keyGrid->setColumnMinimumWidth(c, col);
+        m_keyGrid->setColumnStretch(c, 1);
+    }
 }
 
 void MainWindow::applyExtVisibility()
@@ -478,6 +501,7 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
 {
     const bool wasIdle = m_state == Engine::CallState::Idle;
     m_state = state;
+    QTimer::singleShot(0, this, &MainWindow::equalizeKeypad); // button texts may change below
     // reserved room <-> call info
     m_callSpace->changeSize(0, state == Engine::CallState::Idle ? callInfoHeight() : 0, QSizePolicy::Minimum, QSizePolicy::Fixed);
     m_left->invalidate();
@@ -670,6 +694,7 @@ void MainWindow::setConsult(Engine::CallState state, const QString &peerText, bo
 {
     m_consult = state;
     m_secondIsWaiting = waitingCall;
+    QTimer::singleShot(0, this, &MainWindow::equalizeKeypad);
     if (waitingCall && state != Engine::CallState::Idle) {
         m_status->setText(state == Engine::CallState::Established ? i18n("Talking to %1 – the other call is on hold", peerText)
                                                                   : i18n("Accepting %1 …", peerText));
