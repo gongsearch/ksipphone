@@ -21,8 +21,8 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QApplication>
-#include <QProxyStyle>
-#include <QStyleFactory>
+#include <QPainter>
+#include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -106,33 +106,46 @@ void Settings::save() const
 
 namespace
 {
-// item views put the text right next to the check box; add the usual check box/label gap
-class CheckListStyle : public QProxyStyle
+// Item views put the text right next to the check box (Windows 11 style even without any gap).
+// The style draws background and check box, the delegate draws the text at a fixed distance.
+class CheckListDelegate : public QStyledItemDelegate
 {
 public:
-    using QProxyStyle::QProxyStyle;
-    QRect subElementRect(SubElement element, const QStyleOption *option, const QWidget *widget) const override
+    using QStyledItemDelegate::QStyledItemDelegate;
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
-        QRect r = QProxyStyle::subElementRect(element, option, widget);
-        if (element == SE_ItemViewItemText) {
-            const auto *vo = qstyleoption_cast<const QStyleOptionViewItem *>(option);
-            if (vo && (vo->features & QStyleOptionViewItem::HasCheckIndicator))
-                r.setLeft(r.left() + gap(option, widget));
-        }
-        return r;
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt, index);
+        const QWidget *w = opt.widget;
+        QStyle *style = w ? w->style() : QApplication::style();
+        const QString text = opt.text;
+        const QRect check = style->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &opt, w);
+        opt.text.clear();
+        style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, w);
+
+        QRect textRect = opt.rect.adjusted(0, 0, -4, 0);
+        textRect.setLeft((check.isValid() ? check.right() : opt.rect.left()) + 1 + gap(style, w));
+        const QPalette::ColorGroup group = !(opt.state & QStyle::State_Enabled) ? QPalette::Disabled
+            : (opt.state & QStyle::State_Active)                                 ? QPalette::Active
+                                                                                 : QPalette::Inactive;
+        painter->save();
+        painter->setFont(opt.font);
+        painter->setPen(opt.palette.color(group, (opt.state & QStyle::State_Selected) ? QPalette::HighlightedText : QPalette::Text));
+        painter->drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft | Qt::TextSingleLine,
+                          opt.fontMetrics.elidedText(text, Qt::ElideRight, textRect.width()));
+        painter->restore();
     }
-    QSize sizeFromContents(ContentsType type, const QStyleOption *option, const QSize &size, const QWidget *widget) const override
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
-        QSize sz = QProxyStyle::sizeFromContents(type, option, size, widget);
-        if (type == CT_ItemViewItem)
-            sz.rwidth() += gap(option, widget);
+        QSize sz = QStyledItemDelegate::sizeHint(option, index);
+        sz.rwidth() += gap(option.widget ? option.widget->style() : QApplication::style(), option.widget);
         return sz;
     }
 
 private:
-    int gap(const QStyleOption *option, const QWidget *widget) const
+    static int gap(const QStyle *style, const QWidget *w)
     {
-        return qMax(12, 2 * pixelMetric(PM_CheckBoxLabelSpacing, option, widget));
+        return qMax(10, 2 * style->pixelMetric(QStyle::PM_CheckBoxLabelSpacing, nullptr, w));
     }
 };
 }
@@ -164,10 +177,7 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     // Codecs: tick to offer, order = preference (drag & drop or the arrow buttons)
     const QList<CodecInfo> known = Codecs::catalogue();
     m_codecs = new QListWidget(acc);
-    // based on a fresh instance of the current application style (QProxyStyle would otherwise fall back to the desktop default)
-    auto *listStyle = new CheckListStyle(QStyleFactory::create(QApplication::style()->name()));
-    listStyle->setParent(m_codecs);
-    m_codecs->setStyle(listStyle);
+    m_codecs->setItemDelegate(new CheckListDelegate(m_codecs));
     m_codecs->setDragDropMode(QAbstractItemView::InternalMove);
     m_codecs->setDefaultDropAction(Qt::MoveAction);
     m_codecs->setToolTip(i18n("Tick the codecs to offer. The order is the preference: drag the entries or use the arrows."));
