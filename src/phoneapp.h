@@ -81,6 +81,7 @@ private:
     class MediaControl *m_media;
     class MuteControl *m_muteCtl;
     class GlobalShortcuts *m_global;
+    class WindowPlacer *m_placer;
     bool m_alwaysOnTop = false;
     QPointer<class CallLogDialog> m_historyDialog;
     bool m_callIncoming = false;

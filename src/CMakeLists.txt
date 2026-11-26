@@ -19,6 +19,7 @@ add_executable(ksipphone
     mutecontrol.cpp
     globalshortcuts.cpp
     keepabove.cpp
+    windowplacer.cpp
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})

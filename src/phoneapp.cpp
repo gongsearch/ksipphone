@@ -10,6 +10,7 @@
 #include "mediacontrol.h"
 #include "globalshortcuts.h"
 #include "mutecontrol.h"
+#include "windowplacer.h"
 
 #include <QClipboard>
 #include <QGuiApplication>
@@ -63,6 +64,7 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_media(new MediaControl(this))
     , m_muteCtl(new MuteControl(m_engine, this))
     , m_global(new GlobalShortcuts(this))
+    , m_placer(new WindowPlacer(m_window, this))
 {
     m_tray->setIconName(QStringLiteral("call-start"));
     m_phonebook->setLocalContacts(m_local);
@@ -366,6 +368,7 @@ PhoneApp::~PhoneApp()
 
 void PhoneApp::start(bool minimized)
 {
+    m_placer->start(); // KDE/Wayland: remembers where the dialer was when it comes back from the tray
     applySettings();
     m_engine->start();
     if (!minimized)
@@ -729,5 +732,6 @@ void PhoneApp::quit()
 {
     if (m_engine->callState() != Engine::CallState::Idle)
         m_engine->hangup();
+    m_placer->stop();
     qApp->quit();
 }
