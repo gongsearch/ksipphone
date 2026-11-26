@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 #include "phonebook.h"
+#include "localcontacts.h"
+
+#include <QSet>
 
 #include <QFutureWatcher>
 #include <QLoggingCategory>
@@ -113,11 +116,33 @@ PhonebookResult Phonebook::query(const QString &uri, const QString &base, const 
     return result;
 }
 
+QList<PhonebookEntry> Phonebook::withLocal(const QList<PhonebookEntry> &ldap, const QString &text) const
+{
+    // LDAP first; local address book entries whose number LDAP did not return already
+    QList<PhonebookEntry> out = ldap;
+    if (!m_local)
+        return out;
+    QSet<QString> seen;
+    for (const PhonebookEntry &e : ldap)
+        seen.insert(normalize(e.number));
+    for (const PhonebookEntry &e : m_local->search(text)) {
+        if (!seen.contains(normalize(e.number))) {
+            seen.insert(normalize(e.number));
+            out.append(e);
+        }
+    }
+    return out;
+}
+
 void Phonebook::search(const QString &text, int requestId)
 {
     const QString q = text.trimmed();
-    if (!isConfigured() || q.size() < 2) {
+    if (q.size() < 2) {
         Q_EMIT searchFinished(requestId, {});
+        return;
+    }
+    if (!isConfigured()) {
+        Q_EMIT searchFinished(requestId, withLocal({}, q));
         return;
     }
     const QString e = escapeFilter(q);
@@ -135,11 +160,11 @@ void Phonebook::search(const QString &text, int requestId)
 
     QPointer<Phonebook> self(this);
     auto *w = new QFutureWatcher<PhonebookResult>(this);
-    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, requestId] {
+    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, requestId, q] {
         if (self) {
             const PhonebookResult r = w->result();
             Q_EMIT self->errorOccurred(r.error);
-            Q_EMIT self->searchFinished(requestId, r.entries);
+            Q_EMIT self->searchFinished(requestId, self->withLocal(r.entries, q));
         }
         w->deleteLater();
     });
@@ -149,20 +174,42 @@ void Phonebook::search(const QString &text, int requestId)
 void Phonebook::lookupNumber(const QString &number, int requestId)
 {
     const QString n = normalize(number);
-    if (!isConfigured() || n.size() < 3) {
+    if (n.size() < 3) {
         Q_EMIT lookupFinished(requestId, {}, {});
+        return;
+    }
+    if (!isConfigured()) {
+        QString name;
+        QByteArray photo;
+        if (m_local)
+            m_local->lookup(number, &name, &photo);
+        Q_EMIT lookupFinished(requestId, name, photo);
         return;
     }
     const QString e = escapeFilter(n);
     const QString filter = QStringLiteral("(&(objectClass=inetOrgPerson)(|(telephoneNumber=%1)(mobile=%1)(homePhone=%1)))").arg(e);
     QPointer<Phonebook> self(this);
     auto *w = new QFutureWatcher<PhonebookResult>(this);
-    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, requestId] {
+    connect(w, &QFutureWatcher<PhonebookResult>::finished, this, [self, w, requestId, number] {
         const PhonebookResult r = w->result();
         if (self) {
             Q_EMIT self->errorOccurred(r.error);
-            Q_EMIT self->lookupFinished(requestId, r.entries.isEmpty() ? QString() : r.entries.first().name,
-                                        r.entries.isEmpty() ? QByteArray() : r.entries.first().photo);
+            QString name = r.entries.isEmpty() ? QString() : r.entries.first().name;
+            QByteArray photo = r.entries.isEmpty() ? QByteArray() : r.entries.first().photo;
+            // not in LDAP (or no photo there): ask the desktop address book
+            if (self->m_local && (name.isEmpty() || photo.isEmpty())) {
+                QString lname;
+                QByteArray lphoto;
+                if (self->m_local->lookup(number, &lname, &lphoto)) {
+                    if (name.isEmpty()) {
+                        name = lname;
+                        photo = lphoto;
+                    } else if (photo.isEmpty() && lname.compare(name, Qt::CaseInsensitive) == 0) {
+                        photo = lphoto; // same person: borrow the photo
+                    }
+                }
+            }
+            Q_EMIT self->lookupFinished(requestId, name, photo);
         }
         w->deleteLater();
     });

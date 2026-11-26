@@ -29,7 +29,9 @@ public:
     explicit Phonebook(QObject *parent = nullptr);
 
     void configure(const QString &uri, const QString &baseDn);
-    bool isConfigured() const { return !m_uri.isEmpty() && !m_base.isEmpty(); }
+    bool isConfigured() const { return !m_uri.isEmpty() && !m_base.isEmpty(); } // LDAP
+    // desktop address book (KPeople), asked after LDAP
+    void setLocalContacts(class LocalContacts *local) { m_local = local; }
 
     // Asynchronous; results are delivered via the signals.
     void search(const QString &text, int requestId);
@@ -45,4 +47,6 @@ Q_SIGNALS:
 private:
     static PhonebookResult query(const QString &uri, const QString &base, const QString &filter, int limit, bool withPhoto);
     QString m_uri, m_base;
+    class LocalContacts *m_local = nullptr;
+    QList<PhonebookEntry> withLocal(const QList<PhonebookEntry> &ldap, const QString &text) const;
 };

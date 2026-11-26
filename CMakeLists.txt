@@ -25,6 +25,12 @@ include(FeatureSummary)
 add_compile_definitions(KF_DISABLE_DEPRECATED_BEFORE_AND_AT=0x060800)
 
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Widgets Concurrent Network Multimedia)
+if (UNIX AND NOT APPLE)
+    find_package(Qt6 ${QT_MIN_VERSION} QUIET COMPONENTS DBus) # GNOME / Evolution address book
+endif()
+if (APPLE)
+    enable_language(OBJCXX) # macOS Contacts
+endif()
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS I18n)
 if (KSIPPHONE_WITH_KDE)
     find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS CoreAddons Notifications StatusNotifierItem)
@@ -36,6 +42,9 @@ find_package(Qt6Keychain REQUIRED)
 # Optional: read passwords stored by KSipPhone 0.1 in KWallet once and move them to the keychain.
 if (KSIPPHONE_WITH_KDE)
     find_package(KF6Wallet ${KF_MIN_VERSION} QUIET)
+    # Optional: KDE address book (Akonadi, KDE Connect phone contacts, vCards) as second contact source
+    find_package(KF6People ${KF_MIN_VERSION} QUIET)
+    set_package_properties(KF6People PROPERTIES TYPE OPTIONAL PURPOSE "names and photos from the KDE address book")
 endif()
 set_package_properties(KF6Wallet PROPERTIES TYPE OPTIONAL PURPOSE "migrate passwords from KSipPhone 0.1")
 

@@ -44,6 +44,7 @@ private:
 
     Engine *m_engine;
     Phonebook *m_phonebook;
+    class LocalContacts *m_local;
     MainWindow *m_window;
     Desktop::Tray *m_tray;
     Ringer *m_ringer;

@@ -14,4 +14,6 @@
   <file alias="breeze/22/io.github.gongsearch.KSipPhone.svg">icons/app/io.github.gongsearch.KSipPhone.svg</file>
   <file alias="breeze/22/go-up.svg">icons/breeze/22/go-up.svg</file>
   <file alias="breeze/22/go-down.svg">icons/breeze/22/go-down.svg</file>
+  <file alias="breeze/22/audio-volume-high.svg">icons/breeze/22/audio-volume-high.svg</file>
+  <file alias="breeze/22/x-office-address-book.svg">icons/breeze/22/x-office-address-book.svg</file>
 </qresource></RCC>

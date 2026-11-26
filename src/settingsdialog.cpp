@@ -2,6 +2,7 @@
 #include "settingsdialog.h"
 #include "ringer.h"
 #include "codecs.h"
+#include "localcontacts.h"
 
 #include <KLocalizedString>
 
@@ -15,7 +16,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QFormLayout>
-#include <QGroupBox>
+#include <QLabel>
+#include <QTabWidget>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QToolButton>
@@ -64,6 +66,7 @@ Settings Settings::load()
     c.beginGroup(QStringLiteral("Phonebook"));
     s.ldapUri = str(c, QStringLiteral("Uri"));
     s.ldapBase = str(c, QStringLiteral("BaseDn"));
+    s.useLocalContacts = c.value(QStringLiteral("UseLocalContacts"), true).toBool();
     c.endGroup();
     return s;
 }
@@ -92,6 +95,7 @@ void Settings::save() const
     c.beginGroup(QStringLiteral("Phonebook"));
     c.setValue(QStringLiteral("Uri"), ldapUri);
     c.setValue(QStringLiteral("BaseDn"), ldapBase);
+    c.setValue(QStringLiteral("UseLocalContacts"), useLocalContacts);
     c.endGroup();
     c.sync();
 }
@@ -101,8 +105,11 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
 {
     setWindowTitle(i18n("Settings"));
     auto *lay = new QVBoxLayout(this);
+    // three tabs: SIP account, audio, phonebook
+    auto *tabs = new QTabWidget(this);
+    lay->addWidget(tabs);
 
-    auto *acc = new QGroupBox(i18n("SIP account"), this);
+    auto *acc = new QWidget(tabs);
     auto *f = new QFormLayout(acc);
     m_user = new QLineEdit(s.user, acc);
     m_server = new QLineEdit(s.server, acc);
@@ -195,9 +202,9 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_dtmf->setCurrentIndex(qMax(0, m_dtmf->findData(s.dtmfMode)));
     m_dtmf->setToolTip(i18n("Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, dtmf_mode=info needs SIP INFO."));
     f->addRow(i18n("DTMF:"), m_dtmf);
-    lay->addWidget(acc);
+    tabs->addTab(acc, QIcon::fromTheme(QStringLiteral("call-start")), i18n("Account"));
 
-    auto *gen = new QGroupBox(i18n("Audio"), this);
+    auto *gen = new QWidget(tabs);
     auto *gf = new QFormLayout(gen);
     auto fill = [](QComboBox *c, const QList<AudioNode> &nodes, const QString &cur) {
         c->addItem(i18n("System default"), QString());
@@ -250,9 +257,9 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     gf->addRow(i18n("Ring on:"), m_ringDev);
     gf->addRow(i18n("Ring tone:"), fileRow);
     gf->addRow(i18n("Ring:"), m_ring);
-    lay->addWidget(gen);
+    tabs->addTab(gen, QIcon::fromTheme(QStringLiteral("audio-volume-high")), i18n("Audio"));
 
-    auto *pb = new QGroupBox(i18n("LDAP phonebook (optional, anonymous read)"), this);
+    auto *pb = new QWidget(tabs);
     auto *g = new QFormLayout(pb);
     m_ldapUri = new QLineEdit(s.ldapUri, pb);
     m_ldapUri->setPlaceholderText(QStringLiteral("ldap://server"));
@@ -260,13 +267,24 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_ldapBase->setPlaceholderText(QStringLiteral("ou=Phonebook,dc=example,dc=org"));
     g->addRow(i18n("URI:"), m_ldapUri);
     g->addRow(i18n("Base DN:"), m_ldapBase);
-    lay->addWidget(pb);
+    auto *pbHint = new QLabel(i18n("Optional: an LDAP directory (read anonymously) for searching contacts and showing "
+                                   "caller names and photos."), pb);
+    pbHint->setWordWrap(true);
+    g->insertRow(0, pbHint);
+    if (const QStringList sources = LocalContacts::titles(); !sources.isEmpty()) {
+        m_local = new QCheckBox(i18n("Also use the address book of this computer"), pb);
+        m_local->setChecked(s.useLocalContacts);
+        m_local->setToolTip(i18n("Asked after LDAP: for names and photos of callers and for the search in the dialer.\nSources: %1",
+                                 sources.join(QStringLiteral(", "))));
+        g->addRow(QString(), m_local);
+    }
+    tabs->addTab(pb, QIcon::fromTheme(QStringLiteral("x-office-address-book")), i18n("Phonebook"));
 
     auto *bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     connect(bb, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(bb, &QDialogButtonBox::rejected, this, &QDialog::reject);
     lay->addWidget(bb);
-    resize(460, sizeHint().height());
+    resize(qMax(520, sizeHint().width()), sizeHint().height());
 }
 
 Settings SettingsDialog::settings() const
@@ -293,6 +311,7 @@ Settings SettingsDialog::settings() const
     s.dtmfMode = m_dtmf->currentData().toString();
     s.ldapUri = m_ldapUri->text().trimmed();
     s.ldapBase = m_ldapBase->text().trimmed();
+    s.useLocalContacts = m_local ? m_local->isChecked() : true;
     return s;
 }
 

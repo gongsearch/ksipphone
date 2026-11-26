@@ -235,7 +235,8 @@ void MainWindow::setSearchResults(int requestId, const QList<PhonebookEntry> &en
         return; // outdated
     m_model->clear();
     for (const auto &e : entries) {
-        const QString kind = e.kind == QLatin1String("mobile") ? i18n("mobile")
+        const QString kind = e.kind == QLatin1String("local") ? i18n("address book")
+            : e.kind == QLatin1String("mobile")                ? i18n("mobile")
             : e.kind == QLatin1String("homePhone")              ? i18n("home")
                                                                 : i18n("work");
         auto *it = new QStandardItem(QStringLiteral("%1 – %2 (%3)").arg(e.name, e.number, kind));

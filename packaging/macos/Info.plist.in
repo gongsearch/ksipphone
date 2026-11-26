@@ -15,6 +15,7 @@
   <key>LSApplicationCategoryType</key><string>public.app-category.social-networking</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSMicrophoneUsageDescription</key><string>KSipPhone needs the microphone for phone calls.</string>
+  <key>NSContactsUsageDescription</key><string>KSipPhone shows names and photos of your contacts for calls and finds them in the dialer.</string>
   <key>CFBundleURLTypes</key>
   <array>
     <dict>

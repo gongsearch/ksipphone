@@ -2,6 +2,7 @@
 #include "phoneapp.h"
 
 #include "mainwindow.h"
+#include "localcontacts.h"
 #include "ringer.h"
 #include "secrets.h"
 #include "settingsdialog.h"
@@ -35,11 +36,13 @@ PhoneApp::PhoneApp(QObject *parent)
     : QObject(parent)
     , m_engine(new Engine(this))
     , m_phonebook(new Phonebook(this))
+    , m_local(new LocalContacts(this))
     , m_window(new MainWindow)
     , m_tray(new Desktop::Tray(m_window, this))
     , m_ringer(new Ringer(this))
 {
     m_tray->setIconName(QStringLiteral("call-start"));
+    m_phonebook->setLocalContacts(m_local);
     Desktop::Notification::setTray(m_tray);
 
     auto *menu = new QMenu;
@@ -217,6 +220,7 @@ void PhoneApp::applySettings()
 {
     const Settings s = Settings::load();
     m_phonebook->configure(s.ldapUri, s.ldapBase);
+    m_local->setEnabled(s.useLocalContacts && LocalContacts::isAvailable());
     m_engine->setAudioDevices(s.speakerDevice, s.micDevice, s.echoCancel);
     m_ringer->configure(s.ringFile, s.ringDevice, s.ringLoop);
     Account a;

@@ -9,6 +9,7 @@ class QComboBox;
 struct Settings {
     QString user, server, transport, displayName, codecs;
     QString ldapUri, ldapBase;
+    bool useLocalContacts = true; // desktop address book (KPeople)
     QString voicemail; // number to dial for the mailbox
     QString dtmfMode;  // rtpevent | info | auto
     bool preferIpv6 = false;
@@ -35,6 +36,7 @@ private:
     QComboBox *m_transport;
     class QCheckBox *m_ipv6;
     class QCheckBox *m_aec;
+    class QCheckBox *m_local = nullptr;
     QComboBox *m_dtmf;
     QComboBox *m_ring, *m_mic, *m_speaker, *m_ringDev;
     QLineEdit *m_ringFile;

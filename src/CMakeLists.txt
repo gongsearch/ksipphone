@@ -9,6 +9,8 @@ add_executable(ksipphone
     secrets.cpp
     desktop.cpp
     codecs.cpp
+    localcontacts.cpp
+    contactsource.h
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})
@@ -21,6 +23,24 @@ target_link_libraries(ksipphone PRIVATE
     ${LDAP_LIBRARY} ${LBER_LIBRARY}
 )
 
+# desktop / OS address books
+if (KF6People_FOUND)
+    target_sources(ksipphone PRIVATE contacts_kpeople.cpp)
+    target_link_libraries(ksipphone PRIVATE KF6::People KF6::PeopleBackend)
+    target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_KPEOPLE)
+endif()
+if (UNIX AND NOT APPLE AND TARGET Qt6::DBus)
+    # Evolution Data Server: libebook is dlopen()ed, no build or package dependency
+    target_sources(ksipphone PRIVATE contacts_eds.cpp)
+    target_link_libraries(ksipphone PRIVATE Qt6::DBus ${CMAKE_DL_LIBS})
+    target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_EDS)
+endif()
+if (APPLE)
+    target_sources(ksipphone PRIVATE contacts_mac.mm)
+    set_source_files_properties(contacts_mac.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    target_link_libraries(ksipphone PRIVATE "-framework Contacts" "-framework Foundation")
+    target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_MACCONTACTS)
+endif()
 if (KSIPPHONE_WITH_KDE)
     target_link_libraries(ksipphone PRIVATE KF6::CoreAddons KF6::Notifications KF6::StatusNotifierItem)
     target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_KDE)
