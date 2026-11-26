@@ -71,6 +71,7 @@ private:
     void refreshExtList();
     void setupShortcuts();
     int callInfoHeight() const;
+    void learnCallInfoHeight();
     void applyExtVisibility();
     void saveGeometryNow();
     void updateTransferButtons();
@@ -90,6 +91,7 @@ private:
     QToolButton *m_settings = nullptr, *m_history = nullptr;
     bool m_alwaysOnTop = false;
     class QSpacerItem *m_callSpace = nullptr;
+    mutable int m_learnedCallInfo = -1; // measured call info height (settings), -1: not read yet
     class QFrame *m_waitBox;
     QLabel *m_waitText;
     bool m_secondIsWaiting = false;

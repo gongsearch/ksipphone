@@ -440,15 +440,31 @@ void MainWindow::setRegistration(const QString &text, bool ok)
     m_reg->setText(QStringLiteral("<span style='color:%1'>●</span> %2").arg(ok ? QStringLiteral("#2e9d4c") : QStringLiteral("#c0392b"), text.toHtmlEscaped()));
 }
 
+void MainWindow::learnCallInfoHeight()
+{
+    // measured during a call: if the call info needed more room than reserved, reserve that from now on
+    if (m_state == Engine::CallState::Idle || !m_peerBox->isVisible())
+        return;
+    int needed = m_peerBox->sizeHint().height() + 12;
+    if (m_waitBox->isVisible())
+        needed += m_waitBox->sizeHint().height() + 12;
+    if (needed > callInfoHeight()) {
+        appSettings().setValue(QStringLiteral("Window/CallInfoHeight"), needed);
+        m_learnedCallInfo = needed;
+    }
+}
+
 int MainWindow::callInfoHeight() const
 {
+    if (m_learnedCallInfo < 0)
+        m_learnedCallInfo = appSettings().value(QStringLiteral("Window/CallInfoHeight"), 0).toInt();
     // peer box: margins 8+8, photo 96, name (1.35x bold, up to two lines), state row; plus the column spacing
     QFont nf = font();
     nf.setPointSizeF(nf.pointSizeF() * 1.35);
     nf.setBold(true);
     const int name = QFontMetrics(nf).lineSpacing() * 2;
     const int stateRow = qMax(fontMetrics().height() + 6, 22);
-    return 8 + 96 + 6 + name + 6 + stateRow + 8 + 12;
+    return qMax(8 + 96 + 6 + name + 6 + stateRow + 8 + 12, m_learnedCallInfo);
 }
 
 void MainWindow::setCall(Engine::CallState state, const QString &peerText)
@@ -458,6 +474,8 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
     // reserved room <-> call info
     m_callSpace->changeSize(0, state == Engine::CallState::Idle ? callInfoHeight() : 0, QSizePolicy::Minimum, QSizePolicy::Fixed);
     m_left->invalidate();
+    if (state != Engine::CallState::Idle)
+        QTimer::singleShot(0, this, &MainWindow::learnCallInfoHeight);
     // after a call the number / search text is not needed any more
     if (state == Engine::CallState::Idle && !wasIdle)
         m_number->clear();
@@ -636,6 +654,7 @@ void MainWindow::setDnd(bool on, bool bySystem)
 
 void MainWindow::setWaiting(const QString &peerText)
 {
+    QTimer::singleShot(0, this, &MainWindow::learnCallInfoHeight);
     m_waitText->setText(i18n("<b>Call waiting:</b> %1", peerText.toHtmlEscaped()));
     m_waitBox->setVisible(!peerText.isEmpty());
 }
@@ -704,7 +723,12 @@ void MainWindow::setPeerPhoto(const QPixmap &photo)
         m_photo->hide();
         return;
     }
-    m_photo->setPixmap(photo.scaled(96 * devicePixelRatioF(), 96 * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    // 96 logical pixels at any display scale (without the ratio set it was shown 1.5x / 2x larger)
+    const qreal dpr = devicePixelRatioF();
+    QPixmap scaled = photo.scaled(qRound(96 * dpr), qRound(96 * dpr), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    scaled.setDevicePixelRatio(dpr);
+    m_photo->setPixmap(scaled);
+    QTimer::singleShot(0, this, &MainWindow::learnCallInfoHeight);
     m_photo->show();
 }
 
