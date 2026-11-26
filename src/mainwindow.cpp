@@ -316,7 +316,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
 
     setRegistration(i18n("Not registered"), false);
     setCall(Engine::CallState::Idle, {});
-    setMinimumWidth(360);
+    // no explicit minimum: the layout's minimum (keypad, extension list) applies to width and height
     resize(380, sizeHint().height());
 }
 
