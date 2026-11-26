@@ -114,14 +114,21 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     QFont f = m_number->font();
     f.setPointSizeF(f.pointSizeF() * 1.15);
     m_number->setFont(f);
-    lay->addWidget(m_number);
+    // body: left column (search, call info, keypad + buttons), extension list on the right
+    auto *body = new QHBoxLayout;
+    body->setSpacing(12);
+    auto *left = new QVBoxLayout;
+    left->setSpacing(12);
+    body->addLayout(left, 0);
+    lay->addLayout(body, 1);
+    left->addWidget(m_number);
     connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
 
     m_pbError = new QLabel(this);
     m_pbError->setWordWrap(true);
     m_pbError->setStyleSheet(QStringLiteral("color:#c0392b"));
     m_pbError->hide();
-    lay->addWidget(m_pbError);
+    left->addWidget(m_pbError);
 
     // peer area (only visible during a call): photo, name, state + duration + codec
     m_peerBox = new QWidget(this);
@@ -157,7 +164,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     statusRow->addStretch();
     pb->addLayout(statusRow);
     m_peerBox->hide();
-    lay->addWidget(m_peerBox);
+    left->addWidget(m_peerBox);
 
     m_callTimer = new QTimer(this);
     m_callTimer->setInterval(1000);
@@ -181,7 +188,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         b->setMinimumWidth(80);
         b->setFont(kf);
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
-        grid->addWidget(b, i / 3, i % 3);
+        grid->addWidget(b, i / 3, (i % 3) * 2, 1, 2);
     }
     // internal extensions with presence status, next to the keypad: filter field + options, list
     m_extPanel = new QWidget(this);
@@ -252,14 +259,10 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         else if (m_state == Engine::CallState::Established && m_consult == Engine::CallState::Idle)
             Q_EMIT transferRequested(ext);
     });
-    auto *keyRow = new QHBoxLayout;
-    keyRow->setSpacing(12);
-    keyRow->addLayout(grid, 0);
-    keyRow->addWidget(m_extPanel, 1);
-    lay->addLayout(keyRow);
+    left->addLayout(grid);
+    left->addStretch(1); // the keypad stays together when the window gets taller
+    body->addWidget(m_extPanel, 1);
 
-    auto *row = new QHBoxLayout;
-    row->setSpacing(8);
     m_mute = new QToolButton(this);
     m_mute->setText(i18n("Mute"));
     m_mute->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -299,12 +302,15 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         else
             Q_EMIT hangupRequested();
     });
-    // all buttons share extra width evenly
-    for (QAbstractButton *b : std::initializer_list<QAbstractButton *>{m_mute, m_hold, m_transfer, m_call, m_hangup}) {
+    // buttons under the keypad: mute / hold / transfer in thirds, call / hang up in halves
+    for (QAbstractButton *b : std::initializer_list<QAbstractButton *>{m_mute, m_hold, m_transfer, m_call, m_hangup})
         b->setSizePolicy(QSizePolicy::Expanding, b->sizePolicy().verticalPolicy());
-        row->addWidget(b, 1);
-    }
-    lay->addLayout(row);
+    grid->setRowMinimumHeight(4, 4);
+    grid->addWidget(m_mute, 5, 0, 1, 2);
+    grid->addWidget(m_hold, 5, 2, 1, 2);
+    grid->addWidget(m_transfer, 5, 4, 1, 2);
+    grid->addWidget(m_call, 6, 0, 1, 3);
+    grid->addWidget(m_hangup, 6, 3, 1, 3);
 
     setRegistration(i18n("Not registered"), false);
     setCall(Engine::CallState::Idle, {});
