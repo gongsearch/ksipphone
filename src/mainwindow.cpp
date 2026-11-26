@@ -114,14 +114,17 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     QFont f = m_number->font();
     f.setPointSizeF(f.pointSizeF() * 1.15);
     m_number->setFont(f);
-    // body: left column (search, call info, keypad + buttons), extension list on the right
-    auto *body = new QHBoxLayout;
-    body->setSpacing(12);
+    // body grid: row 0 search field | extension filter, row 1 call info + keypad + buttons | extension list
+    auto *body = new QGridLayout;
+    body->setHorizontalSpacing(12);
+    body->setVerticalSpacing(12);
     auto *left = new QVBoxLayout;
     left->setSpacing(12);
-    body->addLayout(left, 0);
+    body->addWidget(m_number, 0, 0);
+    body->addLayout(left, 1, 0);
+    body->setColumnStretch(1, 1); // extra width goes to the extension list
+    body->setRowStretch(1, 1);
     lay->addLayout(body, 1);
-    left->addWidget(m_number);
     connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
 
     m_pbError = new QLabel(this);
@@ -191,13 +194,12 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         grid->addWidget(b, i / 3, (i % 3) * 2, 1, 2);
     }
     // internal extensions with presence status, next to the keypad: filter field + options, list
-    m_extPanel = new QWidget(this);
-    auto *extLay = new QVBoxLayout(m_extPanel);
-    extLay->setContentsMargins(0, 0, 0, 0);
-    extLay->setSpacing(6);
-    auto *extTop = new QHBoxLayout;
+    m_extPanel = new QWidget(this); // filter field + options button
+    auto *extTop = new QHBoxLayout(m_extPanel);
+    extTop->setContentsMargins(0, 0, 0, 0);
     extTop->setSpacing(4);
     m_extFilter = new QLineEdit(m_extPanel);
+    m_extFilter->setFont(m_number->font()); // same height as the search field
     m_extFilter->setPlaceholderText(i18n("Filter extensions"));
     m_extFilter->setClearButtonEnabled(true);
     connect(m_extFilter, &QLineEdit::textChanged, this, &MainWindow::refreshExtList);
@@ -242,16 +244,15 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     extOptions->setMenu(menu);
     extTop->addWidget(m_extFilter, 1);
     extTop->addWidget(extOptions);
-    extLay->addLayout(extTop);
-    m_ext = new QListWidget(m_extPanel);
+    m_ext = new QListWidget(this);
     m_ext->setFocusPolicy(Qt::NoFocus);
     m_ext->setSelectionMode(QAbstractItemView::NoSelection);
     m_ext->setMouseTracking(true);
     m_ext->setItemDelegate(new ExtDelegate(m_ext));
     m_ext->setToolTip(i18n("Click to call; during a call click to transfer"));
-    extLay->addWidget(m_ext, 1);
-    m_extPanel->setMinimumWidth(250); // takes the extra width when the window is widened
+    m_ext->setMinimumWidth(250);
     m_extPanel->hide();
+    m_ext->hide();
     connect(m_ext, &QListWidget::itemClicked, this, [this](QListWidgetItem *it) {
         const QString ext = it->data(ExtNumberRole).toString();
         if (m_state == Engine::CallState::Idle)
@@ -261,7 +262,8 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     });
     left->addLayout(grid);
     left->addStretch(1); // the keypad stays together when the window gets taller
-    body->addWidget(m_extPanel, 1);
+    body->addWidget(m_extPanel, 0, 1);
+    body->addWidget(m_ext, 1, 1);
 
     m_mute = new QToolButton(this);
     m_mute->setText(i18n("Mute"));
@@ -372,6 +374,7 @@ void MainWindow::setExtensions(const QList<QPair<QString, QString>> &extensions)
 {
     m_extensions = extensions;
     m_extPanel->setVisible(!extensions.isEmpty());
+    m_ext->setVisible(!extensions.isEmpty());
     refreshExtList();
     adjustSize();
 }
