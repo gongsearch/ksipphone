@@ -25,6 +25,7 @@ public:
     void setCall(Engine::CallState state, const QString &peerText);
     void setNumber(const QString &number);
     void setSearchResults(int requestId, const QList<PhonebookEntry> &entries);
+    void clearSearchResults();
     void setPhonebookError(const QString &message);
     void setCodec(const QString &codec);
     void setPeerPhoto(const QPixmap &photo); // null pixmap hides it

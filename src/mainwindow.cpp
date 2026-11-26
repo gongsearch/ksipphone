@@ -75,6 +75,11 @@ MainWindow::MainWindow(QWidget *parent)
         if (!m_settingNumber)
             m_searchTimer->start();
     });
+    // field emptied (typing, clear button, programmatically): drop old results and close the drop-down
+    connect(m_number, &QLineEdit::textChanged, this, [this](const QString &text) {
+        if (text.trimmed().size() < 2)
+            clearSearchResults();
+    });
     connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
 
     m_pbError = new QLabel(this);
@@ -243,8 +248,18 @@ void MainWindow::setSearchResults(int requestId, const QList<PhonebookEntry> &en
         it->setData(e.number, NumberRole);
         m_model->appendRow(it);
     }
-    if (!entries.isEmpty() && m_number->hasFocus())
+    if (entries.isEmpty())
+        m_completer->popup()->hide();
+    else if (m_number->hasFocus())
         m_completer->complete();
+}
+
+void MainWindow::clearSearchResults()
+{
+    m_searchTimer->stop();
+    ++m_searchId; // results still on their way are outdated
+    m_completer->popup()->hide();
+    m_model->clear();
 }
 
 void MainWindow::setPhonebookError(const QString &message)
