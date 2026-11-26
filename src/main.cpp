@@ -9,6 +9,8 @@
 #include <QApplication>
 #include <QPalette>
 #include <QStyleHints>
+
+#include <functional>
 #include <QCommandLineParser>
 #include <QFileOpenEvent>
 #include <QUrl>
@@ -41,15 +43,34 @@ static bool forwardToRunningInstance(const QStringList &args)
 }
 
 #ifndef KSIPPHONE_WITH_KDE
+// judged by the colours actually used for drawing, so it matches whatever the style renders
 static bool isDarkScheme()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-    const Qt::ColorScheme scheme = QGuiApplication::styleHints()->colorScheme();
-    if (scheme != Qt::ColorScheme::Unknown)
-        return scheme == Qt::ColorScheme::Dark;
-#endif
-    return qGray(QGuiApplication::palette().color(QPalette::Window).rgb()) < 128;
+    const QPalette pal = QGuiApplication::palette();
+    return qGray(pal.color(QPalette::WindowText).rgb()) > qGray(pal.color(QPalette::Window).rgb());
 }
+
+// re-applies the icon theme whenever the application palette changes (light/dark switch)
+class PaletteWatcher : public QObject
+{
+public:
+    PaletteWatcher(std::function<void()> apply, QObject *parent)
+        : QObject(parent)
+        , m_apply(std::move(apply))
+    {
+    }
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (watched == qApp && event->type() == QEvent::ApplicationPaletteChange)
+            m_apply();
+        return false;
+    }
+
+private:
+    std::function<void()> m_apply;
+};
 #endif
 
 int main(int argc, char **argv)
@@ -100,6 +121,7 @@ int main(int argc, char **argv)
             QIcon::setThemeName(name);
     };
     applyIconTheme();
+    app.installEventFilter(new PaletteWatcher(applyIconTheme, &app));
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     QObject::connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, &app, applyIconTheme);
 #endif
