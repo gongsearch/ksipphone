@@ -3,10 +3,12 @@
 
 #include <KLocalizedString>
 
+#include <QAbstractButton>
 #include <QAbstractItemView>
 #include <QCompleter>
 #include <QIcon>
 #include <QKeyEvent>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QStandardItemModel>
@@ -98,6 +100,22 @@ SearchField::SearchField(Phonebook *phonebook, QWidget *parent)
 
 bool SearchField::eventFilter(QObject *watched, QEvent *event)
 {
+    // a click outside the open drop-down only closes it (Qt popup behaviour); for buttons of this window
+    // (call, keypad, ...) the click should also do its job - one click instead of two
+    if (watched == m_completer->popup() && event->type() == QEvent::MouseButtonPress) {
+        auto *me = static_cast<QMouseEvent *>(event);
+        QAbstractItemView *popup = m_completer->popup();
+        if (me->button() == Qt::LeftButton && !popup->rect().contains(me->position().toPoint())) {
+            QWidget *w = window()->childAt(window()->mapFromGlobal(me->globalPosition().toPoint()));
+            while (w && !qobject_cast<QAbstractButton *>(w))
+                w = w->parentWidget();
+            if (auto *button = qobject_cast<QAbstractButton *>(w); button && button->isEnabled()) {
+                popup->hide();
+                QTimer::singleShot(0, button, &QAbstractButton::click);
+                return true;
+            }
+        }
+    }
     if (watched == m_completer->popup() && event->type() == QEvent::KeyPress) {
         const int key = static_cast<QKeyEvent *>(event)->key();
         if (key == Qt::Key_Return || key == Qt::Key_Enter) {

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- One click is enough on Call (and other buttons) while the search drop-down is open (the first click used to only close it)
+
 ## 1.1.0 – 2026-11-26
 
 - Translations: French, Spanish, Italian, Dutch, Polish, Portuguese (Brazil), Czech, Swedish, Russian, Japanese, Chinese (Simplified), Hindi, Arabic, Persian, Urdu (machine-assisted; corrections welcome); menu entry, notifications and store summary translated too
