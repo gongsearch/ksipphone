@@ -21,7 +21,10 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QApplication>
+#include <QKeyEvent>
+#include <QMouseEvent>
 #include <QPainter>
+#include <QStyleOptionButton>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
 #include <QToolButton>
@@ -106,12 +109,14 @@ void Settings::save() const
 
 namespace
 {
-// Item views put the text right next to the check box (Windows 11 style even without any gap).
-// The style draws background and check box, the delegate draws the text at a fixed distance.
+// Checkable list entries with a clear gap between check box and text. Styles place the item view check
+// box differently (Windows 11 even draws it where it reports none), so the delegate draws the check box
+// itself (like a normal QCheckBox), the text after it, and handles clicks/space on its own check box.
 class CheckListDelegate : public QStyledItemDelegate
 {
 public:
     using QStyledItemDelegate::QStyledItemDelegate;
+
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
         QStyleOptionViewItem opt(option);
@@ -119,12 +124,20 @@ public:
         const QWidget *w = opt.widget;
         QStyle *style = w ? w->style() : QApplication::style();
         const QString text = opt.text;
-        const QRect check = style->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &opt, w);
+        const bool checked = opt.checkState == Qt::Checked;
+        // background, selection and focus only
         opt.text.clear();
+        opt.features &= ~QStyleOptionViewItem::HasCheckIndicator;
         style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, w);
 
+        QStyleOptionButton box;
+        box.rect = checkRect(opt, style, w);
+        box.state = (opt.state & (QStyle::State_Enabled | QStyle::State_Active)) | (checked ? QStyle::State_On : QStyle::State_Off);
+        box.palette = opt.palette;
+        style->drawPrimitive(QStyle::PE_IndicatorCheckBox, &box, painter, w);
+
         QRect textRect = opt.rect.adjusted(0, 0, -4, 0);
-        textRect.setLeft((check.isValid() ? check.right() : opt.rect.left()) + 1 + gap(style, w));
+        textRect.setLeft(box.rect.right() + 1 + gap(style, w));
         const QPalette::ColorGroup group = !(opt.state & QStyle::State_Enabled) ? QPalette::Disabled
             : (opt.state & QStyle::State_Active)                                 ? QPalette::Active
                                                                                  : QPalette::Inactive;
@@ -135,17 +148,72 @@ public:
                           opt.fontMetrics.elidedText(text, Qt::ElideRight, textRect.width()));
         painter->restore();
     }
+
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt, index);
+        const QWidget *w = opt.widget;
+        QStyle *style = w ? w->style() : QApplication::style();
+        const int boxW = style->pixelMetric(QStyle::PM_IndicatorWidth, nullptr, w);
+        const int boxH = style->pixelMetric(QStyle::PM_IndicatorHeight, nullptr, w);
         QSize sz = QStyledItemDelegate::sizeHint(option, index);
-        sz.rwidth() += gap(option.widget ? option.widget->style() : QApplication::style(), option.widget);
+        sz.setWidth(margin(style, w) + boxW + gap(style, w) + opt.fontMetrics.horizontalAdvance(opt.text) + 8);
+        sz.setHeight(qMax(sz.height(), boxH + 6));
         return sz;
+    }
+
+    bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override
+    {
+        const Qt::ItemFlags flags = model->flags(index);
+        if (!(flags & Qt::ItemIsUserCheckable) || !(flags & Qt::ItemIsEnabled))
+            return false;
+        const QWidget *w = option.widget;
+        QStyle *style = w ? w->style() : QApplication::style();
+        switch (event->type()) {
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseButtonRelease: {
+            auto *me = static_cast<QMouseEvent *>(event);
+            // the check box plus the gap is the click target; clicks on the text select/drag as usual
+            QRect hit = checkRect(option, style, w);
+            hit.setLeft(option.rect.left());
+            hit.setRight(hit.right() + gap(style, w) / 2);
+            hit.setTop(option.rect.top());
+            hit.setBottom(option.rect.bottom());
+            if (me->button() != Qt::LeftButton || !hit.contains(me->position().toPoint()))
+                return false;
+            if (event->type() != QEvent::MouseButtonRelease)
+                return true; // swallow, toggle on release
+            break;
+        }
+        case QEvent::KeyPress: {
+            const int key = static_cast<QKeyEvent *>(event)->key();
+            if (key != Qt::Key_Space && key != Qt::Key_Select)
+                return false;
+            break;
+        }
+        default:
+            return false;
+        }
+        const bool checked = index.data(Qt::CheckStateRole).toInt() == Qt::Checked;
+        return model->setData(index, checked ? Qt::Unchecked : Qt::Checked, Qt::CheckStateRole);
     }
 
 private:
     static int gap(const QStyle *style, const QWidget *w)
     {
         return qMax(10, 2 * style->pixelMetric(QStyle::PM_CheckBoxLabelSpacing, nullptr, w));
+    }
+    static int margin(const QStyle *style, const QWidget *w)
+    {
+        return style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, w) + 3;
+    }
+    static QRect checkRect(const QStyleOptionViewItem &opt, const QStyle *style, const QWidget *w)
+    {
+        const int bw = style->pixelMetric(QStyle::PM_IndicatorWidth, nullptr, w);
+        const int bh = style->pixelMetric(QStyle::PM_IndicatorHeight, nullptr, w);
+        return QRect(opt.rect.left() + margin(style, w), opt.rect.top() + (opt.rect.height() - bh) / 2, bw, bh);
     }
 };
 }
