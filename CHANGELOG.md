@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Translations: French, Spanish, Italian, Dutch, Polish, Portuguese (Brazil), Czech, Swedish, Russian, Japanese, Chinese (Simplified), Hindi, Arabic, Persian, Urdu (machine-assisted; corrections welcome); menu entry, notifications and store summary translated too
+- Right-to-left layout for Arabic, Persian and Urdu (the keypad keeps 1 2 3 from left to right)
+- The call button is only enabled when a call is possible: registered and a number entered (accepting an incoming call always works)
 - All keypad keys have the same width (they no longer depend on the button texts below)
 
 ## 1.0.2 – 2026-11-26

@@ -1,0 +1,1161 @@
+# Japanese translation of KSipPhone.
+# SPDX-License-Identifier: MIT
+# Machine-assisted translation - corrections welcome.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ksipphone\n"
+"Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
+"POT-Creation-Date: 2026-11-26 19:23+0100\n"
+"PO-Revision-Date: 2026-11-26\n"
+"Last-Translator: KSipPhone contributors\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/calllogdialog.cpp:29 src/mainwindow.cpp:135 src/phoneapp.cpp:85
+#, kde-format
+msgid "Call history"
+msgstr "通話履歴"
+
+#: src/calllogdialog.cpp:33
+#, kde-format
+msgid "Filter by name or number"
+msgstr "名前または番号で絞り込み"
+
+#: src/calllogdialog.cpp:36
+#, kde-format
+msgid "All calls"
+msgstr "すべての通話"
+
+#: src/calllogdialog.cpp:37
+#, kde-format
+msgid "Missed"
+msgstr "不在着信"
+
+#: src/calllogdialog.cpp:38
+#, kde-format
+msgid "Incoming"
+msgstr "着信"
+
+#: src/calllogdialog.cpp:39
+#, kde-format
+msgid "Outgoing"
+msgstr "発信"
+
+#: src/calllogdialog.cpp:40 src/calllogdialog.cpp:67
+#, kde-format
+msgid "Clear list"
+msgstr "リストを消去"
+
+#: src/calllogdialog.cpp:49
+#, kde-format
+msgid "Name"
+msgstr "名前"
+
+#: src/calllogdialog.cpp:49
+#, kde-format
+msgid "Number"
+msgstr "番号"
+
+#: src/calllogdialog.cpp:49
+#, kde-format
+msgid "Time"
+msgstr "時刻"
+
+#: src/calllogdialog.cpp:49
+#, kde-format
+msgid "Duration"
+msgstr "通話時間"
+
+#: src/calllogdialog.cpp:54
+#, kde-format
+msgid "Double-click to call back"
+msgstr "ダブルクリックで折り返し発信"
+
+#: src/calllogdialog.cpp:67
+#, kde-format
+msgid "Delete the whole call history?"
+msgstr "通話履歴をすべて削除しますか？"
+
+#: src/calllogdialog.cpp:113
+#, kde-format
+msgid "answered elsewhere"
+msgstr "他の端末で応答"
+
+#: src/calllogdialog.cpp:131 src/mainwindow.cpp:367 src/mainwindow.cpp:561
+#, kde-format
+msgid "Call"
+msgstr "発信"
+
+#: src/calllogdialog.cpp:132
+#, kde-format
+msgid "Copy number"
+msgstr "番号をコピー"
+
+#: src/calllogdialog.cpp:135
+#, kde-format
+msgid "Delete entry"
+msgstr "項目を削除"
+
+#: src/codecs.cpp:23
+#, kde-format
+msgid "G.722 (HD)"
+msgstr "G.722 (HD)"
+
+#: src/codecs.cpp:23
+#, kde-format
+msgid "G.722 – HD voice (16 kHz)"
+msgstr "G.722 – HD 音声 (16 kHz)"
+
+#: src/codecs.cpp:24
+#, kde-format
+msgid "Opus (HD)"
+msgstr "Opus (HD)"
+
+#: src/codecs.cpp:24
+#, kde-format
+msgid "Opus – HD voice, low bandwidth"
+msgstr "Opus – HD 音声、低帯域"
+
+#: src/codecs.cpp:25
+#, kde-format
+msgid "AMR-WB (HD)"
+msgstr "AMR-WB (HD)"
+
+#: src/codecs.cpp:25
+#, kde-format
+msgid "AMR-WB (G.722.2) – HD voice of mobile networks"
+msgstr "AMR-WB (G.722.2) – 携帯電話網の HD 音声"
+
+#: src/codecs.cpp:26
+#, kde-format
+msgid "G.711 A-law (PCMA)"
+msgstr "G.711 A-law (PCMA)"
+
+#: src/codecs.cpp:26
+#, kde-format
+msgid "G.711 A-law (PCMA) – standard in Europe"
+msgstr "G.711 A-law (PCMA) – ヨーロッパの標準"
+
+#: src/codecs.cpp:27
+#, kde-format
+msgid "G.711 µ-law (PCMU)"
+msgstr "G.711 µ-law (PCMU)"
+
+#: src/codecs.cpp:27
+#, kde-format
+msgid "G.711 µ-law (PCMU) – standard in North America"
+msgstr "G.711 µ-law (PCMU) – 北米・日本の標準"
+
+#: src/codecs.cpp:28
+#, kde-format
+msgid "AMR"
+msgstr "AMR"
+
+#: src/codecs.cpp:28
+#, kde-format
+msgid "AMR – narrowband codec of mobile networks"
+msgstr "AMR – 携帯電話網の狭帯域コーデック"
+
+#: src/codecs.cpp:29
+#, kde-format
+msgid "L16 (LAN only)"
+msgstr "L16 (LAN のみ)"
+
+#: src/codecs.cpp:29
+#, kde-format
+msgid "L16 – uncompressed 16 kHz, for the local network only"
+msgstr "L16 – 非圧縮 16 kHz、ローカルネットワーク専用"
+
+#: src/globalshortcuts.cpp:23
+#, kde-format
+msgid "Show or hide the dialer"
+msgstr "ダイヤル画面の表示/非表示"
+
+#: src/globalshortcuts.cpp:24
+#, kde-format
+msgid "Accept call"
+msgstr "着信に応答"
+
+#: src/globalshortcuts.cpp:25 src/mainwindow.cpp:368 src/mainwindow.cpp:563
+#: src/mainwindow.cpp:748 src/mainwindow.cpp:756 src/phoneapp.cpp:86
+#, kde-format
+msgid "Hang up"
+msgstr "切断"
+
+#: src/globalshortcuts.cpp:26
+#, kde-format
+msgid "Mute / unmute"
+msgstr "ミュート / ミュート解除"
+
+#: src/globalshortcuts.cpp:27
+#, kde-format
+msgid "Do not disturb on / off"
+msgstr "おやすみモード オン / オフ"
+
+#: src/globalshortcuts.cpp:28
+#, kde-format
+msgid "Call the number in the clipboard"
+msgstr "クリップボードの番号に発信"
+
+#: src/globalshortcuts.cpp:30
+#, kde-format
+msgid "Push to talk (hold)"
+msgstr "プッシュトゥトーク (押し続ける)"
+
+#: src/localcontacts.cpp:71
+#, kde-format
+msgid "KDE contacts (incl. phone contacts via KDE Connect)"
+msgstr "KDE の連絡先 (KDE Connect 経由のスマートフォンの連絡先を含む)"
+
+#: src/localcontacts.cpp:74
+#, kde-format
+msgid "GNOME / Evolution contacts"
+msgstr "GNOME / Evolution の連絡先"
+
+#: src/localcontacts.cpp:76
+#, kde-format
+msgid "macOS Contacts"
+msgstr "macOS の連絡先"
+
+#: src/main.cpp:93
+#, kde-format
+msgid "Start hidden in the system tray"
+msgstr "システムトレイに隠した状態で起動"
+
+#: src/main.cpp:94
+#, kde-format
+msgid "Open the settings dialog"
+msgstr "設定ダイアログを開く"
+
+#: src/main.cpp:95
+#, kde-format
+msgid "tel: or sip: URI to call"
+msgstr "発信先の tel: または sip: URI"
+
+#: src/main.cpp:97 src/main.cpp:111 src/mainwindow.cpp:96 src/phoneapp.cpp:291
+#: src/phoneapp.cpp:440 src/phoneapp.cpp:773
+#, kde-format
+msgid "KSipPhone"
+msgstr "KSipPhone"
+
+#: src/main.cpp:98 src/main.cpp:113
+#, kde-format
+msgid "A small SIP phone for KDE Plasma"
+msgstr "KDE Plasma 用の小さな SIP 電話"
+
+#: src/mainwindow.cpp:107 src/settingsdialog.cpp:287
+#, kde-format
+msgid "Settings"
+msgstr "設定"
+
+#: src/mainwindow.cpp:114 src/mainwindow.cpp:788 src/phoneapp.cpp:84
+#, kde-format
+msgid "Call voicemail"
+msgstr "留守番電話に発信"
+
+#: src/mainwindow.cpp:118
+#, kde-format
+msgid "Show or hide the extension list"
+msgstr "内線リストの表示/非表示"
+
+#: src/mainwindow.cpp:224 src/mainwindow.cpp:561 src/phoneapp.cpp:674
+#, kde-format
+msgid "Accept"
+msgstr "応答"
+
+#: src/mainwindow.cpp:225
+#, kde-format
+msgid "Put the current call on hold and accept"
+msgstr "現在の通話を保留して応答"
+
+#: src/mainwindow.cpp:226 src/mainwindow.cpp:563 src/phoneapp.cpp:627
+#: src/phoneapp.cpp:675
+#, kde-format
+msgid "Decline"
+msgstr "拒否"
+
+#: src/mainwindow.cpp:270
+#, kde-format
+msgid "Filter extensions"
+msgstr "内線を絞り込み"
+
+#: src/mainwindow.cpp:275
+#, kde-format
+msgid "Sort and filter"
+msgstr "並べ替えと絞り込み"
+
+#: src/mainwindow.cpp:284
+#, kde-format
+msgid "Sort by number"
+msgstr "番号順"
+
+#: src/mainwindow.cpp:284
+#, kde-format
+msgid "Sort by first name"
+msgstr "名前 (名) 順"
+
+#: src/mainwindow.cpp:284
+#, kde-format
+msgid "Sort by last name"
+msgstr "名字順"
+
+#: src/mainwindow.cpp:284
+#, kde-format
+msgid "Sort by status"
+msgstr "状態順"
+
+#: src/mainwindow.cpp:298
+#, kde-format
+msgid "Show all extensions"
+msgstr "すべての内線を表示"
+
+#: src/mainwindow.cpp:298
+#, kde-format
+msgid "Only online (free or busy)"
+msgstr "オンラインのみ (空きまたは通話中)"
+
+#: src/mainwindow.cpp:298
+#, kde-format
+msgid "Only free extensions"
+msgstr "空いている内線のみ"
+
+#: src/mainwindow.cpp:319
+#, kde-format
+msgid "Click to call; during a call click to transfer"
+msgstr "クリックで発信、通話中はクリックで転送"
+
+#: src/mainwindow.cpp:340
+#, kde-format
+msgid "Mute"
+msgstr "ミュート"
+
+#: src/mainwindow.cpp:344
+#, kde-format
+msgid "Mute microphone"
+msgstr "マイクをミュート"
+
+#: src/mainwindow.cpp:348 src/mainwindow.cpp:352
+#, kde-format
+msgid "Hold"
+msgstr "保留"
+
+#: src/mainwindow.cpp:356 src/mainwindow.cpp:753
+#, kde-format
+msgid "Transfer"
+msgstr "転送"
+
+#: src/mainwindow.cpp:360 src/mainwindow.cpp:754
+#, kde-format
+msgid "Transfer the call"
+msgstr "通話を転送"
+
+#: src/mainwindow.cpp:389 src/mainwindow.cpp:432 src/phoneapp.cpp:285
+#: src/phoneapp.cpp:766
+#, kde-format
+msgid "Not registered"
+msgstr "未登録"
+
+#: src/mainwindow.cpp:532 src/mediacontrol.cpp:75 src/mediacontrol.cpp:184
+#: src/phoneapp.cpp:670
+#, kde-format
+msgid "Incoming call"
+msgstr "着信"
+
+#: src/mainwindow.cpp:533
+#, kde-format
+msgid "Calling …"
+msgstr "発信中 …"
+
+#: src/mainwindow.cpp:534
+#, kde-format
+msgid "Ringing …"
+msgstr "呼び出し中 …"
+
+#: src/mainwindow.cpp:535 src/mainwindow.cpp:722
+#, kde-format
+msgid "Connected"
+msgstr "通話中"
+
+#: src/mainwindow.cpp:673
+#, kde-format
+msgid "free"
+msgstr "空き"
+
+#: src/mainwindow.cpp:677
+#, kde-format
+msgid "busy or ringing"
+msgstr "通話中または呼び出し中"
+
+#: src/mainwindow.cpp:681
+#, kde-format
+msgid "offline"
+msgstr "オフライン"
+
+#: src/mainwindow.cpp:685
+#, kde-format
+msgid "status unknown"
+msgstr "状態不明"
+
+#: src/mainwindow.cpp:696
+#, kde-format
+msgid "Do not disturb is on – click to turn it off"
+msgstr "おやすみモードがオンです – クリックでオフ"
+
+#: src/mainwindow.cpp:697
+#, kde-format
+msgid "The desktop's do not disturb is on – calls are not rung"
+msgstr "デスクトップのおやすみモードがオンです – 着信音は鳴りません"
+
+#: src/mainwindow.cpp:698 src/phoneapp.cpp:88
+#, kde-format
+msgid "Do not disturb"
+msgstr "おやすみモード"
+
+#: src/mainwindow.cpp:704
+#, kde-format
+msgid "<b>Call waiting:</b> %1"
+msgstr "<b>キャッチホン:</b> %1"
+
+#: src/mainwindow.cpp:714
+#, kde-format
+msgid "Talking to %1 – the other call is on hold"
+msgstr "%1 と通話中 – もう一方の通話は保留中"
+
+#: src/mainwindow.cpp:715
+#, kde-format
+msgid "Accepting %1 …"
+msgstr "%1 に応答中 …"
+
+#: src/mainwindow.cpp:726
+#, kde-format
+msgid "On hold – calling %1 …"
+msgstr "保留中 – %1 に発信中 …"
+
+#: src/mainwindow.cpp:729
+#, kde-format
+msgid "On hold – %1 is ringing"
+msgstr "保留中 – %1 を呼び出し中"
+
+#: src/mainwindow.cpp:732
+#, kde-format
+msgid "On hold – talking to %1"
+msgstr "保留中 – %1 と通話中"
+
+#: src/mainwindow.cpp:746
+#, kde-format
+msgid "Swap"
+msgstr "切り替え"
+
+#: src/mainwindow.cpp:747
+#, kde-format
+msgid "Switch to the call on hold"
+msgstr "保留中の通話に切り替え"
+
+#: src/mainwindow.cpp:749
+#, kde-format
+msgid "End this call and return to the one on hold"
+msgstr "この通話を終了して保留中の通話に戻る"
+
+#: src/mainwindow.cpp:753
+#, kde-format
+msgid "Connect"
+msgstr "接続"
+
+#: src/mainwindow.cpp:754
+#, kde-format
+msgid "Connect the waiting caller with the consulted party"
+msgstr "待機中の相手を相談先とつなぐ"
+
+#: src/mainwindow.cpp:756
+#, kde-format
+msgid "Back"
+msgstr "戻る"
+
+#: src/mainwindow.cpp:757
+#, kde-format
+msgid "End the consultation and return to the waiting caller"
+msgstr "相談を終了して待機中の相手に戻る"
+
+#: src/mainwindow.cpp:762
+#, kde-format
+msgid "Phonebook: %1"
+msgstr "電話帳: %1"
+
+#: src/mainwindow.cpp:787
+#, kde-format
+msgid "1 new voice message - click to listen"
+msgid_plural "%1 new voice messages - click to listen"
+msgstr[0] "%1 件の新しい留守番電話メッセージ - クリックして再生"
+
+#: src/mainwindow.cpp:813
+#, kde-format
+msgid "Codec: %1"
+msgstr "コーデック: %1"
+
+#: src/mediacontrol.cpp:75 src/mediacontrol.cpp:184
+#, kde-format
+msgid "Phone call"
+msgstr "電話"
+
+#: src/phoneapp.cpp:79 src/phoneapp.cpp:634 src/phoneapp.cpp:682
+#: src/phoneapp.cpp:707
+#, kde-format
+msgid "Show dialer"
+msgstr "ダイヤル画面を表示"
+
+#: src/phoneapp.cpp:110
+#, kde-format
+msgid "Settings…"
+msgstr "設定…"
+
+#: src/phoneapp.cpp:112
+#, kde-format
+msgid "Quit"
+msgstr "終了"
+
+#: src/phoneapp.cpp:176
+#, kde-format
+msgid "Transfer failed"
+msgstr "転送に失敗しました"
+
+#: src/phoneapp.cpp:176
+#, kde-format
+msgid "The call could not be transferred."
+msgstr "通話を転送できませんでした。"
+
+#: src/phoneapp.cpp:259
+#, kde-format
+msgid "New voice message"
+msgstr "新しい留守番電話メッセージ"
+
+#: src/phoneapp.cpp:260
+#, kde-format
+msgid "You have 1 new voice message."
+msgid_plural "You have %1 new voice messages."
+msgstr[0] "新しい留守番電話メッセージが %1 件あります。"
+
+#: src/phoneapp.cpp:263
+#, kde-format
+msgid "Listen"
+msgstr "再生"
+
+#: src/phoneapp.cpp:282
+#, kde-format
+msgid "Registered as %1"
+msgstr "%1 として登録済み"
+
+#: src/phoneapp.cpp:283
+#, kde-format
+msgid "Registering %1 …"
+msgstr "%1 を登録中 …"
+
+#: src/phoneapp.cpp:284
+#, kde-format
+msgid "Registration failed: %1"
+msgstr "登録に失敗しました: %1"
+
+#: src/phoneapp.cpp:428
+#, kde-format
+msgid "unknown"
+msgstr "不明"
+
+#: src/phoneapp.cpp:440
+#, kde-format
+msgid "The password could not be stored: %1"
+msgstr "パスワードを保存できませんでした: %1"
+
+#: src/phoneapp.cpp:489
+#, kde-format
+msgid "No SIP account configured"
+msgstr "SIP アカウントが設定されていません"
+
+#: src/phoneapp.cpp:623
+#, kde-format
+msgid "Call waiting"
+msgstr "キャッチホン"
+
+#: src/phoneapp.cpp:626
+#, kde-format
+msgid "Accept (hold current)"
+msgstr "応答 (現在の通話を保留)"
+
+#: src/phoneapp.cpp:697
+#, kde-format
+msgid "Missed call"
+msgstr "不在着信"
+
+#: src/phoneapp.cpp:698
+#, kde-format
+msgid "%1 at %2"
+msgstr "%1 %2"
+
+#: src/phoneapp.cpp:704
+#, kde-format
+msgid "Call back"
+msgstr "折り返し発信"
+
+#: src/phoneapp.cpp:763
+#, kde-format
+msgid "Incoming call from %1"
+msgstr "%1 からの着信"
+
+#: src/phoneapp.cpp:765
+#, kde-format
+msgid "In call with %1"
+msgstr "%1 と通話中"
+
+#: src/phoneapp.cpp:766
+#, kde-format
+msgid "Registered"
+msgstr "登録済み"
+
+#: src/phoneapp.cpp:768
+#, kde-format
+msgid "1 new voice message"
+msgid_plural "%1 new voice messages"
+msgstr[0] "%1 件の新しい留守番電話メッセージ"
+
+#: src/phoneapp.cpp:770
+#, kde-format
+msgid "Do not disturb: calls are rejected"
+msgstr "おやすみモード: 着信を拒否"
+
+#: src/phoneapp.cpp:770
+#, kde-format
+msgid "Do not disturb: calls are shown silently"
+msgstr "おやすみモード: 着信を音なしで表示"
+
+#: src/searchfield.cpp:53
+#, kde-format
+msgid "Number, SIP address or name"
+msgstr "番号、SIP アドレスまたは名前"
+
+#: src/searchfield.cpp:155
+#, kde-format
+msgid "mobile"
+msgstr "携帯"
+
+#: src/searchfield.cpp:156
+#, kde-format
+msgid "home"
+msgstr "自宅"
+
+#: src/searchfield.cpp:157
+#, kde-format
+msgid "work"
+msgstr "勤務先"
+
+#: src/searchfield.cpp:170
+#, kde-format
+msgid "LDAP phonebook"
+msgstr "LDAP 電話帳"
+
+#: src/searchfield.cpp:170
+#, kde-format
+msgid "address book of this computer"
+msgstr "このコンピュータのアドレス帳"
+
+#: src/settingsdialog.cpp:297
+#, kde-format
+msgid "host or host:port"
+msgstr "ホストまたはホスト:ポート"
+
+#: src/settingsdialog.cpp:301
+#, kde-format
+msgid "Prefer IPv6 if the server has an IPv6 address"
+msgstr "サーバーに IPv6 アドレスがあれば IPv6 を優先"
+
+#: src/settingsdialog.cpp:306
+#, kde-format
+msgid "not set"
+msgstr "未設定"
+
+#: src/settingsdialog.cpp:306
+#, kde-format
+msgid "stored in KWallet - type to change"
+msgstr "KWallet に保存済み - 変更するには入力"
+
+#: src/settingsdialog.cpp:314
+#, kde-format
+msgid ""
+"Tick the codecs to offer. The order is the preference: drag the entries or "
+"use the arrows."
+msgstr ""
+"提供するコーデックにチェックを付けます。並び順が優先順位です: 項目をドラッグ"
+"するか矢印を使ってください。"
+
+#: src/settingsdialog.cpp:326
+#, kde-format
+msgid "Not available in this baresip build"
+msgstr "この baresip ビルドでは利用できません"
+
+#: src/settingsdialog.cpp:338
+#, kde-format
+msgid "%1 (not available)"
+msgstr "%1 (利用不可)"
+
+#: src/settingsdialog.cpp:349
+#, kde-format
+msgid "Prefer"
+msgstr "優先度を上げる"
+
+#: src/settingsdialog.cpp:352
+#, kde-format
+msgid "Less preferred"
+msgstr "優先度を下げる"
+
+#: src/settingsdialog.cpp:370
+#, kde-format
+msgid "User:"
+msgstr "ユーザー:"
+
+#: src/settingsdialog.cpp:371
+#, kde-format
+msgid "Server:"
+msgstr "サーバー:"
+
+#: src/settingsdialog.cpp:372
+#, kde-format
+msgid "Transport:"
+msgstr "トランスポート:"
+
+#: src/settingsdialog.cpp:374
+#, kde-format
+msgid "Keep the connection open for firewalls/NAT"
+msgstr "ファイアウォール/NAT のため接続を維持"
+
+#: src/settingsdialog.cpp:376
+#, kde-format
+msgid ""
+"Renews the registration every 90 seconds. Firewalls and NAT routers forget "
+"idle UDP connections after about two minutes; without this, incoming calls "
+"and status updates can be dropped."
+msgstr ""
+"90 秒ごとに登録を更新します。ファイアウォールや NAT ルーターは約 2 分で使われ"
+"ていない UDP 接続を忘れるため、これがないと着信や状態の更新が届かないことがあ"
+"ります。"
+
+#: src/settingsdialog.cpp:380
+#, kde-format
+msgid "Display name:"
+msgstr "表示名:"
+
+#: src/settingsdialog.cpp:381
+#, kde-format
+msgid "Password:"
+msgstr "パスワード:"
+
+#: src/settingsdialog.cpp:382
+#, kde-format
+msgid "Codecs:"
+msgstr "コーデック:"
+
+#: src/settingsdialog.cpp:384
+#, kde-format
+msgid "number of the mailbox, e.g. 9000"
+msgstr "留守番電話の番号 (例: 9000)"
+
+#: src/settingsdialog.cpp:385
+#, kde-format
+msgid "Voicemail:"
+msgstr "留守番電話:"
+
+#: src/settingsdialog.cpp:390
+#, kde-format
+msgid "From the phonebook, numbers with up to"
+msgstr "電話帳から、次の桁数以下の番号"
+
+#: src/settingsdialog.cpp:392
+#, kde-format
+msgid ""
+"All LDAP phonebook entries with internal numbers (2 digits or more). Numbers "
+"the server offers no status for (e.g. emergency numbers) are left out "
+"automatically."
+msgstr ""
+"内線番号 (2 桁以上) を持つすべての LDAP 電話帳エントリ。サーバーが状態を提供"
+"しない番号 (緊急番号など) は自動的に除外されます。"
+
+#: src/settingsdialog.cpp:399
+#, kde-format
+msgid "digits"
+msgstr "桁"
+
+#: src/settingsdialog.cpp:401
+#, kde-format
+msgid "Extensions:"
+msgstr "内線:"
+
+#: src/settingsdialog.cpp:403
+#, kde-format
+msgid ""
+"Internal extensions shown in a list with their status (free, busy, "
+"offline).\n"
+"The server must offer presence for them (Asterisk: a hint per extension)."
+msgstr ""
+"内線を状態 (空き、通話中、オフライン) とともにリストに表示します。\n"
+"サーバーがそれらのプレゼンスを提供している必要があります (Asterisk: 内線ごと"
+"に hint)。"
+
+#: src/settingsdialog.cpp:407
+#, kde-format
+msgid "additional extensions not in the phonebook, e.g. 10, 20"
+msgstr "電話帳にない追加の内線 (例: 10, 20)"
+
+#: src/settingsdialog.cpp:408
+#, kde-format
+msgid "e.g. 100, 1000, 2000"
+msgstr "例: 100, 1000, 2000"
+
+#: src/settingsdialog.cpp:414
+#, kde-format
+msgid "RFC 4733 / RTP events (recommended)"
+msgstr "RFC 4733 / RTP イベント (推奨)"
+
+#: src/settingsdialog.cpp:415
+#, kde-format
+msgid "SIP INFO"
+msgstr "SIP INFO"
+
+#: src/settingsdialog.cpp:416
+#, kde-format
+msgid "Automatic"
+msgstr "自動"
+
+#: src/settingsdialog.cpp:418
+#, kde-format
+msgid ""
+"Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, "
+"dtmf_mode=info needs SIP INFO."
+msgstr ""
+"サーバーと一致させる必要があります: 例えば Asterisk の dtmf_mode=rfc4733 に"
+"は RFC 4733、dtmf_mode=info には SIP INFO が必要です。"
+
+#: src/settingsdialog.cpp:419
+#, kde-format
+msgid "DTMF:"
+msgstr "DTMF:"
+
+#: src/settingsdialog.cpp:420
+#, kde-format
+msgid "Account"
+msgstr "アカウント"
+
+#: src/settingsdialog.cpp:425
+#, kde-format
+msgid "System default"
+msgstr "システムの既定"
+
+#: src/settingsdialog.cpp:430
+#, kde-format
+msgid "%1 (not connected)"
+msgstr "%1 (未接続)"
+
+#: src/settingsdialog.cpp:445
+#, kde-format
+msgid "Choose ring tone"
+msgstr "着信音を選択"
+
+#: src/settingsdialog.cpp:448
+#, kde-format
+msgid "Ring tone"
+msgstr "着信音"
+
+#: src/settingsdialog.cpp:448
+#, kde-format
+msgid "Sounds (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"
+msgstr "サウンド (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"
+
+#: src/settingsdialog.cpp:453
+#, kde-format
+msgid "Test"
+msgstr "テスト"
+
+#: src/settingsdialog.cpp:462
+#, kde-format
+msgid "Once"
+msgstr "1 回"
+
+#: src/settingsdialog.cpp:463
+#, kde-format
+msgid "Continuously until answered"
+msgstr "応答するまで繰り返す"
+
+#: src/settingsdialog.cpp:465 src/settingsdialog.cpp:556
+#: src/settingsdialog.cpp:563
+#, kde-format
+msgid "Microphone:"
+msgstr "マイク:"
+
+#: src/settingsdialog.cpp:466
+#, kde-format
+msgid "Speaker / headset:"
+msgstr "スピーカー / ヘッドセット:"
+
+#: src/settingsdialog.cpp:467
+#, kde-format
+msgid "Echo cancellation in KSipPhone (WebRTC)"
+msgstr "KSipPhone のエコーキャンセル (WebRTC)"
+
+#: src/settingsdialog.cpp:469
+#, kde-format
+msgid ""
+"Leave off if the microphone already comes through PipeWire's echo "
+"cancellation (module-echo-cancel / an \"Echo Cancellation Source\"), "
+"otherwise the echo is cancelled twice."
+msgstr ""
+"マイクがすでに PipeWire のエコーキャンセル (module-echo-cancel / 「Echo "
+"Cancellation Source」) を通っている場合はオフのままにしてください。そうでない"
+"とエコーが二重に除去されます。"
+
+#: src/settingsdialog.cpp:472
+#, kde-format
+msgid "Ring on:"
+msgstr "着信音の出力先:"
+
+#: src/settingsdialog.cpp:473
+#, kde-format
+msgid "Ring tone:"
+msgstr "着信音:"
+
+#: src/settingsdialog.cpp:474
+#, kde-format
+msgid "Ring:"
+msgstr "鳴らし方:"
+
+#: src/settingsdialog.cpp:476
+#, kde-format
+msgid "Show calls silently"
+msgstr "着信を音なしで表示"
+
+#: src/settingsdialog.cpp:477
+#, kde-format
+msgid "Reject calls (busy)"
+msgstr "着信を拒否 (話し中)"
+
+#: src/settingsdialog.cpp:479
+#, kde-format
+msgid ""
+"What happens with incoming calls while \"Do not disturb\" is on (tray menu "
+"or window)"
+msgstr ""
+"「おやすみモード」がオンのとき着信をどう扱うか (トレイメニューまたはウィンド"
+"ウ)"
+
+#: src/settingsdialog.cpp:480
+#, kde-format
+msgid "Do not disturb:"
+msgstr "おやすみモード:"
+
+#: src/settingsdialog.cpp:482
+#, kde-format
+msgid "Also when the desktop's \"Do not disturb\" is on"
+msgstr "デスクトップの「おやすみモード」がオンのときも"
+
+#: src/settingsdialog.cpp:487
+#, kde-format
+msgid "Pause music and videos during calls"
+msgstr "通話中は音楽と動画を一時停止"
+
+#: src/settingsdialog.cpp:489
+#, kde-format
+msgid ""
+"Media players (MPRIS) are paused when a call starts and resumed afterwards"
+msgstr ""
+"通話開始時にメディアプレーヤー (MPRIS) を一時停止し、終了後に再開します"
+
+#: src/settingsdialog.cpp:491
+#, kde-format
+msgid "Answer and hang up with media keys and headset buttons"
+msgstr "メディアキーとヘッドセットのボタンで応答・切断"
+
+#: src/settingsdialog.cpp:493
+#, kde-format
+msgid "Play/pause answers a ringing call and ends a running one"
+msgstr "再生/一時停止キーで着信に応答し、通話中なら切断します"
+
+#: src/settingsdialog.cpp:496
+#, kde-format
+msgid "Audio"
+msgstr "オーディオ"
+
+#: src/settingsdialog.cpp:504
+#, kde-format
+msgid "URI:"
+msgstr "URI:"
+
+#: src/settingsdialog.cpp:505
+#, kde-format
+msgid "Base DN:"
+msgstr "ベース DN:"
+
+#: src/settingsdialog.cpp:506
+#, kde-format
+msgid ""
+"Optional: an LDAP directory (read anonymously) for searching contacts and "
+"showing caller names and photos."
+msgstr ""
+"任意: 連絡先の検索と発信者の名前・写真の表示に使う LDAP ディレクトリ (匿名で"
+"読み取り)。"
+
+#: src/settingsdialog.cpp:511
+#, kde-format
+msgid "Also use the address book of this computer"
+msgstr "このコンピュータのアドレス帳も使用"
+
+#: src/settingsdialog.cpp:513
+#, kde-format
+msgid ""
+"Asked after LDAP: for names and photos of callers and for the search in the "
+"dialer.\n"
+"Sources: %1"
+msgstr ""
+"LDAP の後に参照: 発信者の名前と写真、ダイヤル画面での検索に使います。\n"
+"ソース: %1"
+
+#: src/settingsdialog.cpp:518
+#, kde-format
+msgid "First name Last name"
+msgstr "名 姓"
+
+#: src/settingsdialog.cpp:519
+#, kde-format
+msgid "Last name, First name"
+msgstr "姓, 名"
+
+#: src/settingsdialog.cpp:521
+#, kde-format
+msgid "How names are shown and sorted in the search results"
+msgstr "検索結果での名前の表示と並び順"
+
+#: src/settingsdialog.cpp:522
+#, kde-format
+msgid "Names:"
+msgstr "名前:"
+
+#: src/settingsdialog.cpp:523
+#, kde-format
+msgid "Phonebook"
+msgstr "電話帳"
+
+#: src/settingsdialog.cpp:539
+#, kde-format
+msgid "Keep above other windows"
+msgstr "他のウィンドウより手前に表示"
+
+#: src/settingsdialog.cpp:541
+#, kde-format
+msgid "Window:"
+msgstr "ウィンドウ:"
+
+#: src/settingsdialog.cpp:554
+#, kde-format
+msgid "Follow the system microphone mute"
+msgstr "システムのマイクミュートに連動"
+
+#: src/settingsdialog.cpp:557
+#, kde-format
+msgid ""
+"The mute button shows a microphone muted elsewhere (mic-mute key, desktop, "
+"headset) and mutes system-wide. Restored after the call."
+msgstr ""
+"ミュートボタンは他の場所 (マイクミュートキー、デスクトップ、ヘッドセット) で"
+"ミュートされたマイクを反映し、システム全体をミュートします。通話後に元に戻り"
+"ます。"
+
+#: src/settingsdialog.cpp:561
+#, kde-format
+msgid "Push to talk"
+msgstr "プッシュトゥトーク"
+
+#: src/settingsdialog.cpp:564
+#, kde-format
+msgid ""
+"During calls the microphone is only open while the push-to-talk key is held."
+msgstr ""
+"通話中は、プッシュトゥトークのキーを押している間だけマイクがオンになります。"
+
+#: src/settingsdialog.cpp:565
+#, kde-format
+msgid "Global:"
+msgstr "グローバル:"
+
+#: src/settingsdialog.cpp:565
+#, kde-format
+msgid ""
+"Keys for accept, hang up, mute, push to talk, show dialer, do not disturb "
+"and calling the number in the clipboard: System Settings > Keyboard > "
+"Shortcuts > KSipPhone."
+msgstr ""
+"応答、切断、ミュート、プッシュトゥトーク、ダイヤル画面の表示、おやすみモー"
+"ド、クリップボードの番号への発信のキー: システム設定 > キーボード > ショート"
+"カット > KSipPhone。"
+
+#: src/settingsdialog.cpp:568
+#, kde-format
+msgid ""
+"<table><tr><td>Ctrl+Enter</td><td>Call / accept</td></tr><tr><td>Esc</"
+"td><td>Hang up / decline</td></tr><tr><td>Ctrl+M</td><td>Mute</td></"
+"tr><tr><td>Ctrl+P</td><td>Hold</td></tr><tr><td>Ctrl+T</td><td>Transfer / "
+"connect / swap</td></tr><tr><td>Ctrl+F</td><td>Search</td></"
+"tr><tr><td>Ctrl+E</td><td>Filter extensions</td></tr><tr><td>Ctrl+L</"
+"td><td>Show / hide extension list</td></tr><tr><td>Ctrl+H</td><td>Call "
+"history</td></tr><tr><td>Ctrl+D</td><td>Do not disturb</td></"
+"tr><tr><td>Ctrl+Shift+M</td><td>Call voicemail</td></"
+"tr><tr><td>Ctrl+Shift+T</td><td>Keep window on top</td></tr><tr><td>Ctrl+,</"
+"td><td>Settings</td></tr><tr><td>Ctrl+W</td><td>Hide window</td></"
+"tr><tr><td>Ctrl+Q</td><td>Quit</td></tr></table>"
+msgstr ""
+"<table><tr><td>Ctrl+Enter</td><td>発信 / 応答</td></tr><tr><td>Esc</td><td>切"
+"断 / 拒否</td></tr><tr><td>Ctrl+M</td><td>ミュート</td></tr><tr><td>Ctrl+P</"
+"td><td>保留</td></tr><tr><td>Ctrl+T</td><td>転送 / 接続 / 切り替え</td></"
+"tr><tr><td>Ctrl+F</td><td>検索</td></tr><tr><td>Ctrl+E</td><td>内線を絞り込み"
+"</td></tr><tr><td>Ctrl+L</td><td>内線リストの表示/非表示</td></"
+"tr><tr><td>Ctrl+H</td><td>通話履歴</td></tr><tr><td>Ctrl+D</td><td>おやすみ"
+"モード</td></tr><tr><td>Ctrl+Shift+M</td><td>留守番電話に発信</td></"
+"tr><tr><td>Ctrl+Shift+T</td><td>ウィンドウを最前面に</td></tr><tr><td>Ctrl+,"
+"</td><td>設定</td></tr><tr><td>Ctrl+W</td><td>ウィンドウを隠す</td></"
+"tr><tr><td>Ctrl+Q</td><td>終了</td></tr></table>"
+
+#: src/settingsdialog.cpp:590
+#, kde-format
+msgid "In the window:"
+msgstr "ウィンドウ内:"
+
+#: src/settingsdialog.cpp:592
+#, kde-format
+msgid "Controls"
+msgstr "操作"
+
+#: src/transferdialog.cpp:16
+#, kde-format
+msgid "Transfer call"
+msgstr "通話を転送"
+
+#: src/transferdialog.cpp:18
+#, kde-format
+msgid "Transfer the call to:"
+msgstr "通話の転送先:"
+
+#: src/transferdialog.cpp:22
+#, kde-format
+msgid ""
+"<b>Consult first</b>: you talk to the target while the caller waits, then "
+"connect them.<br><b>Connect now</b>: the call is handed over immediately."
+msgstr ""
+"<b>先に相談</b>: 相手を待たせたまま転送先と話し、その後につなぎます。<br><b>"
+"すぐに接続</b>: 通話をすぐに引き渡します。"
+
+#: src/transferdialog.cpp:30
+#, kde-format
+msgid "Consult first"
+msgstr "先に相談"
+
+#: src/transferdialog.cpp:32
+#, kde-format
+msgid "Connect now"
+msgstr "すぐに接続"

@@ -18,6 +18,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QLocalServer>
+#include <QLocale>
 #include <QLocalSocket>
 
 // Single instance without D-Bus (works on all platforms): the first instance listens on a
@@ -78,6 +79,15 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     app.setQuitOnLastWindowClosed(false);
     KLocalizedString::setApplicationDomain("ksipphone");
+    // right-to-left UI (Arabic, Persian, Urdu ...) when such a translation is used; Qt only does
+    // this by itself when its own translations are loaded, which KI18n does not do
+    for (const QString &lang : KLocalizedString::languages()) {
+        if (lang.startsWith(QLatin1String("en")) || KLocalizedString::isApplicationTranslatedInto(lang)) {
+            if (QLocale(lang).textDirection() == Qt::RightToLeft)
+                QGuiApplication::setLayoutDirection(Qt::RightToLeft);
+            break;
+        }
+    }
 
     QCommandLineParser parser;
     parser.addOption({QStringLiteral("minimized"), i18n("Start hidden in the system tray")});

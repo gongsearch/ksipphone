@@ -73,6 +73,7 @@ private:
     int callInfoHeight() const;
     void learnCallInfoHeight();
     void applyExtVisibility();
+    void updateCallButton(); // enabled only when a call can really be made (or accepted)
     void equalizeKeypad(); // all six grid columns equally wide: keys never depend on the buttons below
     void saveGeometryNow();
     void updateTransferButtons();
@@ -91,6 +92,7 @@ private:
     QToolButton *m_dnd;
     QToolButton *m_settings = nullptr, *m_history = nullptr;
     bool m_alwaysOnTop = false;
+    bool m_registered = false;
     class QSpacerItem *m_callSpace = nullptr;
     mutable int m_learnedCallInfo = -1; // measured call info height (settings), -1: not read yet
     class QFrame *m_waitBox;
@@ -106,7 +108,7 @@ private:
     int m_extShow = 0; // 0 all, 1 online (free or busy), 2 only free
     QHash<QString, Engine::Presence> m_presence;
     Engine::CallState m_consult = Engine::CallState::Idle;
-    QPushButton *m_call, *m_hangup;
+    QPushButton *m_call = nullptr, *m_hangup = nullptr;
     QToolButton *m_mute, *m_hold, *m_vm, *m_transfer;
     Engine::CallState m_state = Engine::CallState::Idle;
 };

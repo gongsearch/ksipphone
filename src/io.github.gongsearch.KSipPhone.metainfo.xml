@@ -6,6 +6,22 @@
   <project_license>MIT</project_license>
   <name>KSipPhone</name>
   <summary>A small SIP phone for KDE Plasma</summary>
+  <summary xml:lang="ar">هاتف SIP صغير لـ KDE Plasma</summary>
+  <summary xml:lang="cs">Malý SIP telefon pro KDE Plasma</summary>
+  <summary xml:lang="de">Ein kleines SIP-Telefon für KDE Plasma</summary>
+  <summary xml:lang="es">Un pequeño teléfono SIP para KDE Plasma</summary>
+  <summary xml:lang="fa">یک تلفن SIP کوچک برای KDE Plasma</summary>
+  <summary xml:lang="fr">Un petit téléphone SIP pour KDE Plasma</summary>
+  <summary xml:lang="hi">KDE Plasma के लिए एक छोटा SIP फ़ोन</summary>
+  <summary xml:lang="it">Un piccolo telefono SIP per KDE Plasma</summary>
+  <summary xml:lang="ja">KDE Plasma 用の小さな SIP 電話</summary>
+  <summary xml:lang="nl">Een kleine SIP-telefoon voor KDE Plasma</summary>
+  <summary xml:lang="pl">Mały telefon SIP dla KDE Plasma</summary>
+  <summary xml:lang="pt_BR">Um pequeno telefone SIP para o KDE Plasma</summary>
+  <summary xml:lang="ru">Небольшой SIP-телефон для KDE Plasma</summary>
+  <summary xml:lang="sv">En liten SIP-telefon för KDE Plasma</summary>
+  <summary xml:lang="ur">KDE Plasma کے لیے ایک چھوٹا SIP فون</summary>
+  <summary xml:lang="zh_CN">适用于 KDE Plasma 的小巧 SIP 电话</summary>
   <description>
     <p>KSipPhone is an audio-only SIP softphone that lives in the Plasma system tray. It uses baresip as SIP and media engine and integrates it into the desktop.</p>
     <ul>

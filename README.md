@@ -133,7 +133,10 @@ KSipPhone runs.
 
 ## Translations
 
-KSipPhone uses KDE's gettext-based i18n. Available: German (`po/de`).
+KSipPhone uses KDE's gettext-based i18n. Available: German, French, Spanish, Italian, Dutch,
+Polish, Portuguese (Brazil), Czech, Swedish, Russian, Japanese, Chinese (Simplified), Hindi,
+Arabic, Persian and Urdu (right-to-left languages get a mirrored layout). Except for German the
+translations are machine-assisted - corrections by native speakers are very welcome.
 After changing user-visible strings run `scripts/update-translations.sh` to update
 `po/ksipphone.pot` and merge it into all languages. A new language is a copy of the
 template as `po/<lang>/ksipphone.po`; pull requests are welcome.

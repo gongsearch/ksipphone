@@ -146,7 +146,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     m_number = new SearchField(phonebook, this);
     // picking a search result calls right away (like a click in the extension list); during a call it transfers
     connect(m_number, &SearchField::numberChosen, this, [this](const QString &n) {
-        if (m_state == Engine::CallState::Idle)
+        if (m_state == Engine::CallState::Idle && m_registered)
             Q_EMIT dialRequested(n);
         else if (m_state == Engine::CallState::Established && m_consult == Engine::CallState::Idle)
             Q_EMIT transferRequested(n);
@@ -168,6 +168,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     body->setRowStretch(1, 1);
     lay->addLayout(body, 1);
     connect(m_number, &SearchField::numberEntered, this, &MainWindow::callClicked); // Enter on a typed number calls
+    connect(m_number, &QLineEdit::textChanged, this, &MainWindow::updateCallButton);
 
     m_pbError = new QLabel(this);
     m_pbError->setWordWrap(true);
@@ -255,7 +256,9 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         m_keys.append(b);
         b->setFont(kf);
         connect(b, &QPushButton::clicked, this, [this, k = keys[i]] { keypad(k); });
-        grid->addWidget(b, i / 3, (i % 3) * 2, 1, 2);
+        // phone keypads keep 1 2 3 from left to right also in right-to-left languages
+        const int c = QGuiApplication::isRightToLeft() ? 2 - i % 3 : i % 3;
+        grid->addWidget(b, i / 3, c * 2, 1, 2);
     }
     // internal extensions with presence status, next to the keypad: filter field + options, list
     m_extPanel = new QWidget(this); // filter field + options button
@@ -319,7 +322,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     m_ext->hide();
     connect(m_ext, &QListWidget::itemClicked, this, [this](QListWidgetItem *it) {
         const QString ext = it->data(ExtNumberRole).toString();
-        if (m_state == Engine::CallState::Idle)
+        if (m_state == Engine::CallState::Idle && m_registered)
             Q_EMIT dialRequested(ext);
         else if (m_state == Engine::CallState::Established && m_consult == Engine::CallState::Idle)
             Q_EMIT transferRequested(ext);
@@ -419,6 +422,16 @@ void MainWindow::moveEvent(QMoveEvent *event)
         m_saveTimer->start();
 }
 
+void MainWindow::updateCallButton()
+{
+    if (!m_call)
+        return;
+    const bool incoming = m_state == Engine::CallState::Incoming;
+    const bool canDial = m_state == Engine::CallState::Idle && m_registered && !m_number->text().trimmed().isEmpty();
+    m_call->setEnabled(incoming || canDial);
+    m_call->setToolTip(!incoming && m_state == Engine::CallState::Idle && !m_registered ? i18n("Not registered") : QString());
+}
+
 void MainWindow::equalizeKeypad()
 {
     // every widget in the 6-column grid (keys span 2, mute/hold/transfer 2, call/hang up 3) needs
@@ -467,6 +480,8 @@ void MainWindow::applyExtVisibility()
 
 void MainWindow::setRegistration(const QString &text, bool ok)
 {
+    m_registered = ok;
+    updateCallButton();
     m_reg->setText(QStringLiteral("<span style='color:%1'>●</span> %2").arg(ok ? QStringLiteral("#2e9d4c") : QStringLiteral("#c0392b"), text.toHtmlEscaped()));
 }
 
@@ -542,7 +557,7 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
             resize(width(), minH);
         }
     });
-    m_call->setEnabled(idle || state == Engine::CallState::Incoming);
+    updateCallButton();
     m_call->setText(state == Engine::CallState::Incoming ? i18n("Accept") : i18n("Call"));
     m_hangup->setEnabled(!idle);
     m_hangup->setText(state == Engine::CallState::Incoming ? i18n("Decline") : i18n("Hang up"));
@@ -815,7 +830,7 @@ void MainWindow::callClicked()
         Q_EMIT acceptRequested();
         return;
     }
-    if (m_state != Engine::CallState::Idle)
+    if (m_state != Engine::CallState::Idle || !m_registered)
         return;
     m_number->clearResults();
     const QString t = m_number->text().trimmed();
