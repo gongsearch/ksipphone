@@ -64,6 +64,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="0.2.1" date="2026-11-26">
+      <description>
+        <p>Windows: fixes the engine not starting because libre.dll was missing from the installer.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-11-26">
       <description>
         <p>Packages for all platforms and a more portable engine:</p>

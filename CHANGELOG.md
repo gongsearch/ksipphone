@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 – 2026-11-26
+
+- Windows: the engine (`baresip.exe`) did not start because `libre.dll` was missing from the installer and the
+  portable ZIP. libre is now linked statically, and the build checks that every DLL is part of the package.
+- Packaging: the `.deb` is uploaded to the release automatically.
+
 ## 0.2.0 – 2026-11-26
 
 Packages for all platforms and a more portable engine.

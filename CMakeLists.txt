@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(ksipphone VERSION 0.2.0 LANGUAGES CXX)
+project(ksipphone VERSION 0.2.1 LANGUAGES CXX)
 
 set(QT_MIN_VERSION "6.6.0")
 set(KF_MIN_VERSION "6.0.0")

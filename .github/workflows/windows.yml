@@ -61,7 +61,9 @@ jobs:
           D="$PWD/deps"
           git clone --depth 1 -b "$BARESIP_VERSION" https://github.com/baresip/re.git
           # re 4.6 + OpenSSL 4 (const X509_NAME getters): GCC >= 14 makes the pointer mismatch an error
+          # static libre: baresip.exe must not depend on a libre.dll (0.2.0 shipped without it)
           logrun re-configure cmake -S re -B re/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$D" \
+            -DLIBRE_BUILD_SHARED=OFF -DLIBRE_BUILD_STATIC=ON \
             "-DCMAKE_C_FLAGS=-Wno-error=incompatible-pointer-types -Wno-deprecated-declarations"
           logrun re-build cmake --build re/build
           logrun re-install cmake --install re/build
@@ -99,7 +101,7 @@ jobs:
           # all remaining MSYS2 DLLs needed by the executables and Qt plugins
           for round in 1 2 3 4; do
             find "$B" -iname '*.exe' -o -iname '*.dll' | while read -r f; do
-              ldd "$f" | awk '/\/ucrt64\// {print $3}'
+              ldd "$f" | awk '/\/ucrt64\/|\/deps\// {print $3}'
             done | sort -u | while read -r dll; do
               [ -f "$B/$(basename "$dll")" ] || cp "$dll" "$B/"
             done
@@ -113,7 +115,17 @@ jobs:
           # ksipphone.exe is a GUI program (no console), so only check that every DLL resolves
           ! ldd bundle/ksipphone.exe | grep -i "not found"
           ! ldd bundle/baresip.exe | grep -i "not found"
-          ./bundle/baresip.exe -h 2>&1 | head -5 || true
+          # baresip.exe must start with ONLY the bundle on the search path (catches DLLs taken from the build tree)
+          out=$(cd bundle && PATH="$PWD:/usr/bin" ./baresip.exe -h 2>&1; echo "rc=$?")
+          echo "$out" | head -5
+          echo "$out" | grep -q "Usage: baresip" || { echo "::error title=baresip.exe does not start from the bundle::$(echo "$out" | tail -3)"; exit 1; }
+          # all DLLs that the bundled executables import must be inside the bundle
+          for exe in bundle/ksipphone.exe bundle/baresip.exe; do
+            objdump -p "$exe" | awk '/DLL Name:/ {print $3}' | while read -r dll; do
+              [ -f "bundle/$dll" ] || [ -f "/c/Windows/System32/$dll" ] || [ -f "/c/Windows/System32/${dll,,}" ] \
+                || { echo "::error title=missing DLL::$exe needs $dll"; exit 1; }
+            done
+          done
 
       - name: Installer
         run: |
