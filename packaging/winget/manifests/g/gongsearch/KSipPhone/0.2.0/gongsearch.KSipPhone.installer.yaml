@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+PackageIdentifier: gongsearch.KSipPhone
+PackageVersion: 0.2.0
+InstallerType: nullsoft
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+UpgradeBehavior: install
+Protocols:
+  - tel
+  - sip
+  - sips
+  - callto
+ReleaseDate: 2026-11-26
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/gongsearch/ksipphone/releases/download/v0.2.0/KSipPhone-0.2.0-setup.exe
+    InstallerSha256: 4AA8D3A95039FDF68122CB07BC186C9663C7DD109668A2980F5A576C670A63BE
+ManifestType: installer
+ManifestVersion: 1.10.0

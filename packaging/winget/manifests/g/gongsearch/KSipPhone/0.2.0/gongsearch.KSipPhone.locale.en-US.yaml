@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
+PackageIdentifier: gongsearch.KSipPhone
+PackageVersion: 0.2.0
+PackageLocale: en-US
+Publisher: gongsearch
+PublisherUrl: https://github.com/gongsearch
+PublisherSupportUrl: https://github.com/gongsearch/ksipphone/issues
+PackageName: KSipPhone
+PackageUrl: https://github.com/gongsearch/ksipphone
+License: MIT
+LicenseUrl: https://github.com/gongsearch/ksipphone/blob/main/LICENSE
+ShortDescription: A small SIP softphone that lives in the system tray
+Description: |-
+  KSipPhone is an audio-only SIP softphone built on the baresip engine. It sits in the system tray,
+  shows incoming calls with caller name and photo, offers a voicemail indicator, an LDAP phonebook
+  search, HD audio (G.722, Opus), and handles tel:, sip: and callto: links.
+Moniker: ksipphone
+Tags:
+  - sip
+  - voip
+  - softphone
+  - telephony
+  - baresip
+ReleaseNotesUrl: https://github.com/gongsearch/ksipphone/releases/tag/v0.2.0
+ManifestType: defaultLocale
+ManifestVersion: 1.10.0
