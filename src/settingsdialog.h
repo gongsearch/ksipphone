@@ -23,6 +23,8 @@ struct Settings {
     bool ringLoop = false;
     bool dndReject = false;       // do not disturb: reject calls (else: show them silently)
     bool dndFollowSystem = true;  // also when the desktop's do-not-disturb is on
+    bool pauseMedia = true;       // pause media players during calls (MPRIS)
+    bool mediaKeys = true;        // media keys / headset buttons answer and hang up
     bool echoCancel = false; // baresip webrtc_aec
     QString micDevice, speakerDevice, ringDevice, ringFile; // PipeWire node names, "" = default
     static Settings load();
@@ -52,6 +54,7 @@ private:
     QComboBox *m_nameFormat;
     QComboBox *m_ring, *m_mic, *m_speaker, *m_ringDev, *m_dnd;
     class QCheckBox *m_dndSystem = nullptr;
+    class QCheckBox *m_pauseMedia = nullptr, *m_mediaKeys = nullptr;
     QLineEdit *m_ringFile;
     class Ringer *m_preview;
     bool m_pwChanged = false;

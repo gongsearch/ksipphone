@@ -78,6 +78,7 @@ private:
     QPixmap m_consultPhoto;
     QPointer<Desktop::Notification> m_waitNote;
     CallLog *m_callLog;
+    class MediaControl *m_media;
     QPointer<class CallLogDialog> m_historyDialog;
     bool m_callIncoming = false;
     QDateTime m_callStart;

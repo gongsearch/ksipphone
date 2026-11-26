@@ -3,6 +3,7 @@
 #include "ringer.h"
 #include "codecs.h"
 #include "localcontacts.h"
+#include "mediacontrol.h"
 
 #include <KLocalizedString>
 
@@ -70,6 +71,8 @@ Settings Settings::load()
     s.ringLoop = c.value(QStringLiteral("RingContinuously"), false).toBool();
     s.dndReject = c.value(QStringLiteral("DndReject"), false).toBool();
     s.dndFollowSystem = c.value(QStringLiteral("DndFollowSystem"), true).toBool();
+    s.pauseMedia = c.value(QStringLiteral("PauseMedia"), true).toBool();
+    s.mediaKeys = c.value(QStringLiteral("MediaKeys"), true).toBool();
     s.echoCancel = c.value(QStringLiteral("EchoCancellation"), false).toBool();
     s.micDevice = str(c, QStringLiteral("Microphone"));
     s.speakerDevice = str(c, QStringLiteral("Speaker"));
@@ -104,6 +107,8 @@ void Settings::save() const
     c.setValue(QStringLiteral("RingContinuously"), ringLoop);
     c.setValue(QStringLiteral("DndReject"), dndReject);
     c.setValue(QStringLiteral("DndFollowSystem"), dndFollowSystem);
+    c.setValue(QStringLiteral("PauseMedia"), pauseMedia);
+    c.setValue(QStringLiteral("MediaKeys"), mediaKeys);
     c.setValue(QStringLiteral("EchoCancellation"), echoCancel);
     c.setValue(QStringLiteral("Microphone"), micDevice);
     c.setValue(QStringLiteral("Speaker"), speakerDevice);
@@ -443,6 +448,16 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_dndSystem->setChecked(s.dndFollowSystem);
     gf->addRow(QString(), m_dndSystem);
 #endif
+    if (MediaControl::isAvailable()) {
+        m_pauseMedia = new QCheckBox(i18n("Pause music and videos during calls"), gen);
+        m_pauseMedia->setChecked(s.pauseMedia);
+        m_pauseMedia->setToolTip(i18n("Media players (MPRIS) are paused when a call starts and resumed afterwards"));
+        gf->addRow(QString(), m_pauseMedia);
+        m_mediaKeys = new QCheckBox(i18n("Answer and hang up with media keys and headset buttons"), gen);
+        m_mediaKeys->setChecked(s.mediaKeys);
+        m_mediaKeys->setToolTip(i18n("Play/pause answers a ringing call and ends a running one"));
+        gf->addRow(QString(), m_mediaKeys);
+    }
     tabs->addTab(gen, QIcon::fromTheme(QStringLiteral("audio-volume-high")), i18n("Audio"));
 
     auto *pb = new QWidget(tabs);
@@ -490,6 +505,8 @@ Settings SettingsDialog::settings() const
     s.ringLoop = m_ring->currentIndex() == 1;
     s.dndReject = m_dnd->currentIndex() == 1;
     s.dndFollowSystem = m_dndSystem ? m_dndSystem->isChecked() : s.dndFollowSystem;
+    s.pauseMedia = m_pauseMedia ? m_pauseMedia->isChecked() : s.pauseMedia;
+    s.mediaKeys = m_mediaKeys ? m_mediaKeys->isChecked() : s.mediaKeys;
     s.echoCancel = m_aec->isChecked();
     s.micDevice = m_mic->currentData().toString();
     s.speakerDevice = m_speaker->currentData().toString();

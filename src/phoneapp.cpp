@@ -7,6 +7,7 @@
 #include "ringer.h"
 #include "transferdialog.h"
 #include "calllogdialog.h"
+#include "mediacontrol.h"
 
 #include <QAction>
 #include <QSettings>
@@ -53,6 +54,7 @@ PhoneApp::PhoneApp(QObject *parent)
     , m_tray(new Desktop::Tray(m_window, this))
     , m_ringer(new Ringer(this))
     , m_callLog(new CallLog(this))
+    , m_media(new MediaControl(this))
 {
     m_tray->setIconName(QStringLiteral("call-start"));
     m_phonebook->setLocalContacts(m_local);
@@ -73,6 +75,8 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_dndAction, &QAction::toggled, this, &PhoneApp::setDnd);
     connect(m_window, &MainWindow::dndToggled, this, &PhoneApp::setDnd);
     connect(m_window, &MainWindow::historyRequested, this, &PhoneApp::showHistory);
+    connect(m_media, &MediaControl::acceptRequested, m_engine, &Engine::accept);
+    connect(m_media, &MediaControl::hangupRequested, m_engine, &Engine::hangup);
     m_dnd = appSettings().value(QStringLiteral("General/DoNotDisturb"), false).toBool();
 #ifdef KSIPPHONE_HAVE_DBUS
     // the desktop's do-not-disturb (Plasma, GNOME via org.freedesktop.Notifications "Inhibited")
@@ -296,6 +300,13 @@ PhoneApp::PhoneApp(QObject *parent)
         m_prevState = s;
         m_window->setCall(s, peerText());
         updateTray();
+        // media: pause players, media keys answer / hang up (a silently shown call under do-not-disturb leaves the music)
+        if (s == Engine::CallState::Idle)
+            m_media->setCallState(MediaControl::State::Idle, {});
+        else if (s == Engine::CallState::Incoming)
+            m_media->setCallState(dndActive() ? MediaControl::State::Idle : MediaControl::State::Ringing, peerText());
+        else
+            m_media->setCallState(MediaControl::State::Active, peerText());
     });
     connect(qApp, &QApplication::aboutToQuit, m_engine, &Engine::stop);
 }
@@ -345,6 +356,7 @@ void PhoneApp::applySettings()
     m_phonebook->setNameFormat(static_cast<Phonebook::NameFormat>(s.nameFormat));
     m_engine->setAudioDevices(s.speakerDevice, s.micDevice, s.echoCancel);
     m_ringer->configure(s.ringFile, s.ringDevice, s.ringLoop);
+    m_media->configure(s.pauseMedia, s.mediaKeys);
     m_dndReject = s.dndReject;
     m_dndFollowSystem = s.dndFollowSystem;
     updateDnd();

@@ -15,6 +15,7 @@ add_executable(ksipphone
     transferdialog.cpp
     calllog.cpp
     calllogdialog.cpp
+    mediacontrol.cpp
 )
 
 target_include_directories(ksipphone PRIVATE ${LDAP_INCLUDE_DIR})
