@@ -6,12 +6,15 @@
 #include <QAbstractItemView>
 #include <QCompleter>
 #include <QIcon>
+#include <QKeyEvent>
 #include <QPainter>
 #include <QPixmap>
 #include <QStandardItemModel>
 #include <QStyle>
 #include <QStyledItemDelegate>
 #include <QTimer>
+
+#include <utility>
 
 static constexpr int NumberRole = Qt::UserRole + 1;
 
@@ -56,6 +59,16 @@ SearchField::SearchField(Phonebook *phonebook, QWidget *parent)
     m_completer->setCaseSensitivity(Qt::CaseInsensitive);
     setCompleter(m_completer);
     m_completer->popup()->setItemDelegate(new ResultDelegate(m_completer->popup()));
+    // installed after QCompleter's own filter, so it sees Enter first: was a result selected?
+    m_completer->popup()->installEventFilter(this);
+    connect(this, &QLineEdit::returnPressed, this, [this] {
+        if (std::exchange(m_completing, false))
+            return; // the completer dials the selected result (numberChosen)
+        const QString t = text().trimmed();
+        clearResults(); // no drop-down popping up again after Enter
+        if (!t.isEmpty())
+            Q_EMIT numberEntered(t);
+    });
     connect(m_completer, QOverload<const QModelIndex &>::of(&QCompleter::activated), this, [this](const QModelIndex &idx) {
         const QString n = idx.data(NumberRole).toString();
         QTimer::singleShot(0, this, [this, n] {
@@ -81,6 +94,26 @@ SearchField::SearchField(Phonebook *phonebook, QWidget *parent)
             clearResults();
     });
     connect(m_phonebook, &Phonebook::searchFinished, this, &SearchField::showResults);
+}
+
+bool SearchField::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_completer->popup() && event->type() == QEvent::KeyPress) {
+        const int key = static_cast<QKeyEvent *>(event)->key();
+        if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+            if (m_completer->popup()->isVisible() && m_completer->popup()->currentIndex().isValid()) {
+                m_completing = true; // QCompleter picks the result (numberChosen)
+                return false;
+            }
+            // no result selected: Enter means the typed text, the drop-down must not swallow it
+            const QString t = text().trimmed();
+            clearResults();
+            if (!t.isEmpty())
+                Q_EMIT numberEntered(t);
+            return true;
+        }
+    }
+    return QLineEdit::eventFilter(watched, event);
 }
 
 void SearchField::setNumber(const QString &number)

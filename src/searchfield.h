@@ -23,6 +23,10 @@ public:
 
 Q_SIGNALS:
     void numberChosen(const QString &number); // a search result was picked (click or Enter)
+    void numberEntered(const QString &text); // Enter on typed text (no search result selected)
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void showResults(int requestId, const QList<PhonebookEntry> &entries);
@@ -33,4 +37,5 @@ private:
     QTimer *m_timer;
     int m_requestId = -1;
     bool m_setting = false;
+    bool m_completing = false; // Enter went to a selected search result
 };

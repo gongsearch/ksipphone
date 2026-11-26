@@ -167,7 +167,7 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     body->setColumnStretch(1, 1); // extra width goes to the extension list
     body->setRowStretch(1, 1);
     lay->addLayout(body, 1);
-    connect(m_number, &QLineEdit::returnPressed, this, &MainWindow::callClicked);
+    connect(m_number, &SearchField::numberEntered, this, &MainWindow::callClicked); // Enter on a typed number calls
 
     m_pbError = new QLabel(this);
     m_pbError->setWordWrap(true);
@@ -792,8 +792,7 @@ void MainWindow::callClicked()
     }
     if (m_state != Engine::CallState::Idle)
         return;
-    if (m_number->popupVisible())
-        return; // Return selects the completion first
+    m_number->clearResults();
     const QString t = m_number->text().trimmed();
     if (!t.isEmpty())
         Q_EMIT dialRequested(t);

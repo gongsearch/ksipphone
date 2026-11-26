@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 – 2026-11-26
+
+- Enter in the number field calls the typed number, even while search results are shown (a selected result is still called as before)
+
 ## 1.0.1 – 2026-11-26
 
 - Picking a search result calls right away (during a call: transfer), like a click in the extension list
