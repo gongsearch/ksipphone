@@ -132,7 +132,7 @@ public:
 private:
     int gap(const QStyleOption *option, const QWidget *widget) const
     {
-        return qMax(6, pixelMetric(PM_CheckBoxLabelSpacing, option, widget));
+        return qMax(12, 2 * pixelMetric(PM_CheckBoxLabelSpacing, option, widget));
     }
 };
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "phoneapp.h"
+#include <QTabWidget>
 
 #include "mainwindow.h"
 #include "localcontacts.h"
@@ -244,6 +245,19 @@ void PhoneApp::openSettings()
     const Settings cur = Settings::load();
     const QString key = QStringLiteral("sip:%1@%2").arg(cur.user, cur.server);
     SettingsDialog dlg(cur, cur.user.isEmpty() ? QString() : readPassword(key), m_window->isVisible() ? m_window : nullptr);
+    // developer aid: KSIPPHONE_GRAB_DIR=<dir> saves images of each settings tab (only this dialog, not the screen)
+    if (const QString grabDir = qEnvironmentVariable("KSIPPHONE_GRAB_DIR"); !grabDir.isEmpty()) {
+        QTimer::singleShot(1500, &dlg, [&dlg, grabDir] {
+            auto *tabs = dlg.findChild<QTabWidget *>();
+            for (int i = 0; tabs && i < tabs->count(); ++i) {
+                tabs->setCurrentIndex(i);
+                QCoreApplication::processEvents();
+                dlg.grab().save(QStringLiteral("%1/settings-%2.png").arg(grabDir).arg(i));
+            }
+            if (tabs)
+                tabs->setCurrentIndex(0);
+        });
+    }
     if (dlg.exec() != QDialog::Accepted)
         return;
     const Settings s = dlg.settings();
