@@ -3,6 +3,7 @@
 #include "contactsource.h"
 
 
+#include <QCoreApplication>
 #include <QImage>
 #include <QLoggingCategory>
 #include <QPointer>
@@ -38,7 +39,7 @@ public:
                                   return;
                               }
                               QMetaObject::invokeMethod(
-                                  qApp, [self] {
+                                  QCoreApplication::instance(), [self] {
                                       if (self)
                                           self->reload();
                                   },
@@ -57,6 +58,7 @@ private:
         if ([CNContactStore authorizationStatusForEntityType:CNEntityTypeContacts] != CNAuthorizationStatusAuthorized)
             return;
         QList<LocalPerson> people;
+        QList<LocalPerson> *out = &people; // blocks capture C++ objects as const copies
         @autoreleasepool {
             NSArray *keys = @[
                 [CNContactFormatter descriptorForRequiredKeysForStyle:CNContactFormatterStyleFullName],
@@ -77,7 +79,7 @@ private:
                                                           p.name = QString::fromNSString(name.length ? name : c.organizationName);
                                                           if (NSData *d = c.thumbnailImageData)
                                                               p.photo = photoPng(QImage::fromData(QByteArray::fromNSData(d)));
-                                                          people.append(p);
+                                                          out->append(p);
                                                       }];
             if (!ok)
                 qCWarning(MACCONTACTS) << "reading contacts failed" << QString::fromNSString(error.localizedDescription ?: @"");
