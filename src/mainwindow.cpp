@@ -8,6 +8,8 @@
 #include <QCollator>
 #include <QMenu>
 #include <QSettings>
+#include <QMoveEvent>
+#include <QResizeEvent>
 #include <QStyledItemDelegate>
 
 #include <algorithm>
@@ -105,7 +107,19 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     m_vm->setAutoRaise(true);
     m_vm->setToolTip(i18n("Call voicemail"));
     connect(m_vm, &QToolButton::clicked, this, &MainWindow::voicemailRequested);
+    m_extToggle = new QToolButton(this);
+    m_extToggle->setIcon(QIcon::fromTheme(QStringLiteral("view-list-details")));
+    m_extToggle->setToolTip(i18n("Show or hide the extension list"));
+    m_extToggle->setAutoRaise(true);
+    m_extToggle->setCheckable(true);
+    m_extToggle->setChecked(appSettings().value(QStringLiteral("Window/ExtensionList"), true).toBool());
+    m_extToggle->hide();
+    connect(m_extToggle, &QToolButton::toggled, this, [this](bool on) {
+        appSettings().setValue(QStringLiteral("Window/ExtensionList"), on);
+        applyExtVisibility();
+    });
     top->addWidget(m_reg, 1);
+    top->addWidget(m_extToggle);
     top->addWidget(m_vm);
     top->addWidget(settings);
     lay->addLayout(top);
@@ -318,6 +332,53 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     setCall(Engine::CallState::Idle, {});
     // no explicit minimum: the layout's minimum (keypad, extension list) applies to width and height
     resize(380, sizeHint().height());
+    // saved window size and position (Wayland ignores the position)
+    if (const QByteArray g = appSettings().value(QStringLiteral("Window/Geometry")).toByteArray(); !g.isEmpty())
+        restoreGeometry(g);
+    m_wideWidth = width(); // the list (if configured) appears later and keeps this width
+    m_saveTimer = new QTimer(this);
+    m_saveTimer->setSingleShot(true);
+    m_saveTimer->setInterval(800);
+    connect(m_saveTimer, &QTimer::timeout, this, &MainWindow::saveGeometryNow);
+}
+
+void MainWindow::saveGeometryNow()
+{
+    if (m_state != Engine::CallState::Idle)
+        return; // the window may be enlarged for the call info
+    appSettings().setValue(QStringLiteral("Window/Geometry"), saveGeometry());
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    if (isVisible() && m_saveTimer)
+        m_saveTimer->start();
+}
+
+void MainWindow::moveEvent(QMoveEvent *event)
+{
+    QWidget::moveEvent(event);
+    if (isVisible() && m_saveTimer)
+        m_saveTimer->start();
+}
+
+void MainWindow::applyExtVisibility()
+{
+    const bool configured = !m_extensions.isEmpty();
+    const bool show = configured && m_extToggle->isChecked();
+    m_extToggle->setVisible(configured);
+    if (show == m_ext->isVisible())
+        return;
+    if (!show && m_ext->isVisible())
+        m_wideWidth = width(); // remember for showing it again
+    m_extPanel->setVisible(show);
+    m_ext->setVisible(show);
+    // shrink to the keypad when hiding, back to the earlier width when showing
+    QTimer::singleShot(0, this, [this, show] {
+        const int minW = minimumSizeHint().width();
+        resize(show ? qMax(minW, m_wideWidth) : minW, height());
+    });
 }
 
 void MainWindow::setRegistration(const QString &text, bool ok)
@@ -348,7 +409,18 @@ void MainWindow::setCall(Engine::CallState state, const QString &peerText)
         m_callTimer->stop();
         m_duration->hide();
     }
-    adjustSize();
+    // grow if the call info needs room; afterwards back to the size the user had
+    if (!idle && m_heightBeforeCall < 0)
+        m_heightBeforeCall = height();
+    QTimer::singleShot(0, this, [this, idle] {
+        const int minH = minimumSizeHint().height();
+        if (idle && m_heightBeforeCall >= 0) {
+            resize(width(), qMax(minH, m_heightBeforeCall));
+            m_heightBeforeCall = -1;
+        } else if (height() < minH) {
+            resize(width(), minH);
+        }
+    });
     m_call->setEnabled(idle || state == Engine::CallState::Incoming);
     m_call->setText(state == Engine::CallState::Incoming ? i18n("Accept") : i18n("Call"));
     m_hangup->setEnabled(!idle);
@@ -373,10 +445,8 @@ void MainWindow::setNumber(const QString &number)
 void MainWindow::setExtensions(const QList<QPair<QString, QString>> &extensions)
 {
     m_extensions = extensions;
-    m_extPanel->setVisible(!extensions.isEmpty());
-    m_ext->setVisible(!extensions.isEmpty());
+    applyExtVisibility();
     refreshExtList();
-    adjustSize();
 }
 
 void MainWindow::setPresence(const QHash<QString, Engine::Presence> &states)
@@ -610,6 +680,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    saveGeometryNow();
     // The window only hides; the phone keeps running in the system tray.
     hide();
     event->ignore();

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-26 12:41+0100\n"
+"POT-Creation-Date: 2026-11-26 12:58+0100\n"
 "PO-Revision-Date: 2026-11-25 23:30+0100\n"
 "Last-Translator: gongsearch\n"
 "Language-Team: German\n"
@@ -114,7 +114,7 @@ msgstr "Einstellungsdialog öffnen"
 msgid "tel: or sip: URI to call"
 msgstr "Anzurufende tel:- oder sip:-Adresse"
 
-#: src/main.cpp:87 src/main.cpp:101 src/mainwindow.cpp:89 src/phoneapp.cpp:132
+#: src/main.cpp:87 src/main.cpp:101 src/mainwindow.cpp:91 src/phoneapp.cpp:132
 #: src/phoneapp.cpp:245 src/phoneapp.cpp:443
 #, kde-format
 msgid "KSipPhone"
@@ -125,205 +125,210 @@ msgstr "KSipPhone"
 msgid "A small SIP phone for KDE Plasma"
 msgstr "Ein kleines SIP-Telefon für KDE Plasma"
 
-#: src/mainwindow.cpp:99 src/settingsdialog.cpp:265
+#: src/mainwindow.cpp:101 src/settingsdialog.cpp:265
 #, kde-format
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: src/mainwindow.cpp:106 src/mainwindow.cpp:533 src/phoneapp.cpp:56
+#: src/mainwindow.cpp:108 src/mainwindow.cpp:613 src/phoneapp.cpp:56
 #, kde-format
 msgid "Call voicemail"
 msgstr "Mailbox anrufen"
 
-#: src/mainwindow.cpp:193
+#: src/mainwindow.cpp:112
+#, kde-format
+msgid "Show or hide the extension list"
+msgstr "Nebenstellenliste ein- oder ausblenden"
+
+#: src/mainwindow.cpp:217
 #, kde-format
 msgid "Filter extensions"
 msgstr "Nebenstellen filtern"
 
-#: src/mainwindow.cpp:198
+#: src/mainwindow.cpp:222
 #, kde-format
 msgid "Sort and filter"
 msgstr "Sortieren und filtern"
 
-#: src/mainwindow.cpp:207
+#: src/mainwindow.cpp:231
 #, kde-format
 msgid "Sort by number"
 msgstr "Nach Nummer sortieren"
 
-#: src/mainwindow.cpp:207
+#: src/mainwindow.cpp:231
 #, kde-format
 msgid "Sort by first name"
 msgstr "Nach Vorname sortieren"
 
-#: src/mainwindow.cpp:207
+#: src/mainwindow.cpp:231
 #, kde-format
 msgid "Sort by last name"
 msgstr "Nach Nachname sortieren"
 
-#: src/mainwindow.cpp:207
+#: src/mainwindow.cpp:231
 #, kde-format
 msgid "Sort by status"
 msgstr "Nach Status sortieren"
 
-#: src/mainwindow.cpp:221
+#: src/mainwindow.cpp:245
 #, kde-format
 msgid "Show all extensions"
 msgstr "Alle Nebenstellen anzeigen"
 
-#: src/mainwindow.cpp:221
+#: src/mainwindow.cpp:245
 #, kde-format
 msgid "Only online (free or busy)"
 msgstr "Nur online (frei oder besetzt)"
 
-#: src/mainwindow.cpp:221
+#: src/mainwindow.cpp:245
 #, kde-format
 msgid "Only free extensions"
 msgstr "Nur freie Nebenstellen"
 
-#: src/mainwindow.cpp:243
+#: src/mainwindow.cpp:266
 #, kde-format
 msgid "Click to call; during a call click to transfer"
 msgstr "Klicken zum Anrufen; während eines Gesprächs klicken zum Weiterleiten"
 
-#: src/mainwindow.cpp:263
+#: src/mainwindow.cpp:283
 #, kde-format
 msgid "Mute"
 msgstr "Stumm"
 
-#: src/mainwindow.cpp:267
+#: src/mainwindow.cpp:287
 #, kde-format
 msgid "Mute microphone"
 msgstr "Mikrofon stummschalten"
 
-#: src/mainwindow.cpp:271 src/mainwindow.cpp:275
+#: src/mainwindow.cpp:291 src/mainwindow.cpp:295
 #, kde-format
 msgid "Hold"
 msgstr "Halten"
 
-#: src/mainwindow.cpp:279 src/mainwindow.cpp:502
+#: src/mainwindow.cpp:299 src/mainwindow.cpp:582
 #, kde-format
 msgid "Transfer"
 msgstr "Weiterleiten"
 
-#: src/mainwindow.cpp:283 src/mainwindow.cpp:503
+#: src/mainwindow.cpp:303 src/mainwindow.cpp:583
 #, kde-format
 msgid "Transfer the call"
 msgstr "Gespräch weiterleiten"
 
-#: src/mainwindow.cpp:290 src/mainwindow.cpp:344
+#: src/mainwindow.cpp:310 src/mainwindow.cpp:425
 #, kde-format
 msgid "Call"
 msgstr "Anrufen"
 
-#: src/mainwindow.cpp:291 src/mainwindow.cpp:346 src/mainwindow.cpp:506
+#: src/mainwindow.cpp:311 src/mainwindow.cpp:427 src/mainwindow.cpp:586
 #: src/phoneapp.cpp:57
 #, kde-format
 msgid "Hang up"
 msgstr "Auflegen"
 
-#: src/mainwindow.cpp:308 src/phoneapp.cpp:126 src/phoneapp.cpp:438
+#: src/mainwindow.cpp:331 src/phoneapp.cpp:126 src/phoneapp.cpp:438
 #, kde-format
 msgid "Not registered"
 msgstr "Nicht angemeldet"
 
-#: src/mainwindow.cpp:326 src/phoneapp.cpp:343
+#: src/mainwindow.cpp:396 src/phoneapp.cpp:343
 #, kde-format
 msgid "Incoming call"
 msgstr "Eingehender Anruf"
 
-#: src/mainwindow.cpp:327
+#: src/mainwindow.cpp:397
 #, kde-format
 msgid "Calling …"
 msgstr "Wird angerufen …"
 
-#: src/mainwindow.cpp:328
+#: src/mainwindow.cpp:398
 #, kde-format
 msgid "Ringing …"
 msgstr "Klingelt …"
 
-#: src/mainwindow.cpp:329 src/mainwindow.cpp:481
+#: src/mainwindow.cpp:399 src/mainwindow.cpp:561
 #, kde-format
 msgid "Connected"
 msgstr "Verbunden"
 
-#: src/mainwindow.cpp:344 src/phoneapp.cpp:347
+#: src/mainwindow.cpp:425 src/phoneapp.cpp:347
 #, kde-format
 msgid "Accept"
 msgstr "Annehmen"
 
-#: src/mainwindow.cpp:346 src/phoneapp.cpp:348
+#: src/mainwindow.cpp:427 src/phoneapp.cpp:348
 #, kde-format
 msgid "Decline"
 msgstr "Ablehnen"
 
-#: src/mainwindow.cpp:457
+#: src/mainwindow.cpp:537
 #, kde-format
 msgid "free"
 msgstr "frei"
 
-#: src/mainwindow.cpp:461
+#: src/mainwindow.cpp:541
 #, kde-format
 msgid "busy or ringing"
 msgstr "besetzt oder klingelt"
 
-#: src/mainwindow.cpp:465
+#: src/mainwindow.cpp:545
 #, kde-format
 msgid "offline"
 msgstr "offline"
 
-#: src/mainwindow.cpp:469
+#: src/mainwindow.cpp:549
 #, kde-format
 msgid "status unknown"
 msgstr "Status unbekannt"
 
-#: src/mainwindow.cpp:485
+#: src/mainwindow.cpp:565
 #, kde-format
 msgid "On hold – calling %1 …"
 msgstr "Gehalten – rufe %1 an …"
 
-#: src/mainwindow.cpp:488
+#: src/mainwindow.cpp:568
 #, kde-format
 msgid "On hold – %1 is ringing"
 msgstr "Gehalten – bei %1 klingelt es"
 
-#: src/mainwindow.cpp:491
+#: src/mainwindow.cpp:571
 #, kde-format
 msgid "On hold – talking to %1"
 msgstr "Gehalten – Rückfrage mit %1"
 
-#: src/mainwindow.cpp:502
+#: src/mainwindow.cpp:582
 #, kde-format
 msgid "Connect"
 msgstr "Verbinden"
 
-#: src/mainwindow.cpp:503
+#: src/mainwindow.cpp:583
 #, kde-format
 msgid "Connect the waiting caller with the consulted party"
 msgstr "Den wartenden Anrufer mit dem Rückfrage-Teilnehmer verbinden"
 
-#: src/mainwindow.cpp:506
+#: src/mainwindow.cpp:586
 #, kde-format
 msgid "Back"
 msgstr "Zurück"
 
-#: src/mainwindow.cpp:507
+#: src/mainwindow.cpp:587
 #, kde-format
 msgid "End the consultation and return to the waiting caller"
 msgstr "Rückfrage beenden und zum wartenden Anrufer zurückkehren"
 
-#: src/mainwindow.cpp:512
+#: src/mainwindow.cpp:592
 #, kde-format
 msgid "Phonebook: %1"
 msgstr "Telefonbuch: %1"
 
-#: src/mainwindow.cpp:532
+#: src/mainwindow.cpp:612
 #, kde-format
 msgid "1 new voice message - click to listen"
 msgid_plural "%1 new voice messages - click to listen"
 msgstr[0] "Eine neue Sprachnachricht – zum Anhören klicken"
 msgstr[1] "%1 neue Sprachnachrichten – zum Anhören klicken"
 
-#: src/mainwindow.cpp:558
+#: src/mainwindow.cpp:638
 #, kde-format
 msgid "Codec: %1"
 msgstr "Codec: %1"

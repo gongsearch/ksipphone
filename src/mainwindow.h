@@ -49,6 +49,8 @@ Q_SIGNALS:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
 
 private:
@@ -56,6 +58,8 @@ private:
     void callClicked();
     void updatePresenceIcons();
     void refreshExtList();
+    void applyExtVisibility();
+    void saveGeometryNow();
     void updateTransferButtons();
 
     QLabel *m_reg, *m_status, *m_pbError, *m_codec, *m_photo, *m_peerName, *m_duration;
@@ -68,6 +72,10 @@ private:
     QLineEdit *m_extFilter;
     QList<QPair<QString, QString>> m_extensions; // number, name
     int m_extSort = 0;                           // 0 number, 1 first name, 2 last name, 3 status
+    QToolButton *m_extToggle;
+    QTimer *m_saveTimer = nullptr;
+    int m_wideWidth = 0;
+    int m_heightBeforeCall = -1;
     int m_extShow = 0; // 0 all, 1 online (free or busy), 2 only free
     QHash<QString, Engine::Presence> m_presence;
     Engine::CallState m_consult = Engine::CallState::Idle;
