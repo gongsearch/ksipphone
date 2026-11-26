@@ -12,7 +12,7 @@
 #ifndef KSIPPHONE_BARESIP_MODULE_PATH
 #define KSIPPHONE_BARESIP_MODULE_PATH "/usr/lib/baresip/modules"
 #endif
-// Set for builds that ship a static baresip: the modules compiled into it (";" separated).
+// Set for builds that ship a static baresip: the modules compiled into it ("," separated).
 #ifndef KSIPPHONE_STATIC_BARESIP_MODULES
 #define KSIPPHONE_STATIC_BARESIP_MODULES ""
 #endif
@@ -77,7 +77,7 @@ bool Codecs::available(const CodecInfo &codec)
 bool Codecs::moduleAvailable(const QString &module)
 {
     // builds with a bundled static baresip know what is compiled in
-    static const QStringList compiledIn = QStringLiteral(KSIPPHONE_STATIC_BARESIP_MODULES).split(QLatin1Char(';'), Qt::SkipEmptyParts);
+    static const QStringList compiledIn = QStringLiteral(KSIPPHONE_STATIC_BARESIP_MODULES).split(QLatin1Char(','), Qt::SkipEmptyParts);
     if (!compiledIn.isEmpty())
         return compiledIn.contains(module);
 #if defined(Q_OS_WIN)

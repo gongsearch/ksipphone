@@ -53,10 +53,12 @@ add_subdirectory(src)
 if (KSIPPHONE_BUNDLE_BARESIP)
     include(BundledBaresip)
 endif()
+# ';' would split the compiler definition into several arguments: pass the module list comma separated
+string(REPLACE ";" "," _static_modules "${KSIPPHONE_STATIC_BARESIP_MODULES}")
 target_compile_definitions(ksipphone PRIVATE
     KSIPPHONE_BARESIP_MODULE_PATH="${BARESIP_MODULE_PATH}" KSIPPHONE_BARESIP_SHARE_PATH="${BARESIP_SHARE_PATH}"
     KSIPPHONE_BARESIP_EXECUTABLE="${BARESIP_EXECUTABLE}"
-    KSIPPHONE_STATIC_BARESIP_MODULES="${KSIPPHONE_STATIC_BARESIP_MODULES}")
+    KSIPPHONE_STATIC_BARESIP_MODULES="${_static_modules}")
 include(Packaging)
 ki18n_install(po)
 
