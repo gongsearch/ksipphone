@@ -64,6 +64,14 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="0.2.2" date="2026-11-26">
+      <description>
+        <ul>
+          <li>Codec selection as a sortable list with checkboxes; L16, AMR-WB and AMR when available</li>
+          <li>Windows/macOS: settings icon was missing</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.1" date="2026-11-26">
       <description>
         <p>Windows: fixes the engine not starting because libre.dll was missing from the installer.</p>

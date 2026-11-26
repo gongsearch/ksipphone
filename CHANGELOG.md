@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 – 2026-11-26
+
+- Settings: codecs as a list with checkboxes; drag & drop or the arrow buttons set the preference
+- More codecs: L16 (16 kHz, for the local network) in all packages; AMR-WB and AMR when the installed baresip
+  provides them. Codecs the engine cannot use are shown greyed out
+- Windows / macOS: all icons come from the bundled Breeze set (the settings icon was missing on Windows)
+
 ## 0.2.1 – 2026-11-26
 
 - Windows: the engine (`baresip.exe`) did not start because `libre.dll` was missing from the installer and the

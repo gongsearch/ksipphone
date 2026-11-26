@@ -1,6 +1,6 @@
 # Maintainer: gongsearch <66825717+gongsearch@users.noreply.github.com>
 pkgname=ksipphone
-pkgver=0.2.1
+pkgver=0.2.2
 pkgrel=1
 pkgdesc="A small SIP phone for KDE Plasma (baresip front end)"
 arch=('x86_64' 'aarch64')
