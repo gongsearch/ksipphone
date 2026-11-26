@@ -54,10 +54,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          apt-get install -y -qq gh
-          git config --global --add safe.directory "$PWD"
-          for i in $(seq 10); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 30; done
-          gh release upload "$GITHUB_REF_NAME" build/ksipphone_*.deb --clobber
+          # gh is not always installable in Debian testing: upload through the REST API with curl
+          apt-get install -y -qq curl jq >/dev/null
+          API="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          for i in $(seq 20); do
+            ID=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" "$API/releases/tags/$GITHUB_REF_NAME" | jq -r .id) && [ "$ID" != null ] && break
+            sleep 30
+          done
+          f=$(ls build/ksipphone_*.deb); n=$(basename "$f")
+          old=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" "$API/releases/$ID/assets" | jq -r ".[] | select(.name==\"$n\") | .id")
+          [ -n "$old" ] && curl -fsS -X DELETE -H "Authorization: Bearer $GH_TOKEN" "$API/releases/assets/$old"
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/vnd.debian.binary-package" \
+            --data-binary @"$f" "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$ID/assets?name=$n" | jq -r .browser_download_url
 
   rpm:
     name: .rpm (Fedora, distribution baresip)
