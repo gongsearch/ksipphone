@@ -8,6 +8,7 @@
 #include <QCollator>
 #include <QMenu>
 #include <QSettings>
+#include <QFrame>
 #include <QMoveEvent>
 #include <QResizeEvent>
 #include <QStyledItemDelegate>
@@ -118,7 +119,13 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
         appSettings().setValue(QStringLiteral("Window/ExtensionList"), on);
         applyExtVisibility();
     });
+    m_dnd = new QToolButton(this);
+    m_dnd->setAutoRaise(true);
+    m_dnd->setCheckable(true);
+    connect(m_dnd, &QToolButton::toggled, this, &MainWindow::dndToggled);
+    setDnd(false, false);
     top->addWidget(m_reg, 1);
+    top->addWidget(m_dnd);
     top->addWidget(m_extToggle);
     top->addWidget(m_vm);
     top->addWidget(settings);
@@ -184,6 +191,26 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
     pb->addLayout(statusRow);
     m_peerBox->hide();
     left->addWidget(m_peerBox);
+
+    // call waiting: a second caller during a call
+    m_waitBox = new QFrame(this);
+    m_waitBox->setFrameShape(QFrame::StyledPanel);
+    auto *wb = new QVBoxLayout(m_waitBox);
+    m_waitText = new QLabel(m_waitBox);
+    m_waitText->setWordWrap(true);
+    m_waitText->setAlignment(Qt::AlignCenter);
+    wb->addWidget(m_waitText);
+    auto *wbButtons = new QHBoxLayout;
+    auto *waitAccept = new QPushButton(QIcon::fromTheme(QStringLiteral("call-start")), i18n("Accept"), m_waitBox);
+    waitAccept->setToolTip(i18n("Put the current call on hold and accept"));
+    auto *waitReject = new QPushButton(QIcon::fromTheme(QStringLiteral("call-stop")), i18n("Decline"), m_waitBox);
+    connect(waitAccept, &QPushButton::clicked, this, &MainWindow::acceptWaitingRequested);
+    connect(waitReject, &QPushButton::clicked, this, &MainWindow::rejectWaitingRequested);
+    wbButtons->addWidget(waitAccept);
+    wbButtons->addWidget(waitReject);
+    wb->addLayout(wbButtons);
+    m_waitBox->hide();
+    left->addWidget(m_waitBox);
 
     m_callTimer = new QTimer(this);
     m_callTimer->setInterval(1000);
@@ -562,9 +589,32 @@ void MainWindow::updatePresenceIcons()
     }
 }
 
-void MainWindow::setConsult(Engine::CallState state, const QString &peerText)
+void MainWindow::setDnd(bool on, bool bySystem)
+{
+    const QSignalBlocker b(m_dnd);
+    m_dnd->setChecked(on);
+    m_dnd->setIcon(QIcon::fromTheme(on || bySystem ? QStringLiteral("notifications-disabled") : QStringLiteral("notifications")));
+    m_dnd->setToolTip(on         ? i18n("Do not disturb is on – click to turn it off")
+                          : bySystem ? i18n("The desktop's do not disturb is on – calls are not rung")
+                                     : i18n("Do not disturb"));
+}
+
+void MainWindow::setWaiting(const QString &peerText)
+{
+    m_waitText->setText(i18n("<b>Call waiting:</b> %1", peerText.toHtmlEscaped()));
+    m_waitBox->setVisible(!peerText.isEmpty());
+}
+
+void MainWindow::setConsult(Engine::CallState state, const QString &peerText, bool waitingCall)
 {
     m_consult = state;
+    m_secondIsWaiting = waitingCall;
+    if (waitingCall && state != Engine::CallState::Idle) {
+        m_status->setText(state == Engine::CallState::Established ? i18n("Talking to %1 – the other call is on hold", peerText)
+                                                                  : i18n("Accepting %1 …", peerText));
+        updateTransferButtons();
+        return;
+    }
     switch (state) {
     case Engine::CallState::Idle:
         if (m_state == Engine::CallState::Established)
@@ -588,10 +638,19 @@ void MainWindow::updateTransferButtons()
 {
     const bool consulting = m_consult != Engine::CallState::Idle;
     const bool inCall = m_state == Engine::CallState::Established;
+    m_hold->setEnabled(inCall && !consulting);
+    if (consulting && m_secondIsWaiting) {
+        // two calls after accepting a waiting call
+        m_transfer->setEnabled(inCall && m_consult == Engine::CallState::Established);
+        m_transfer->setText(i18n("Swap"));
+        m_transfer->setToolTip(i18n("Switch to the call on hold"));
+        m_hangup->setText(i18n("Hang up"));
+        m_hangup->setToolTip(i18n("End this call and return to the one on hold"));
+        return;
+    }
     m_transfer->setEnabled(inCall && (!consulting || m_consult == Engine::CallState::Ringing || m_consult == Engine::CallState::Established));
     m_transfer->setText(consulting ? i18n("Connect") : i18n("Transfer"));
     m_transfer->setToolTip(consulting ? i18n("Connect the waiting caller with the consulted party") : i18n("Transfer the call"));
-    m_hold->setEnabled(inCall && !consulting);
     if (m_state != Engine::CallState::Incoming)
         m_hangup->setText(consulting ? i18n("Back") : i18n("Hang up"));
     m_hangup->setToolTip(consulting ? i18n("End the consultation and return to the waiting caller") : QString());

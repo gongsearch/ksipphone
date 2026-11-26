@@ -63,6 +63,14 @@ public:
     void completeConsult();
     void abortConsult();
     CallState consultState() const { return m_consultState; }
+    // second call: a consultation (attended transfer) or an accepted waiting call
+    enum class SecondCall { Consult, Waiting };
+    SecondCall secondCall() const { return m_secondKind; }
+
+    // call waiting: a second incoming call during a call
+    void acceptWaiting(); // holds the current call
+    void rejectWaiting();
+    void swapCalls();     // with an accepted waiting call: switch which call is active
 
     // presence of these extensions (SUBSCRIBE via baresip's presence module)
     void setWatchList(const QStringList &extensions);
@@ -84,6 +92,9 @@ Q_SIGNALS:
     void engineError(const QString &message);
     void consultStateChanged(Engine::CallState state, const QString &peerUri); // Idle = no consultation call
     void transferFailed(const QString &reason);
+    void waitingCall(const QString &peerUri, const QString &peerName); // second incoming call
+    void waitingEnded();                                              // accepted, rejected or gone
+    void callsSwapped();                                              // main and second call changed roles
     void presenceChanged(const QHash<QString, Engine::Presence> &states); // extension -> state
     void ready();
 
@@ -126,6 +137,8 @@ private:
     bool m_consultPending = false;
     CallState m_consultState = CallState::Idle;
     QString m_consultPeer;
+    SecondCall m_secondKind = SecondCall::Consult;
+    QString m_waitingId, m_waitingPeer;
     // presence
     QStringList m_watch;
     QString m_contactsServer; // server the contacts file was written for

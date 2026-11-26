@@ -27,6 +27,9 @@ public:
     void start(bool minimized);
     void handleArguments(const QStringList &args, bool fromRemote);
 
+private Q_SLOTS:
+    void systemNotificationProperties(const QString &interface, const QVariantMap &changed, const QStringList &invalidated);
+
 private:
     void applySettings();
     void openSettings();
@@ -42,6 +45,10 @@ private:
     void quit();
     void showWindow(bool onTop = false);
     void transferCall(const QString &target);
+    void setDnd(bool on);
+    bool dndActive() const { return m_dnd || (m_dndFollowSystem && m_systemDnd); }
+    void updateDnd();
+    void notifyWaiting(const QString &text);
     void updateExtensions();
 
     Engine *m_engine;
@@ -64,6 +71,10 @@ private:
     QHash<QString, QString> m_extNames;
     QHash<int, QString> m_extLookups; // lookup id -> extension
     int m_nextExtLookup = 1000000;
-    QString m_consultName;
+    QString m_consultName, m_consultNumber;
+    QPixmap m_consultPhoto;
+    QPointer<Desktop::Notification> m_waitNote;
+    bool m_dnd = false, m_systemDnd = false, m_dndReject = false, m_dndFollowSystem = true;
+    class QAction *m_dndAction = nullptr;
     int m_consultLookup = -1;
 };

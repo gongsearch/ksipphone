@@ -6,6 +6,15 @@
 #include "localcontacts.h"
 #include "ringer.h"
 #include "transferdialog.h"
+
+#include <QAction>
+#include <QSettings>
+#ifdef KSIPPHONE_HAVE_DBUS
+#include <QDBusConnection>
+#include <QDBusInterface>
+#include <QDBusReply>
+#include <QDBusVariant>
+#endif
 #include "secrets.h"
 #include "settingsdialog.h"
 
@@ -56,6 +65,25 @@ PhoneApp::PhoneApp(QObject *parent)
     menu->addAction(QIcon::fromTheme(QStringLiteral("mail-message")), i18n("Call voicemail"), this, &PhoneApp::callVoicemail);
     menu->addAction(QIcon::fromTheme(QStringLiteral("call-stop")), i18n("Hang up"), m_engine, &Engine::hangup);
     menu->addSeparator();
+    m_dndAction = menu->addAction(QIcon::fromTheme(QStringLiteral("notifications-disabled")), i18n("Do not disturb"));
+    m_dndAction->setCheckable(true);
+    connect(m_dndAction, &QAction::toggled, this, &PhoneApp::setDnd);
+    connect(m_window, &MainWindow::dndToggled, this, &PhoneApp::setDnd);
+    m_dnd = appSettings().value(QStringLiteral("General/DoNotDisturb"), false).toBool();
+#ifdef KSIPPHONE_HAVE_DBUS
+    // the desktop's do-not-disturb (Plasma, GNOME via org.freedesktop.Notifications "Inhibited")
+    {
+        QDBusInterface props(QStringLiteral("org.freedesktop.Notifications"), QStringLiteral("/org/freedesktop/Notifications"),
+                             QStringLiteral("org.freedesktop.DBus.Properties"));
+        const QDBusReply<QDBusVariant> r = props.call(QStringLiteral("Get"), QStringLiteral("org.freedesktop.Notifications"), QStringLiteral("Inhibited"));
+        if (r.isValid())
+            m_systemDnd = r.value().variant().toBool();
+        QDBusConnection::sessionBus().connect(QStringLiteral("org.freedesktop.Notifications"), QStringLiteral("/org/freedesktop/Notifications"),
+                                              QStringLiteral("org.freedesktop.DBus.Properties"), QStringLiteral("PropertiesChanged"), this,
+                                              SLOT(systemNotificationProperties(QString, QVariantMap, QStringList)));
+    }
+#endif
+    menu->addSeparator();
     menu->addAction(QIcon::fromTheme(QStringLiteral("configure")), i18n("Settings…"), this, &PhoneApp::openSettings);
     menu->addSeparator();
     menu->addAction(QIcon::fromTheme(QStringLiteral("application-exit")), i18n("Quit"), this, &PhoneApp::quit);
@@ -80,12 +108,41 @@ PhoneApp::PhoneApp(QObject *parent)
     connect(m_window, &MainWindow::consultCompleteRequested, m_engine, &Engine::completeConsult);
     connect(m_window, &MainWindow::consultAbortRequested, m_engine, &Engine::abortConsult);
     connect(m_engine, &Engine::consultStateChanged, this, [this](Engine::CallState s, const QString &uri) {
-        m_window->setConsult(s, m_consultName.isEmpty() ? userPart(uri) : m_consultName);
+        m_window->setConsult(s, m_consultName.isEmpty() ? userPart(uri) : m_consultName, m_engine->secondCall() == Engine::SecondCall::Waiting);
     });
     connect(m_engine, &Engine::transferFailed, this, [](const QString &reason) {
         Desktop::Notification::error(i18n("Transfer failed"), reason.isEmpty() ? i18n("The call could not be transferred.") : reason);
     });
     connect(m_engine, &Engine::presenceChanged, m_window, &MainWindow::setPresence);
+    // call waiting
+    connect(m_window, &MainWindow::acceptWaitingRequested, m_engine, &Engine::acceptWaiting);
+    connect(m_window, &MainWindow::rejectWaitingRequested, m_engine, &Engine::rejectWaiting);
+    connect(m_engine, &Engine::waitingCall, this, [this](const QString &uri, const QString &name) {
+        m_consultNumber = userPart(uri);
+        m_consultName = name;
+        m_consultPhoto = QPixmap();
+        m_consultLookup = ++m_nextExtLookup;
+        m_phonebook->lookupNumber(m_consultNumber, m_consultLookup);
+        if (dndActive() && m_dndReject) {
+            m_engine->rejectWaiting();
+            return;
+        }
+        const QString text = name.isEmpty() || name == m_consultNumber ? m_consultNumber : QStringLiteral("%1 (%2)").arg(name, m_consultNumber);
+        m_window->setWaiting(text);
+        notifyWaiting(text);
+    });
+    connect(m_engine, &Engine::waitingEnded, this, [this] {
+        m_window->setWaiting(QString());
+        if (m_waitNote)
+            m_waitNote->close();
+    });
+    connect(m_engine, &Engine::callsSwapped, this, [this] {
+        std::swap(m_peerNumber, m_consultNumber);
+        std::swap(m_peerName, m_consultName);
+        std::swap(m_peerPhoto, m_consultPhoto);
+        m_window->setCall(m_engine->callState(), peerText());
+        m_window->setPeerPhoto(m_peerPhoto);
+    });
     connect(m_phonebook, &Phonebook::errorOccurred, m_window, &MainWindow::setPhonebookError);
     connect(m_engine, &Engine::codecChanged, m_window, &MainWindow::setCodec);
     connect(m_engine, &Engine::voicemailChanged, this, [this](int nNew, int, bool) {
@@ -138,6 +195,10 @@ PhoneApp::PhoneApp(QObject *parent)
         m_window->setPeerPhoto({});
         const int id = ++m_lookupId;
         m_phonebook->lookupNumber(m_peerNumber, id);
+        if (dndActive() && m_dndReject) {
+            m_engine->hangup(); // busy; it shows up as a missed call
+            return;
+        }
         notifyIncoming();
     });
     connect(m_phonebook, &Phonebook::lookupFinished, this, [this](int id, const QString &name, const QByteArray &photo) {
@@ -150,9 +211,17 @@ PhoneApp::PhoneApp(QObject *parent)
             return;
         }
         if (id == m_consultLookup) {
+            if (!photo.isEmpty())
+                m_consultPhoto.loadFromData(photo);
             if (!name.isEmpty()) {
                 m_consultName = name;
-                m_window->setConsult(m_engine->consultState(), name);
+                if (m_engine->consultState() != Engine::CallState::Idle)
+                    m_window->setConsult(m_engine->consultState(), name, m_engine->secondCall() == Engine::SecondCall::Waiting);
+                else if (m_waitNote) {
+                    const QString text = QStringLiteral("%1 (%2)").arg(name, m_consultNumber);
+                    m_window->setWaiting(text);
+                    m_waitNote->setText(text);
+                }
             }
             return;
         }
@@ -253,6 +322,9 @@ void PhoneApp::applySettings()
     m_phonebook->setNameFormat(static_cast<Phonebook::NameFormat>(s.nameFormat));
     m_engine->setAudioDevices(s.speakerDevice, s.micDevice, s.echoCancel);
     m_ringer->configure(s.ringFile, s.ringDevice, s.ringLoop);
+    m_dndReject = s.dndReject;
+    m_dndFollowSystem = s.dndFollowSystem;
+    updateDnd();
     Account a;
     a.user = s.user;
     a.server = s.server;
@@ -309,6 +381,54 @@ void PhoneApp::transferCall(const QString &target)
     m_engine->startConsult(t);
 }
 
+void PhoneApp::setDnd(bool on)
+{
+    m_dnd = on;
+    appSettings().setValue(QStringLiteral("General/DoNotDisturb"), on);
+    updateDnd();
+}
+
+void PhoneApp::updateDnd()
+{
+    if (m_dndAction) {
+        const QSignalBlocker b(m_dndAction);
+        m_dndAction->setChecked(m_dnd);
+    }
+    m_window->setDnd(m_dnd, m_dndFollowSystem && m_systemDnd && !m_dnd);
+    if (dndActive())
+        m_ringer->stop();
+    updateTray();
+}
+
+void PhoneApp::systemNotificationProperties(const QString &interface, const QVariantMap &changed, const QStringList &)
+{
+    if (interface != QLatin1String("org.freedesktop.Notifications") || !changed.contains(QStringLiteral("Inhibited")))
+        return;
+    m_systemDnd = changed.value(QStringLiteral("Inhibited")).toBool();
+    updateDnd();
+}
+
+void PhoneApp::notifyWaiting(const QString &text)
+{
+    if (m_waitNote)
+        m_waitNote->close();
+    m_waitNote = new Desktop::Notification(QStringLiteral("callWaiting"), Desktop::Notification::Kind::Persistent, this);
+    m_waitNote->setTitle(i18n("Call waiting"));
+    m_waitNote->setText(text);
+    m_waitNote->setIconName(QStringLiteral("call-start"));
+    const int acc = m_waitNote->addAction(i18n("Accept (hold current)"));
+    const int dec = m_waitNote->addAction(i18n("Decline"));
+    connect(m_waitNote, &Desktop::Notification::actionTriggered, this, [this, acc, dec](int i) {
+        if (i == acc)
+            m_engine->acceptWaiting();
+        else if (i == dec)
+            m_engine->rejectWaiting();
+    });
+    m_waitNote->setDefaultAction(i18n("Show dialer"));
+    connect(m_waitNote, &Desktop::Notification::defaultTriggered, this, [this] { showWindow(); });
+    m_waitNote->send();
+}
+
 void PhoneApp::openSettings()
 {
     const Settings cur = Settings::load();
@@ -355,9 +475,10 @@ void PhoneApp::notifyIncoming()
     m_ring->setDefaultAction(i18n("Show dialer"));
     connect(m_ring, &Desktop::Notification::defaultTriggered, this, [this] { showWindow(); });
     m_ring->send();
-    m_ringer->start();
+    if (!dndActive())
+        m_ringer->start(); // do not disturb: the notification only, no ringing
     // Without notification buttons the dialer window (with Accept / Decline) comes to the front.
-    if (!Desktop::richNotifications())
+    if (!Desktop::richNotifications() && !dndActive())
         showWindow(true);
 }
 
@@ -438,6 +559,8 @@ void PhoneApp::updateTray()
     tip << (rs == Engine::RegState::Registered ? i18n("Registered") : i18n("Not registered"));
     if (vm)
         tip << i18np("1 new voice message", "%1 new voice messages", m_voicemails);
+    if (dndActive())
+        tip << (m_dndReject ? i18n("Do not disturb: calls are rejected") : i18n("Do not disturb: calls are shown silently"));
     m_tray->setIconName(icon);
     m_tray->setAttention(vm);
     m_tray->setToolTip(i18n("KSipPhone"), tip.join(QStringLiteral("<br>")));

@@ -21,6 +21,8 @@ struct Settings {
     bool preferIpv6 = false;
     bool keepAlive = true;
     bool ringLoop = false;
+    bool dndReject = false;       // do not disturb: reject calls (else: show them silently)
+    bool dndFollowSystem = true;  // also when the desktop's do-not-disturb is on
     bool echoCancel = false; // baresip webrtc_aec
     QString micDevice, speakerDevice, ringDevice, ringFile; // PipeWire node names, "" = default
     static Settings load();
@@ -48,7 +50,8 @@ private:
     class QCheckBox *m_local = nullptr;
     QComboBox *m_dtmf;
     QComboBox *m_nameFormat;
-    QComboBox *m_ring, *m_mic, *m_speaker, *m_ringDev;
+    QComboBox *m_ring, *m_mic, *m_speaker, *m_ringDev, *m_dnd;
+    class QCheckBox *m_dndSystem = nullptr;
     QLineEdit *m_ringFile;
     class Ringer *m_preview;
     bool m_pwChanged = false;

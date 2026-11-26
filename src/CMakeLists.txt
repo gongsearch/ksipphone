@@ -35,7 +35,7 @@ if (UNIX AND NOT APPLE AND TARGET Qt6::DBus)
     # Evolution Data Server: libebook is dlopen()ed, no build or package dependency
     target_sources(ksipphone PRIVATE contacts_eds.cpp)
     target_link_libraries(ksipphone PRIVATE Qt6::DBus ${CMAKE_DL_LIBS})
-    target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_EDS)
+    target_compile_definitions(ksipphone PRIVATE KSIPPHONE_WITH_EDS KSIPPHONE_HAVE_DBUS)
 endif()
 if (APPLE)
     target_sources(ksipphone PRIVATE contacts_mac.mm)

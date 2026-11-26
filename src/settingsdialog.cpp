@@ -68,6 +68,8 @@ Settings Settings::load()
     c.endGroup();
     c.beginGroup(QStringLiteral("Audio"));
     s.ringLoop = c.value(QStringLiteral("RingContinuously"), false).toBool();
+    s.dndReject = c.value(QStringLiteral("DndReject"), false).toBool();
+    s.dndFollowSystem = c.value(QStringLiteral("DndFollowSystem"), true).toBool();
     s.echoCancel = c.value(QStringLiteral("EchoCancellation"), false).toBool();
     s.micDevice = str(c, QStringLiteral("Microphone"));
     s.speakerDevice = str(c, QStringLiteral("Speaker"));
@@ -100,6 +102,8 @@ void Settings::save() const
     c.endGroup();
     c.beginGroup(QStringLiteral("Audio"));
     c.setValue(QStringLiteral("RingContinuously"), ringLoop);
+    c.setValue(QStringLiteral("DndReject"), dndReject);
+    c.setValue(QStringLiteral("DndFollowSystem"), dndFollowSystem);
     c.setValue(QStringLiteral("EchoCancellation"), echoCancel);
     c.setValue(QStringLiteral("Microphone"), micDevice);
     c.setValue(QStringLiteral("Speaker"), speakerDevice);
@@ -428,6 +432,17 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     gf->addRow(i18n("Ring on:"), m_ringDev);
     gf->addRow(i18n("Ring tone:"), fileRow);
     gf->addRow(i18n("Ring:"), m_ring);
+    m_dnd = new QComboBox(gen);
+    m_dnd->addItem(i18n("Show calls silently"));
+    m_dnd->addItem(i18n("Reject calls (busy)"));
+    m_dnd->setCurrentIndex(s.dndReject ? 1 : 0);
+    m_dnd->setToolTip(i18n("What happens with incoming calls while \"Do not disturb\" is on (tray menu or window)"));
+    gf->addRow(i18n("Do not disturb:"), m_dnd);
+#ifdef KSIPPHONE_HAVE_DBUS
+    m_dndSystem = new QCheckBox(i18n("Also when the desktop's \"Do not disturb\" is on"), gen);
+    m_dndSystem->setChecked(s.dndFollowSystem);
+    gf->addRow(QString(), m_dndSystem);
+#endif
     tabs->addTab(gen, QIcon::fromTheme(QStringLiteral("audio-volume-high")), i18n("Audio"));
 
     auto *pb = new QWidget(tabs);
@@ -473,6 +488,8 @@ Settings SettingsDialog::settings() const
     s.preferIpv6 = m_ipv6->isChecked();
     s.keepAlive = m_keepAlive->isChecked();
     s.ringLoop = m_ring->currentIndex() == 1;
+    s.dndReject = m_dnd->currentIndex() == 1;
+    s.dndFollowSystem = m_dndSystem ? m_dndSystem->isChecked() : s.dndFollowSystem;
     s.echoCancel = m_aec->isChecked();
     s.micDevice = m_mic->currentData().toString();
     s.speakerDevice = m_speaker->currentData().toString();

@@ -46,4 +46,8 @@
   <file alias="breeze-dark/22/view-sort.svg">icons/breeze-dark/22/view-sort.svg</file>
   <file alias="breeze/22/view-list-details.svg">icons/breeze/22/view-list-details.svg</file>
   <file alias="breeze-dark/22/view-list-details.svg">icons/breeze-dark/22/view-list-details.svg</file>
+  <file alias="breeze/22/notifications.svg">icons/breeze/22/notifications.svg</file>
+  <file alias="breeze/22/notifications-disabled.svg">icons/breeze/22/notifications-disabled.svg</file>
+  <file alias="breeze-dark/22/notifications.svg">icons/breeze-dark/22/notifications.svg</file>
+  <file alias="breeze-dark/22/notifications-disabled.svg">icons/breeze-dark/22/notifications-disabled.svg</file>
 </qresource></RCC>

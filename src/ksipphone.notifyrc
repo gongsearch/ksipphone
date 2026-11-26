@@ -8,6 +8,11 @@ Name=Incoming call
 Comment=Someone is calling
 Action=Popup
 
+[Event/callWaiting]
+Name=Call waiting
+Comment=Someone calls during a call
+Action=Popup
+
 [Event/missedCall]
 Name=Missed call
 Comment=A call was not answered

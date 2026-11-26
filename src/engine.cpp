@@ -513,6 +513,7 @@ void Engine::startConsult(const QString &target)
     if (target.trimmed().isEmpty() || m_callState != CallState::Established || m_consultState != CallState::Idle)
         return;
     m_consultPending = true;
+    m_secondKind = SecondCall::Consult;
     m_consultPeer = targetUri(target);
     // baresip puts the current call on hold and dials the target
     send(QStringLiteral("atransferstart ") + m_consultPeer, [this](bool ok, const QString &out) {
@@ -527,6 +528,10 @@ void Engine::completeConsult()
 {
     if (m_consultState == CallState::Idle)
         return;
+    if (m_secondKind == SecondCall::Waiting) {
+        swapCalls();
+        return;
+    }
     send(QStringLiteral("atransferexec"), [this](bool ok, const QString &out) {
         if (!ok)
             Q_EMIT transferFailed(out.trimmed());
@@ -538,7 +543,54 @@ void Engine::abortConsult()
     if (m_consultState == CallState::Idle && !m_consultPending)
         return;
     m_consultPending = false;
+    if (m_secondKind == SecondCall::Waiting) {
+        // hang up the active (second) call; its CALL_CLOSED resumes the held one
+        send(QStringLiteral("callfind ") + m_consultId);
+        send(QStringLiteral("hangup"));
+        return;
+    }
     send(QStringLiteral("atransferabort"));
+}
+
+void Engine::acceptWaiting()
+{
+    if (m_waitingId.isEmpty() || !m_consultId.isEmpty() || m_callState != CallState::Established)
+        return;
+    send(QStringLiteral("callfind ") + m_callId);
+    send(QStringLiteral("hold"));
+    send(QStringLiteral("callfind ") + m_waitingId);
+    send(QStringLiteral("accept"));
+    m_consultId = m_waitingId;
+    m_consultPeer = m_waitingPeer;
+    m_secondKind = SecondCall::Waiting;
+    m_waitingId.clear();
+    Q_EMIT waitingEnded();
+    setConsultState(CallState::Incoming); // Established follows with its CALL_ESTABLISHED
+}
+
+void Engine::rejectWaiting()
+{
+    if (m_waitingId.isEmpty())
+        return;
+    send(QStringLiteral("callfind ") + m_waitingId);
+    send(QStringLiteral("hangup"));
+    if (!m_callId.isEmpty())
+        send(QStringLiteral("callfind ") + m_callId);
+}
+
+void Engine::swapCalls()
+{
+    if (m_secondKind != SecondCall::Waiting || m_consultState != CallState::Established || m_callId.isEmpty())
+        return;
+    // hold the active second call, resume the held main call, then swap the roles
+    send(QStringLiteral("callfind ") + m_consultId);
+    send(QStringLiteral("hold"));
+    send(QStringLiteral("callfind ") + m_callId);
+    send(QStringLiteral("resume"));
+    std::swap(m_callId, m_consultId);
+    std::swap(m_peer, m_consultPeer);
+    Q_EMIT callsSwapped();
+    Q_EMIT consultStateChanged(m_consultState, m_consultPeer);
 }
 
 void Engine::setConsultState(CallState s)
@@ -724,9 +776,30 @@ void Engine::onEvent(const QJsonObject &ev)
             setCallState(cs);
             return;
         }
+        if (!m_waitingId.isEmpty() && id == m_waitingId) {
+            if (t == QLatin1String("CALL_CLOSED")) {
+                m_waitingId.clear();
+                Q_EMIT waitingEnded();
+            }
+            return;
+        }
+        if (t == QLatin1String("CALL_INCOMING") && !m_callId.isEmpty() && id != m_callId) {
+            if (m_waitingId.isEmpty() && m_consultId.isEmpty() && m_callState == CallState::Established) {
+                // call waiting: offer it, the current call goes on
+                m_waitingId = id;
+                m_waitingPeer = ev.value(QStringLiteral("peeruri")).toString();
+                Q_EMIT waitingCall(m_waitingPeer, ev.value(QStringLiteral("peerdisplayname")).toString());
+            } else {
+                // already two calls (or still setting up the first): busy
+                send(QStringLiteral("callfind ") + id);
+                send(QStringLiteral("hangup"));
+                send(QStringLiteral("callfind ") + m_callId);
+            }
+            return;
+        }
         if (!m_callId.isEmpty() && id != m_callId) {
             qCDebug(ENGINE) << "ignoring event of another call" << t << id;
-            return; // e.g. a second incoming call while busy
+            return;
         }
         if (t == QLatin1String("CALL_INCOMING") || t == QLatin1String("CALL_OUTGOING"))
             m_callId = id;
@@ -750,6 +823,19 @@ void Engine::onEvent(const QJsonObject &ev)
         QTimer::singleShot(300, this, [this] { queryCodec(); });
     } else if (t == QLatin1String("CALL_CLOSED")) {
         m_callId.clear();
+        if (!m_waitingId.isEmpty()) {
+            // the main call ended while another one is waiting: it simply keeps ringing as a normal call
+            m_callId = m_waitingId;
+            m_peer = m_waitingPeer;
+            m_waitingId.clear();
+            Q_EMIT waitingEnded();
+            m_closeReason = text;
+            Q_EMIT codecChanged(QString());
+            Q_EMIT callEnded(text);
+            setCallState(CallState::Incoming);
+            Q_EMIT incomingCall(m_peer, QString());
+            return;
+        }
         m_closeReason = text;
         setCallState(CallState::Idle);
         Q_EMIT codecChanged(QString());
