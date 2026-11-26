@@ -6,6 +6,7 @@
 #include <QAbstractItemView>
 #include <QCloseEvent>
 #include <QCompleter>
+#include <QStyledItemDelegate>
 #include <QStyle>
 #include <QPainter>
 #include <QDateTime>
@@ -23,6 +24,27 @@
 #include <QVBoxLayout>
 
 static constexpr int NumberRole = Qt::UserRole + 1;
+
+namespace
+{
+// search results: icons (source, number type) at the right end of the row, after name and number
+class ResultDelegate : public QStyledItemDelegate
+{
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+protected:
+    void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override
+    {
+        QStyledItemDelegate::initStyleOption(option, index);
+        option->decorationPosition = QStyleOptionViewItem::Right;
+        option->decorationAlignment = Qt::AlignRight | Qt::AlignVCenter;
+        // like QCompleter's own delegate: the current row looks focused
+        if (const auto *view = qobject_cast<const QAbstractItemView *>(option->widget); view && view->currentIndex() == index)
+            option->state |= QStyle::State_HasFocus;
+    }
+};
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -64,6 +86,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     m_completer->setCaseSensitivity(Qt::CaseInsensitive);
     m_number->setCompleter(m_completer);
+    m_completer->popup()->setItemDelegate(new ResultDelegate(m_completer->popup()));
     connect(m_completer, QOverload<const QModelIndex &>::of(&QCompleter::activated), this, [this](const QModelIndex &idx) {
         const QString n = idx.data(NumberRole).toString();
         QTimer::singleShot(0, this, [this, n] { setNumber(n); });
@@ -249,7 +272,7 @@ void MainWindow::setSearchResults(int requestId, const QList<PhonebookEntry> &en
         const bool ldap = e.source == QLatin1String("ldap");
         const QString kindIcon = e.kind == QLatin1String("mobile") ? QStringLiteral("smartphone")
             : e.kind == QLatin1String("home")                     ? QStringLiteral("go-home")
-            : e.kind == QLatin1String("work")                     ? QStringLiteral("phone")
+            : e.kind == QLatin1String("work")                     ? QStringLiteral("computer")
                                                                    : QString();
         const QString kindText = e.kind == QLatin1String("mobile") ? i18n("mobile")
             : e.kind == QLatin1String("home")                     ? i18n("home")
