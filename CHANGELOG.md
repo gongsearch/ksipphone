@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.0 – 2026-11-26
+
+Feature-complete for a simple SIP phone.
+
+- Call waiting: a second call during a call can be accepted (the first is held), declined or swapped with
+- Do not disturb: in the tray menu and the window; calls are shown silently or rejected (busy);
+  follows the desktop's do-not-disturb
+- Call history: missed, incoming and outgoing calls with filter, call back, copy number, delete
+- Extensions for the presence list automatically from the LDAP phonebook (internal numbers; numbers the
+  server offers no status for are left out), plus additional ones
+- Media (Linux): music and videos are paused during calls; media keys and headset buttons answer and hang up
+- Mute follows the system microphone mute (Linux); push to talk (KDE)
+- Window always on top (also on KDE Plasma Wayland), window position remembered on Plasma Wayland
+- Keyboard shortcuts in the window and global shortcuts (KDE): accept, hang up, mute, push to talk,
+  show dialer, do not disturb, call the number in the clipboard
+- New settings tab "Controls"
+
 ## 0.2.4 – 2026-11-26
 
 - Call transfer: blind, or attended (consult the target first, then connect or go back)

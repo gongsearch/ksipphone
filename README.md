@@ -28,8 +28,19 @@ It is written for KDE Plasma but has no hard Plasma or D-Bus dependency of its o
   contacts via KDE Connect), GNOME / Evolution, macOS Contacts. Results sorted alphabetically,
   name format *First Last* or *Last, First*, icons for source and number type.
 - **Call transfer**: blind, or attended (consult the target first, then connect or go back).
-- **Presence of internal extensions**: a list next to the keypad shows free / busy / offline;
-  click to call, during a call click to transfer (see *Presence with Asterisk* below).
+- **Call waiting**: accept a second call (the first is held), decline it, or swap between the two.
+- **Presence of internal extensions**: a list next to the keypad shows free / busy / offline, with
+  filter and sorting; click to call, during a call click to transfer. Extensions come automatically
+  from the LDAP phonebook (internal numbers) or from a list (see *Presence with Asterisk* below).
+- **Call history**: missed, incoming and outgoing calls; filter, call back, copy, delete.
+- **Do not disturb**: show calls silently or reject them; follows the desktop's do-not-disturb.
+- **Media integration** (Linux): pauses music and videos during calls; media keys and headset
+  buttons answer and hang up.
+- **Microphone**: the mute button follows the system microphone mute (Linux); push to talk (KDE).
+- **Window**: always on top (also on Plasma Wayland), size and layout remembered, the extension
+  list can be hidden; keyboard shortcuts in the window, global shortcuts on KDE (accept, hang up,
+  mute, push to talk, show dialer, do not disturb, call the number in the clipboard).
+- **Keep-alive** for stateful firewalls / NAT (re-registers every 90 s), so incoming calls get through.
 - **HD indicator**: shows the negotiated codec (HD badge for G.722 / Opus) and a call timer.
 - **Audio**: choose microphone, speaker/headset and a separate ring device (PipeWire nodes);
   any sound file as ring tone, ringing once or continuously; optional WebRTC echo cancellation
@@ -41,7 +52,7 @@ It is written for KDE Plasma but has no hard Plasma or D-Bus dependency of its o
   Manager, macOS Keychain), never written to disk by KSipPhone.
 - **IPv6**: optionally prefer the server's IPv6 address.
 
-Not (yet) supported: video, chat, own presence status, multiple accounts, conference.
+Not supported: video, chat, an own away status, multiple accounts, conference calls.
 
 ## Requirements
 
@@ -129,7 +140,7 @@ template as `po/<lang>/ksipphone.po`; pull requests are welcome.
 
 ## Screenshots
 
-![Dialer](screenshots/dialer.png) ![Settings](screenshots/settings.png)
+![Dialer](screenshots/dialer.png) ![Settings](screenshots/settings.png) ![Controls and shortcuts](screenshots/controls.png)
 
 ## License
 

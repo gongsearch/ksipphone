@@ -45,11 +45,11 @@
   <screenshots>
     <screenshot type="default">
       <caption>Dialer with phonebook search, keypad and voicemail button</caption>
-      <image>https://raw.githubusercontent.com/gongsearch/ksipphone/v0.2.0/screenshots/dialer.png</image>
+      <image>https://raw.githubusercontent.com/gongsearch/ksipphone/v1.0.0/screenshots/dialer.png</image>
     </screenshot>
     <screenshot>
       <caption>Settings: SIP account, audio devices, ring tone and LDAP phonebook</caption>
-      <image>https://raw.githubusercontent.com/gongsearch/ksipphone/v0.2.0/screenshots/settings.png</image>
+      <image>https://raw.githubusercontent.com/gongsearch/ksipphone/v1.0.0/screenshots/settings.png</image>
     </screenshot>
   </screenshots>
   <branding>
@@ -64,6 +64,18 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.0.0" date="2026-11-26">
+      <description>
+        <p>Feature-complete for a simple SIP phone.</p>
+        <ul>
+          <li>Call waiting, do not disturb and a call history</li>
+          <li>Presence list filled automatically from the LDAP phonebook</li>
+          <li>Pauses media during calls; media keys and headset buttons answer and hang up</li>
+          <li>Mute follows the system microphone; push to talk</li>
+          <li>Window always on top, keyboard and global shortcuts</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.4" date="2026-11-26">
       <description>
         <ul>
