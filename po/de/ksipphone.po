@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ksipphone\n"
 "Report-Msgid-Bugs-To: https://github.com/gongsearch/ksipphone/issues\n"
-"POT-Creation-Date: 2026-11-26 00:28+0100\n"
+"POT-Creation-Date: 2026-11-26 08:25+0100\n"
 "PO-Revision-Date: 2026-11-25 23:30+0100\n"
 "Last-Translator: gongsearch\n"
 "Language-Team: German\n"
@@ -40,7 +40,7 @@ msgstr "KSipPhone"
 msgid "A small SIP phone for KDE Plasma"
 msgstr "Ein kleines SIP-Telefon für KDE Plasma"
 
-#: src/mainwindow.cpp:38 src/settingsdialog.cpp:98
+#: src/mainwindow.cpp:38 src/settingsdialog.cpp:101
 #, kde-format
 msgid "Settings"
 msgstr "Einstellungen"
@@ -246,206 +246,229 @@ msgid_plural "%1 new voice messages"
 msgstr[0] "Eine neue Sprachnachricht"
 msgstr[1] "%1 neue Sprachnachrichten"
 
-#: src/settingsdialog.cpp:101
+#: src/settingsdialog.cpp:104
 #, kde-format
 msgid "SIP account"
 msgstr "SIP-Konto"
 
-#: src/settingsdialog.cpp:105
+#: src/settingsdialog.cpp:108
 #, kde-format
 msgid "host or host:port"
 msgstr "Host oder Host:Port"
 
-#: src/settingsdialog.cpp:109
+#: src/settingsdialog.cpp:112
 #, kde-format
 msgid "Prefer IPv6 if the server has an IPv6 address"
 msgstr "IPv6 bevorzugen, wenn der Server eine IPv6-Adresse hat"
 
-#: src/settingsdialog.cpp:114
+#: src/settingsdialog.cpp:117
 #, kde-format
 msgid "not set"
 msgstr "nicht gesetzt"
 
-#: src/settingsdialog.cpp:114
+#: src/settingsdialog.cpp:117
 #, kde-format
 msgid "stored in KWallet - type to change"
 msgstr "in KWallet gespeichert – zum Ändern neu eingeben"
 
-#: src/settingsdialog.cpp:117
+#: src/settingsdialog.cpp:122
 #, kde-format
-msgid "Comma separated, in order of preference, e.g. G722,PCMA,PCMU,opus"
-msgstr ""
-"Durch Kommas getrennt, in bevorzugter Reihenfolge, z. B. G722,PCMA,PCMU,opus"
+msgid "G.722 – HD voice (16 kHz)"
+msgstr "G.722 – HD-Sprache (16 kHz)"
 
-#: src/settingsdialog.cpp:118
+#: src/settingsdialog.cpp:123
+#, kde-format
+msgid "Opus – HD voice, low bandwidth"
+msgstr "Opus – HD-Sprache, geringe Bandbreite"
+
+#: src/settingsdialog.cpp:124
+#, kde-format
+msgid "G.711 A-law (PCMA) – standard in Europe"
+msgstr "G.711 A-law (PCMA) – Standard in Europa"
+
+#: src/settingsdialog.cpp:125
+#, kde-format
+msgid "G.711 µ-law (PCMU) – standard in North America"
+msgstr "G.711 µ-law (PCMU) – Standard in Nordamerika"
+
+#: src/settingsdialog.cpp:130
+#, kde-format
+msgid "Tick the codecs to offer. The order is the preference: drag the entries or use the arrows."
+msgstr "Anzubietende Codecs ankreuzen. Die Reihenfolge ist die Priorität: Einträge ziehen oder die Pfeile verwenden."
+
+#: src/settingsdialog.cpp:153
+#, kde-format
+msgid "Prefer"
+msgstr "Bevorzugen"
+
+#: src/settingsdialog.cpp:156
+#, kde-format
+msgid "Less preferred"
+msgstr "Weniger bevorzugen"
+
+#: src/settingsdialog.cpp:174
 #, kde-format
 msgid "User:"
 msgstr "Benutzer:"
 
-#: src/settingsdialog.cpp:119
+#: src/settingsdialog.cpp:175
 #, kde-format
 msgid "Server:"
 msgstr "Server:"
 
-#: src/settingsdialog.cpp:120
+#: src/settingsdialog.cpp:176
 #, kde-format
 msgid "Transport:"
 msgstr "Transport:"
 
-#: src/settingsdialog.cpp:122
+#: src/settingsdialog.cpp:178
 #, kde-format
 msgid "Display name:"
 msgstr "Anzeigename:"
 
-#: src/settingsdialog.cpp:123
+#: src/settingsdialog.cpp:179
 #, kde-format
 msgid "Password:"
 msgstr "Passwort:"
 
-#: src/settingsdialog.cpp:124
+#: src/settingsdialog.cpp:180
 #, kde-format
 msgid "Codecs:"
 msgstr "Codecs:"
 
-#: src/settingsdialog.cpp:126
+#: src/settingsdialog.cpp:182
 #, kde-format
 msgid "number of the mailbox, e.g. 9000"
 msgstr "Nummer der Mailbox, z. B. 9000"
 
-#: src/settingsdialog.cpp:127
+#: src/settingsdialog.cpp:183
 #, kde-format
 msgid "Voicemail:"
 msgstr "Mailbox:"
 
-#: src/settingsdialog.cpp:129
+#: src/settingsdialog.cpp:185
 #, kde-format
 msgid "RFC 4733 / RTP events (recommended)"
 msgstr "RFC 4733 / RTP-Events (empfohlen)"
 
-#: src/settingsdialog.cpp:130
+#: src/settingsdialog.cpp:186
 #, kde-format
 msgid "SIP INFO"
 msgstr "SIP INFO"
 
-#: src/settingsdialog.cpp:131
+#: src/settingsdialog.cpp:187
 #, kde-format
 msgid "Automatic"
 msgstr "Automatisch"
 
-#: src/settingsdialog.cpp:133
+#: src/settingsdialog.cpp:189
 #, kde-format
-msgid ""
-"Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, "
-"dtmf_mode=info needs SIP INFO."
-msgstr ""
-"Muss zum Server passen: z. B. braucht Asterisk mit dtmf_mode=rfc4733 RFC "
-"4733, mit dtmf_mode=info SIP INFO."
+msgid "Must match the server: e.g. Asterisk dtmf_mode=rfc4733 needs RFC 4733, dtmf_mode=info needs SIP INFO."
+msgstr "Muss zum Server passen: z. B. braucht Asterisk mit dtmf_mode=rfc4733 RFC 4733, mit dtmf_mode=info SIP INFO."
 
-#: src/settingsdialog.cpp:134
+#: src/settingsdialog.cpp:190
 #, kde-format
 msgid "DTMF:"
 msgstr "DTMF:"
 
-#: src/settingsdialog.cpp:137
+#: src/settingsdialog.cpp:193
 #, kde-format
 msgid "Audio"
 msgstr "Audio"
 
-#: src/settingsdialog.cpp:140
+#: src/settingsdialog.cpp:196
 #, kde-format
 msgid "System default"
 msgstr "Systemstandard"
 
-#: src/settingsdialog.cpp:145
+#: src/settingsdialog.cpp:201
 #, kde-format
 msgid "%1 (not connected)"
 msgstr "%1 (nicht angeschlossen)"
 
-#: src/settingsdialog.cpp:160
+#: src/settingsdialog.cpp:216
 #, kde-format
 msgid "Choose ring tone"
 msgstr "Klingelton auswählen"
 
-#: src/settingsdialog.cpp:163
+#: src/settingsdialog.cpp:219
 #, kde-format
 msgid "Ring tone"
 msgstr "Klingelton"
 
-#: src/settingsdialog.cpp:163
+#: src/settingsdialog.cpp:219
 #, kde-format
 msgid "Sounds (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"
 msgstr "Klänge (*.wav *.ogg *.oga *.mp3 *.flac *.opus)"
 
-#: src/settingsdialog.cpp:168
+#: src/settingsdialog.cpp:224
 #, kde-format
 msgid "Test"
 msgstr "Testen"
 
-#: src/settingsdialog.cpp:177
+#: src/settingsdialog.cpp:233
 #, kde-format
 msgid "Once"
 msgstr "Einmal"
 
-#: src/settingsdialog.cpp:178
+#: src/settingsdialog.cpp:234
 #, kde-format
 msgid "Continuously until answered"
 msgstr "Durchgehend bis zur Annahme"
 
-#: src/settingsdialog.cpp:180
+#: src/settingsdialog.cpp:236
 #, kde-format
 msgid "Microphone:"
 msgstr "Mikrofon:"
 
-#: src/settingsdialog.cpp:181
+#: src/settingsdialog.cpp:237
 #, kde-format
 msgid "Speaker / headset:"
 msgstr "Lautsprecher / Headset:"
 
-#: src/settingsdialog.cpp:182
+#: src/settingsdialog.cpp:238
 #, kde-format
 msgid "Echo cancellation in KSipPhone (WebRTC)"
 msgstr "Echounterdrückung in KSipPhone (WebRTC)"
 
-#: src/settingsdialog.cpp:184
+#: src/settingsdialog.cpp:240
 #, kde-format
-msgid ""
-"Leave off if the microphone already comes through PipeWire's echo "
-"cancellation (module-echo-cancel / an \"Echo Cancellation Source\"), "
-"otherwise the echo is cancelled twice."
-msgstr ""
-"Ausgeschaltet lassen, wenn das Mikrofon schon über die Echounterdrückung von "
-"PipeWire läuft (module-echo-cancel / eine „Echo Cancellation Source“), sonst "
-"wird das Echo doppelt unterdrückt."
+msgid "Leave off if the microphone already comes through PipeWire's echo cancellation (module-echo-cancel / an \"Echo Cancellation Source\"), otherwise the echo is cancelled twice."
+msgstr "Ausgeschaltet lassen, wenn das Mikrofon schon über die Echounterdrückung von PipeWire läuft (module-echo-cancel / eine „Echo Cancellation Source“), sonst wird das Echo doppelt unterdrückt."
 
-#: src/settingsdialog.cpp:187
+#: src/settingsdialog.cpp:243
 #, kde-format
 msgid "Ring on:"
 msgstr "Klingeln auf:"
 
-#: src/settingsdialog.cpp:188
+#: src/settingsdialog.cpp:244
 #, kde-format
 msgid "Ring tone:"
 msgstr "Klingelton:"
 
-#: src/settingsdialog.cpp:189
+#: src/settingsdialog.cpp:245
 #, kde-format
 msgid "Ring:"
 msgstr "Klingeln:"
 
-#: src/settingsdialog.cpp:192
+#: src/settingsdialog.cpp:248
 #, kde-format
 msgid "LDAP phonebook (optional, anonymous read)"
 msgstr "LDAP-Telefonbuch (optional, anonymer Lesezugriff)"
 
-#: src/settingsdialog.cpp:198
+#: src/settingsdialog.cpp:254
 #, kde-format
 msgid "URI:"
 msgstr "URI:"
 
-#: src/settingsdialog.cpp:199
+#: src/settingsdialog.cpp:255
 #, kde-format
 msgid "Base DN:"
 msgstr "Basis-DN:"
+
+#, kde-format
+#~ msgid "Comma separated, in order of preference, e.g. G722,PCMA,PCMU,opus"
+#~ msgstr "Durch Kommas getrennt, in bevorzugter Reihenfolge, z. B. G722,PCMA,PCMU,opus"
 
 #, kde-format
 #~ msgid "KWallet is not available; the password was not stored."

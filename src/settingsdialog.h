@@ -30,7 +30,8 @@ public:
 
 private:
     QLineEdit *m_voicemail;
-    QLineEdit *m_user, *m_server, *m_display, *m_password, *m_codecs, *m_ldapUri, *m_ldapBase;
+    QLineEdit *m_user, *m_server, *m_display, *m_password, *m_ldapUri, *m_ldapBase;
+    class QListWidget *m_codecs;
     QComboBox *m_transport;
     class QCheckBox *m_ipv6;
     class QCheckBox *m_aec;

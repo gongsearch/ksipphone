@@ -5,6 +5,7 @@
 #include <KLocalizedString>
 
 #include <QCheckBox>
+#include <algorithm>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFileDialog>
@@ -15,6 +16,8 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 // Same file and keys as KConfig used in 0.1 (~/.config/ksipphonerc on Linux).
@@ -113,15 +116,68 @@ SettingsDialog::SettingsDialog(const Settings &s, const QString &password, QWidg
     m_password->setEchoMode(QLineEdit::Password);
     m_password->setPlaceholderText(password.isEmpty() ? i18n("not set") : i18n("stored in KWallet - type to change"));
     connect(m_password, &QLineEdit::textEdited, this, [this] { m_pwChanged = true; });
-    m_codecs = new QLineEdit(s.codecs, acc);
-    m_codecs->setToolTip(i18n("Comma separated, in order of preference, e.g. G722,PCMA,PCMU,opus"));
+    // Codecs: tick to offer, order = preference (drag & drop or the arrow buttons)
+    struct CodecInfo { const char *id; QString label; };
+    const QList<CodecInfo> known = {
+        {"G722", i18n("G.722 – HD voice (16 kHz)")},
+        {"opus", i18n("Opus – HD voice, low bandwidth")},
+        {"PCMA", i18n("G.711 A-law (PCMA) – standard in Europe")},
+        {"PCMU", i18n("G.711 µ-law (PCMU) – standard in North America")},
+    };
+    m_codecs = new QListWidget(acc);
+    m_codecs->setDragDropMode(QAbstractItemView::InternalMove);
+    m_codecs->setDefaultDropAction(Qt::MoveAction);
+    m_codecs->setToolTip(i18n("Tick the codecs to offer. The order is the preference: drag the entries or use the arrows."));
+    QStringList enabled = s.codecs.split(QLatin1Char(','), Qt::SkipEmptyParts);
+    for (QString &c : enabled)
+        c = c.trimmed();
+    auto addItem = [this](const QString &id, const QString &label, bool on) {
+        auto *it = new QListWidgetItem(label, m_codecs);
+        it->setData(Qt::UserRole, id);
+        it->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsDragEnabled);
+        it->setCheckState(on ? Qt::Checked : Qt::Unchecked);
+    };
+    // enabled ones first, in their configured order (unknown ids are kept), then the rest
+    for (const QString &id : std::as_const(enabled)) {
+        auto k = std::find_if(known.begin(), known.end(), [&](const CodecInfo &c) { return id.compare(QLatin1String(c.id), Qt::CaseInsensitive) == 0; });
+        addItem(k != known.end() ? QLatin1String(k->id) : id, k != known.end() ? k->label : id, true);
+    }
+    for (const CodecInfo &k : known) {
+        const bool listed = std::any_of(enabled.begin(), enabled.end(), [&](const QString &e) { return e.compare(QLatin1String(k.id), Qt::CaseInsensitive) == 0; });
+        if (!listed)
+            addItem(QLatin1String(k.id), k.label, false);
+    }
+    m_codecs->setFixedHeight(m_codecs->sizeHintForRow(0) * m_codecs->count() + 2 * m_codecs->frameWidth() + 4);
+    auto *up = new QToolButton(acc);
+    up->setIcon(QIcon::fromTheme(QStringLiteral("go-up")));
+    up->setToolTip(i18n("Prefer"));
+    auto *down = new QToolButton(acc);
+    down->setIcon(QIcon::fromTheme(QStringLiteral("go-down")));
+    down->setToolTip(i18n("Less preferred"));
+    auto move = [this](int delta) {
+        const int r = m_codecs->currentRow();
+        if (r < 0 || r + delta < 0 || r + delta >= m_codecs->count())
+            return;
+        QListWidgetItem *it = m_codecs->takeItem(r);
+        m_codecs->insertItem(r + delta, it);
+        m_codecs->setCurrentRow(r + delta);
+    };
+    connect(up, &QToolButton::clicked, this, [move] { move(-1); });
+    connect(down, &QToolButton::clicked, this, [move] { move(1); });
+    auto *codecRow = new QHBoxLayout;
+    auto *arrows = new QVBoxLayout;
+    arrows->addWidget(up);
+    arrows->addWidget(down);
+    arrows->addStretch();
+    codecRow->addWidget(m_codecs, 1);
+    codecRow->addLayout(arrows);
     f->addRow(i18n("User:"), m_user);
     f->addRow(i18n("Server:"), m_server);
     f->addRow(i18n("Transport:"), m_transport);
     f->addRow(QString(), m_ipv6);
     f->addRow(i18n("Display name:"), m_display);
     f->addRow(i18n("Password:"), m_password);
-    f->addRow(i18n("Codecs:"), m_codecs);
+    f->addRow(i18n("Codecs:"), codecRow);
     m_voicemail = new QLineEdit(s.voicemail, acc);
     m_voicemail->setPlaceholderText(i18n("number of the mailbox, e.g. 9000"));
     f->addRow(i18n("Voicemail:"), m_voicemail);
@@ -220,7 +276,12 @@ Settings SettingsDialog::settings() const
     s.ringDevice = m_ringDev->currentData().toString();
     s.ringFile = m_ringFile->text().trimmed();
     s.displayName = m_display->text().trimmed();
-    s.codecs = m_codecs->text().remove(QLatin1Char(' '));
+    QStringList codecs;
+    for (int i = 0; i < m_codecs->count(); ++i) {
+        if (m_codecs->item(i)->checkState() == Qt::Checked)
+            codecs << m_codecs->item(i)->data(Qt::UserRole).toString();
+    }
+    s.codecs = codecs.join(QLatin1Char(','));
     s.voicemail = m_voicemail->text().trimmed();
     s.dtmfMode = m_dtmf->currentData().toString();
     s.ldapUri = m_ldapUri->text().trimmed();
