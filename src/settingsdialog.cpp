@@ -24,6 +24,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QtMath>
 #include <QStyleOptionButton>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
@@ -131,13 +132,16 @@ public:
         style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, w);
 
         QStyleOptionButton box;
-        box.rect = checkRect(opt, style, w);
         box.state = (opt.state & (QStyle::State_Enabled | QStyle::State_Active)) | (checked ? QStyle::State_On : QStyle::State_Off);
         box.palette = opt.palette;
-        style->drawPrimitive(QStyle::PE_IndicatorCheckBox, &box, painter, w);
+        const qreal dpr = painter->device() ? painter->device()->devicePixelRatioF() : 1.0;
+        QRect visible;
+        const QImage img = renderBox(style, w, box, dpr, &visible);
+        const QRect target = checkRect(opt, style, w, &visible);
+        painter->drawImage(target.topLeft() - visible.topLeft(), img);
 
         QRect textRect = opt.rect.adjusted(0, 0, -4, 0);
-        textRect.setLeft(box.rect.right() + 1 + gap(style, w));
+        textRect.setLeft(target.right() + 1 + gap(style, w));
         const QPalette::ColorGroup group = !(opt.state & QStyle::State_Enabled) ? QPalette::Disabled
             : (opt.state & QStyle::State_Active)                                 ? QPalette::Active
                                                                                  : QPalette::Inactive;
@@ -209,11 +213,41 @@ private:
     {
         return style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, w) + 3;
     }
-    static QRect checkRect(const QStyleOptionViewItem &opt, const QStyle *style, const QWidget *w)
+    // Draws the check box into a transparent image and finds where it actually appears: styles offset or
+    // resize it inside the given rect (Windows 11), so its position is measured instead of trusted.
+    static QImage renderBox(QStyle *style, const QWidget *w, QStyleOptionButton box, qreal dpr, QRect *visible)
     {
         const int bw = style->pixelMetric(QStyle::PM_IndicatorWidth, nullptr, w);
         const int bh = style->pixelMetric(QStyle::PM_IndicatorHeight, nullptr, w);
-        return QRect(opt.rect.left() + margin(style, w), opt.rect.top() + (opt.rect.height() - bh) / 2, bw, bh);
+        const int side = 3 * qMax(bw, bh);
+        QImage img(QSize(side, side) * dpr, QImage::Format_ARGB32_Premultiplied);
+        img.setDevicePixelRatio(dpr);
+        img.fill(Qt::transparent);
+        box.rect = QRect(side / 3, side / 3, bw, bh);
+        {
+            QPainter p(&img);
+            style->drawPrimitive(QStyle::PE_IndicatorCheckBox, &box, &p, w);
+        }
+        int x0 = img.width(), y0 = img.height(), x1 = -1, y1 = -1;
+        for (int y = 0; y < img.height(); ++y) {
+            const QRgb *line = reinterpret_cast<const QRgb *>(img.constScanLine(y));
+            for (int x = 0; x < img.width(); ++x) {
+                if (qAlpha(line[x]) > 24) {
+                    x0 = qMin(x0, x), x1 = qMax(x1, x), y0 = qMin(y0, y), y1 = qMax(y1, y);
+                }
+            }
+        }
+        *visible = x1 < 0 ? box.rect
+                          : QRect(QPoint(qFloor(x0 / dpr), qFloor(y0 / dpr)), QPoint(qCeil((x1 + 1) / dpr) - 1, qCeil((y1 + 1) / dpr) - 1));
+        return img;
+    }
+    // where the visible check box goes in the row: left margin, vertically centred
+    static QRect checkRect(const QStyleOptionViewItem &opt, const QStyle *style, const QWidget *w, const QRect *visible = nullptr)
+    {
+        const QSize sz = visible ? visible->size()
+                                 : QSize(style->pixelMetric(QStyle::PM_IndicatorWidth, nullptr, w),
+                                         style->pixelMetric(QStyle::PM_IndicatorHeight, nullptr, w));
+        return QRect(QPoint(opt.rect.left() + margin(style, w), opt.rect.top() + (opt.rect.height() - sz.height()) / 2), sz);
     }
 };
 }

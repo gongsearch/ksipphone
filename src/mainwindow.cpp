@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_number->setPlaceholderText(i18n("Number, SIP address or name"));
     m_number->setClearButtonEnabled(true);
     QFont f = m_number->font();
-    f.setPointSizeF(f.pointSizeF() * 1.4);
+    f.setPointSizeF(f.pointSizeF() * 1.15);
     m_number->setFont(f);
     lay->addWidget(m_number);
 
