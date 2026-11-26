@@ -69,11 +69,17 @@ int main(int argc, char **argv)
     parser.addHelpOption();
     parser.addVersionOption();
     parser.process(app);
-    // Bundled Breeze subset: fallback for icons the platform theme lacks (Windows, macOS)
+    // Bundled Breeze subset. On Windows/macOS it is the primary theme: Qt's own platform icon theme there
+    // only knows standard names and returns empty icons for others (e.g. "configure"), so the fallback
+    // would never be used. On Linux (Qt-only builds) the system theme stays primary.
     QIcon::setThemeSearchPaths(QIcon::themeSearchPaths() << QStringLiteral(":/icons"));
     QIcon::setFallbackThemeName(QStringLiteral("breeze"));
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    QIcon::setThemeName(QStringLiteral("breeze"));
+#else
     if (QIcon::themeName().isEmpty() || QIcon::fromTheme(QStringLiteral("call-start")).isNull())
         QIcon::setThemeName(QStringLiteral("breeze"));
+#endif
 #endif
     QApplication::setWindowIcon(QIcon::fromTheme(QStringLiteral("io.github.gongsearch.KSipPhone"), QIcon::fromTheme(QStringLiteral("call-start"))));
 
