@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 – 2026-11-26
 
 - Translations: French, Spanish, Italian, Dutch, Polish, Portuguese (Brazil), Czech, Swedish, Russian, Japanese, Chinese (Simplified), Hindi, Arabic, Persian, Urdu (machine-assisted; corrections welcome); menu entry, notifications and store summary translated too
 - Right-to-left layout for Arabic, Persian and Urdu (the keypad keeps 1 2 3 from left to right)

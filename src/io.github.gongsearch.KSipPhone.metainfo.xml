@@ -80,6 +80,15 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="1.1.0" date="2026-11-26">
+      <description>
+        <ul>
+          <li>Translations for 15 more languages, right-to-left layout for Arabic, Persian and Urdu</li>
+          <li>The call button is only enabled when a call is possible</li>
+          <li>All keypad keys have the same width</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.2" date="2026-11-26">
       <description>
         <ul>
