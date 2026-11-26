@@ -70,6 +70,7 @@ private:
     void updatePresenceIcons();
     void refreshExtList();
     void setupShortcuts();
+    int callInfoHeight() const;
     void applyExtVisibility();
     void saveGeometryNow();
     void updateTransferButtons();
@@ -88,6 +89,7 @@ private:
     QToolButton *m_dnd;
     QToolButton *m_settings = nullptr, *m_history = nullptr;
     bool m_alwaysOnTop = false;
+    class QSpacerItem *m_callSpace = nullptr;
     class QFrame *m_waitBox;
     QLabel *m_waitText;
     bool m_secondIsWaiting = false;

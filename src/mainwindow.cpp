@@ -317,6 +317,10 @@ MainWindow::MainWindow(Phonebook *phonebook, QWidget *parent)
             Q_EMIT transferRequested(ext);
     });
     left->addLayout(grid);
+    // while idle, reserve the room the call info (photo, name, state) takes during a call: the window
+    // keeps its height when a call starts, only the keypad moves down
+    m_callSpace = new QSpacerItem(0, callInfoHeight(), QSizePolicy::Minimum, QSizePolicy::Fixed);
+    left->addItem(m_callSpace);
     left->addStretch(1); // the keypad stays together when the window gets taller (with the extension list)
     body->addWidget(m_extPanel, 0, 1);
     body->addWidget(m_ext, 1, 1);
@@ -436,9 +440,27 @@ void MainWindow::setRegistration(const QString &text, bool ok)
     m_reg->setText(QStringLiteral("<span style='color:%1'>●</span> %2").arg(ok ? QStringLiteral("#2e9d4c") : QStringLiteral("#c0392b"), text.toHtmlEscaped()));
 }
 
+int MainWindow::callInfoHeight() const
+{
+    // peer box: margins 8+8, photo 96, name (1.35x bold, up to two lines), state row; plus the column spacing
+    QFont nf = font();
+    nf.setPointSizeF(nf.pointSizeF() * 1.35);
+    nf.setBold(true);
+    const int name = QFontMetrics(nf).lineSpacing() * 2;
+    const int stateRow = qMax(fontMetrics().height() + 6, 22);
+    return 8 + 96 + 6 + name + 6 + stateRow + 8 + 12;
+}
+
 void MainWindow::setCall(Engine::CallState state, const QString &peerText)
 {
+    const bool wasIdle = m_state == Engine::CallState::Idle;
     m_state = state;
+    // reserved room <-> call info
+    m_callSpace->changeSize(0, state == Engine::CallState::Idle ? callInfoHeight() : 0, QSizePolicy::Minimum, QSizePolicy::Fixed);
+    m_left->invalidate();
+    // after a call the number / search text is not needed any more
+    if (state == Engine::CallState::Idle && !wasIdle)
+        m_number->clear();
     const bool idle = state == Engine::CallState::Idle;
     const bool inCall = state == Engine::CallState::Established;
     switch (state) {
